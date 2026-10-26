@@ -126,7 +126,7 @@ final class CoachingStoreTests: XCTestCase {
         let assessment = try store.refreshReadiness()
         XCTAssertEqual(assessment.verdict, .gatherData)
         XCTAssertEqual(store.latestReadiness?.id, assessment.id)
-        XCTAssertTrue(store.snapshot().latestReadiness != nil)
+        XCTAssertNotNil(try store.snapshot().latestReadiness)
     }
 
     @MainActor
@@ -261,8 +261,8 @@ final class CoachingStoreTests: XCTestCase {
     @MainActor
     func testSnapshotRejectsFabricatedEvidenceReference() throws {
         var snapshot = AppSnapshot(exportedAt: Date())
-        snapshot.adjustments = [AdjustmentProposal(kind: .keep, reason: "原因", summary: "说明",
-                                                   evidenceIDs: ["health:stepCount"])]
+        snapshot.adjustments = [AdjustmentProposal(kind: .keep, reason: "原因",
+                                                   evidenceIDs: ["health:stepCount"], summary: "说明")]
         // No health snapshot is present, so the citation cannot resolve.
         XCTAssertThrowsError(try snapshot.validate())
     }
