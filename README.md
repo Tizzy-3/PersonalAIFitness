@@ -1,6 +1,6 @@
 # PersonalAIFitness · 个人训练
 
-面向个人使用的原生 iPhone 训练记录项目。SwiftUI + SwiftData，本地优先；当前为 **0.1 首个试用批次**，不是完整 AI 健身产品。
+面向个人使用的原生 iPhone 训练记录项目。SwiftUI + SwiftData，本地优先；当前为 **0.2 动作库与 AI 接入批次**，不是完整需求已交付。
 
 ## 当前范围
 
@@ -8,10 +8,12 @@
 - 力量、有氧、徒手记录；热身/正式组、重量/次数/时长/距离、可选 RPE/RIR、上次数据、复制与备注。
 - 逐组显式保存、休息计时、暂停/恢复、提前结束与重开后的进行中会话入口。
 - 本地历史与基础统计、自定义动作；初始库没有虚构的个人训练或健康数据。
+- 扩展中文动作库、英文/别名搜索、肌群/器械筛选、收藏、动作步骤/常见错误与部分有许可的离线示范短片。
+- 可配置的 OpenAI 兼容 Chat Completions：自有接口/模型/Keychain密钥，每次先预览数据再明确发送；基于真实记录与本地动作资料问答，保守减量建议经校验、对比和确认才产生新计划版本。
 - 加密逻辑备份/恢复：PBKDF2-SHA256 + AES-GCM，恢复前验证与保护副本。
 - HealthKit 仅提供步数、静息心率与体重的基础只读验证。
 
-**尚未实现**：AI 服务、身体状态引擎、规则自动计划、完整健康历史/增量同步/多来源处理、动作 GIF/教学视频、收藏/替代、档案变更时间线及完整趋势。运动限制目前是手动档案，不会自动排除动作。进行中的未提交输入不能保证在强制终止后保留；已成功保存的结果由持久化恢复。
+**尚未实现**：身体状态引擎、规则自动计划、完整健康历史/增量同步/多来源处理、全库 GIF/完整教学视频、档案变更时间线、历史更正及完整趋势。AI只允许现有计划同序动作的保守减量，不支持自主生成科学周期、替换动作或增加负荷。档案存在运动限制时不应用 AI 调整；人工编辑仍需本人核对。未提交输入不能保证在强制终止后保留；已成功保存的结果由持久化恢复。
 
 ## 构建与测试
 
@@ -35,9 +37,13 @@ GitHub Actions 固定 Xcode 27.0，依次运行结构检查、核心测试、iOS
 |---|---|
 | `Packages/FitnessCore` | 领域值、验证、计划版本、训练状态、备份 DTO 与单元测试 |
 | `Sources/PersonalFitness/Features` | 原生界面与用户输入 |
-| `Sources/PersonalFitness/Storage` | SwiftData schema v1、显式保存、备份恢复 |
+| `Sources/PersonalFitness/Storage` | SwiftData schema v1/v2、迁移、显式保存、备份恢复 |
+| `Sources/PersonalFitness/Coach` | API、Keychain、发送预览、教练与建议确认 |
+| `Sources/PersonalFitness/ExerciseMedia` | 有许可的动作媒体展示 |
 | `Sources/PersonalFitness/Health` | 基础只读能力验证 |
 | `Tests/PersonalFitnessTests` | 持久化与加密备份测试 |
 | `.github/workflows/ios-trial.yml` | 测试和未签名构建 |
 
-没有账户、订阅、广告、社交或业务后端，当前没有 AI 请求或健康数据外发。公开的是程序源码，不包含使用者的训练数据、健康数据、证书或密钥。器械图为生成的视觉占位，不是动作教学素材；图标源为项目自有 SVG。
+没有账户、订阅、广告、社交或业务后端。AI仅在本人预览并明确发送后调用所配置服务，Apple健康摘要尚不发送。公开源码不包含使用者的训练数据、健康数据、证书或密钥。器械图为生成的视觉占位，不是动作教学素材；图标源为项目自有 SVG。
+
+完整范围见 [功能状态与验收](Documentation/CAPABILITIES.md)，接口配置见 [AI连接说明](Documentation/AI-CONNECTION.md)，媒体逐项许可见 [素材来源](Documentation/MEDIA-SOURCES.md)。没有API Key时不会显示预设AI回答。

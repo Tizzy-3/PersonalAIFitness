@@ -15,6 +15,18 @@ struct RootView: View {
     @State private var planEditor: PlanEditorRoute?
     @State private var settings = false
 
+    init(store: TrainingStore) {
+        self.store = store
+        #if DEBUG
+        // CI captures actual empty-state screens, without adding fabricated user data.
+        let arguments = ProcessInfo.processInfo.arguments
+        if let index = arguments.firstIndex(of: "--capture-tab"), arguments.indices.contains(index + 1),
+           let tab = Int(arguments[index + 1]), (0...4).contains(tab) {
+            _selectedTab = State(initialValue: tab)
+        }
+        #endif
+    }
+
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
@@ -32,6 +44,8 @@ struct RootView: View {
                 .tabItem { Label("动作库", systemImage: "books.vertical") }.tag(2)
             NavigationStack { TrainingInsightsView(store: store) }
                 .tabItem { Label("趋势", systemImage: "chart.bar") }.tag(3)
+            NavigationStack { CoachView(store: store) }
+                .tabItem { Label("教练", systemImage: "bubble.left.and.text.bubble.right") }.tag(4)
         }
         .tint(.primary)
         .sheet(item: $planEditor) { route in NavigationStack { PlanEditorView(store: store, revising: route.plan) } }
@@ -72,7 +86,8 @@ struct TodayView: View {
                         ForEach(plan.items) { item in
                             NavigationLink { ExerciseDetailView(exercise: item.exercise, store: store) } label: {
                                 HStack(spacing: 12) {
-                                    ExerciseTile(exercise: item.exercise)
+                                    ExerciseTile(exercise: item.exercise,
+                                                 animated: item.id == plan.items.first(where: { ExerciseDetails.details(for: $0.exercise.id)?.media?.previewGIFFileName != nil })?.id)
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(item.exercise.name).font(.subheadline.weight(.semibold))
                                         Text(item.exercise.muscle).font(.caption).foregroundStyle(.secondary)
@@ -111,7 +126,15 @@ struct TodayView: View {
                         }.font(.subheadline)
                     }
                 }
-                Text("首个试用版：AI 教练、状态评估与自动计划尚未实现。")
+                NavigationLink { CoachView(store: store) } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("AI 教练", systemImage: "bubble.left.and.text.bubble.right").font(.headline)
+                        Text("解释当前计划、复盘已保存记录。发送前核对资料，调整先看对比再确认。")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                        .background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+                }.buttonStyle(.plain)
+                Text("身体状态评估与规则自动计划尚未实现；AI 回答不是恢复评估或医学诊断。")
                     .font(.footnote).foregroundStyle(.secondary)
             }.padding(20)
         }

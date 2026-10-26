@@ -20,17 +20,35 @@ struct FitnessPrimaryButtonStyle: ButtonStyle {
     }
 }
 
+@MainActor
 struct ExerciseTile: View {
     let exercise: Exercise
     var size: CGFloat = 48
+    var animated: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        Image(systemName: exercise.kind == .cardio ? "figure.walk" : exercise.kind == .bodyweight ? "figure.strengthtraining.functional" : "dumbbell")
-            .font(.system(size: size * 0.42, weight: .medium))
-            .foregroundStyle(.secondary)
-            .frame(width: size, height: size)
-            .background(FitnessTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
-            .accessibilityHidden(true)
+        ZStack(alignment: .bottomTrailing) {
+            Group {
+                if animated, !reduceMotion, scenePhase == .active,
+                   let gif = ExerciseDetails.details(for: exercise.id)?.media?.previewGIFFileName {
+                    ExerciseAnimatedThumbnail(fileName: gif, poster: ExerciseMediaAsset.poster(for: exercise.id))
+                        .background(Color.white)
+                } else if let poster = ExerciseMediaAsset.poster(for: exercise.id) {
+                    Image(uiImage: poster).resizable().scaledToFit().background(Color.white)
+                } else {
+                    Image(systemName: exercise.kind == .cardio ? "figure.walk" : exercise.kind == .bodyweight ? "figure.strengthtraining.functional" : "dumbbell")
+                        .font(.system(size: size * 0.42, weight: .medium)).foregroundStyle(.secondary)
+                }
+            }.frame(width: size, height: size)
+            if ExerciseDetails.details(for: exercise.id)?.media?.kind == .video {
+                Image(systemName: "play.circle.fill").font(.caption2).foregroundStyle(.white, .black).padding(2)
+            }
+        }
+        .frame(width: size, height: size)
+        .background(FitnessTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 12)).accessibilityHidden(true)
     }
 }
 

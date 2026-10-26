@@ -165,6 +165,175 @@ final class TrainingStoreTests: XCTestCase {
         XCTAssertTrue(reopened.sessions.isEmpty)
     }
 
+    @MainActor
+    func testFavoriteChangesPersistAndUnknownIDsAreRejected() throws {
+        let store = try TrainingStore(inMemory: true)
+        let id = try XCTUnwrap(ExerciseCatalog.exercises.first?.id)
+        try store.toggleFavorite(exerciseID: id)
+        XCTAssertEqual(store.favoriteExerciseIDs, [id])
+        XCTAssertThrowsError(try store.toggleFavorite(exerciseID: "invented.exercise"))
+        XCTAssertEqual(store.favoriteExerciseIDs, [id])
+        try store.toggleFavorite(exerciseID: id)
+        XCTAssertTrue(store.favoriteExerciseIDs.isEmpty)
+    }
+
+    @MainActor
+    func testCoachAnswerIsSavedWithoutChangingCurrentPlan() throws {
+        let store = try TrainingStore(inMemory: true)
+        let plan = try store.confirmPlan(name: "保持原计划", items: [try makeItem()])
+        let context = try CoachContext.make(snapshot: store.snapshot())
+        let data = Data(#"{"answer":"尚无训练完成记录，不能判断进步。","evidence":["statistics"],"limitations":["未提供健康数据"],"proposal":null}"#.utf8)
+        let reply = try CoachReply.decode(data: data, context: context)
+        let turn = CoachTurn(question: "我的表现怎么样？", context: context, reply: reply)
+        try store.saveCoachTurn(turn)
+        XCTAssertEqual(store.coachTurns.count, 1)
+        XCTAssertEqual(store.coachTurns.first?.question, turn.question)
+        XCTAssertEqual(store.currentPlan, plan)
+        XCTAssertEqual(store.planVersions.count, 1)
+        XCTAssertThrowsError(try store.saveCoachTurn(turn))
+        XCTAssertThrowsError(try store.decideCoachTurn(id: turn.id, accept: true))
+        XCTAssertEqual(store.currentPlan, plan)
+    }
+
+    @MainActor
+    func testNewCoachRecordCannotArriveAlreadyAccepted() throws {
+        let store = try TrainingStore(inMemory: true)
+        let original = try store.confirmPlan(name: "需要明确确认", items: [try makeItem()])
+        var turn = try makeCoachTurn(store: store)
+        turn.decision = .accepted
+        turn.appliedPlanVersionID = UUID()
+        XCTAssertThrowsError(try store.saveCoachTurn(turn))
+        XCTAssertTrue(store.coachTurns.isEmpty)
+        XCTAssertEqual(store.currentPlan, original)
+        XCTAssertEqual(store.planVersions.count, 1)
+    }
+
+    @MainActor
+    func testRejectingCoachProposalLeavesPlanExactlyUnchanged() throws {
+        let store = try TrainingStore(inMemory: true)
+        let original = try store.confirmPlan(name: "原安排", items: [try makeItem()])
+        let turn = try makeCoachTurn(store: store)
+        try store.saveCoachTurn(turn)
+        let result = try store.decideCoachTurn(id: turn.id, accept: false)
+        XCTAssertNil(result)
+        XCTAssertEqual(store.currentPlan, original)
+        XCTAssertEqual(store.planVersions, [original])
+        XCTAssertEqual(store.coachTurns.first?.decision, .rejected)
+        XCTAssertNil(store.coachTurns.first?.appliedPlanVersionID)
+        XCTAssertThrowsError(try store.decideCoachTurn(id: turn.id, accept: true))
+    }
+
+    @MainActor
+    func testExplicitCoachConfirmationAppendsOneLinkedPlanVersion() throws {
+        let store = try TrainingStore(inMemory: true)
+        let original = try store.confirmPlan(name: "减量前", items: [try makeItem()])
+        let turn = try makeCoachTurn(store: store)
+        try store.saveCoachTurn(turn)
+        XCTAssertEqual(store.currentPlan, original)
+        let applied = try XCTUnwrap(store.decideCoachTurn(id: turn.id, accept: true))
+        XCTAssertEqual(applied.parentVersionID, original.id)
+        XCTAssertEqual(applied.version, original.version + 1)
+        XCTAssertEqual(applied.items.first?.setCount, 2)
+        XCTAssertEqual(store.planVersions.count, 2)
+        XCTAssertEqual(store.currentPlan, applied)
+        XCTAssertEqual(store.coachTurns.first?.decision, .accepted)
+        XCTAssertEqual(store.coachTurns.first?.appliedPlanVersionID, applied.id)
+        XCTAssertThrowsError(try store.decideCoachTurn(id: turn.id, accept: true))
+        XCTAssertEqual(store.planVersions.count, 2)
+    }
+
+    @MainActor
+    func testStaleCoachProposalCannotBeAppliedAfterProfileChanges() throws {
+        let store = try TrainingStore(inMemory: true)
+        let original = try store.confirmPlan(name: "保持版本", items: [try makeItem()])
+        let turn = try makeCoachTurn(store: store)
+        try store.saveCoachTurn(turn)
+        var profile = store.profile
+        profile.goal = "目标已发生变化"
+        try store.saveProfile(profile)
+        XCTAssertThrowsError(try store.decideCoachTurn(id: turn.id, accept: true))
+        XCTAssertEqual(store.currentPlan, original)
+        XCTAssertEqual(store.coachTurns.first?.decision, .pending)
+        XCTAssertNil(store.coachTurns.first?.appliedPlanVersionID)
+        _ = try store.decideCoachTurn(id: turn.id, accept: false)
+        XCTAssertEqual(store.coachTurns.first?.decision, .rejected)
+    }
+
+    @MainActor
+    func testLateCoachResponseCanBeSavedButNotAppliedAfterTrainingChanges() throws {
+        let store = try TrainingStore(inMemory: true)
+        let original = try store.confirmPlan(name: "训练前", items: [try makeItem()])
+        let turn = try makeCoachTurn(store: store)
+        let session = try store.startWorkout(plan: original)
+        try store.updateSession(id: session.id) { try $0.finish(early: true) }
+        try store.saveCoachTurn(turn)
+        XCTAssertEqual(store.coachTurns.count, 1)
+        XCTAssertThrowsError(try store.decideCoachTurn(id: turn.id, accept: true))
+        XCTAssertEqual(store.currentPlan, original)
+    }
+
+    @MainActor
+    func testBackupRoundTripIncludesCoachDecisionsAndFavorites() throws {
+        let source = try TrainingStore(inMemory: true)
+        let original = try source.confirmPlan(name: "可恢复建议", items: [try makeItem()])
+        let id = try XCTUnwrap(original.items.first?.exercise.id)
+        try source.toggleFavorite(exerciseID: id)
+        let turn = try makeCoachTurn(store: source)
+        try source.saveCoachTurn(turn)
+        _ = try source.decideCoachTurn(id: turn.id, accept: true)
+        let archive = try SnapshotCodec.encode(source.snapshot())
+        let decoded = try SnapshotCodec.decode(archive)
+        let destination = try TrainingStore(inMemory: true)
+        try destination.restore(decoded)
+        XCTAssertEqual(destination.coachTurns, source.coachTurns)
+        XCTAssertEqual(destination.favoriteExerciseIDs, source.favoriteExerciseIDs)
+        XCTAssertEqual(destination.planVersions, source.planVersions)
+        XCTAssertEqual(destination.activePlanVersionID, source.activePlanVersionID)
+    }
+
+    @MainActor
+    func testCoachHistoryAndFavoritesSurviveDiskReopen() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CoachDiskStore-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("coach.store")
+        let expected: AppSnapshot
+        do {
+            let store = try TrainingStore(storageURL: url)
+            let plan = try store.confirmPlan(name: "落盘教练建议", items: [try makeItem()])
+            let id = try XCTUnwrap(plan.items.first?.exercise.id)
+            try store.toggleFavorite(exerciseID: id)
+            let turn = try makeCoachTurn(store: store)
+            try store.saveCoachTurn(turn)
+            _ = try store.decideCoachTurn(id: turn.id, accept: true)
+            expected = try store.snapshot()
+        }
+        let reopened = try TrainingStore(storageURL: url)
+        XCTAssertEqual(reopened.coachTurns, expected.coachTurns ?? [])
+        XCTAssertEqual(reopened.favoriteExerciseIDs, Set(expected.favoriteExerciseIDs ?? []))
+        XCTAssertEqual(reopened.planVersions, expected.planVersions)
+    }
+
+    @MainActor
+    private func makeCoachTurn(store: TrainingStore) throws -> CoachTurn {
+        let context = try CoachContext.make(snapshot: store.snapshot())
+        let plan = try XCTUnwrap(context.plan)
+        let items: [[String: Any]] = plan.items.map { item in
+            ["exerciseID": item.exercise.id, "setCount": max(1, item.setCount - 1),
+             "targetReps": item.targetReps.map { $0 as Any } ?? NSNull(),
+             "targetSeconds": item.targetSeconds.map { $0 as Any } ?? NSNull(),
+             "restSeconds": item.restSeconds]
+        }
+        let json: [String: Any] = [
+            "answer": "当前安排可由你确认后减少一组，尚无依据增加训练量。",
+            "evidence": ["plan"],
+            "limitations": ["未提供健康数据，不能判断恢复程度"],
+            "proposal": ["reason": "本人主动要求减少本次训练量", "targetPlanVersionID": plan.id.uuidString, "items": items]
+        ]
+        let reply = try CoachReply.decode(data: JSONSerialization.data(withJSONObject: json), context: context)
+        return CoachTurn(question: "本次想少练一组，请提出建议。", context: context, reply: reply)
+    }
+
     private func makeItem() throws -> PlannedExercise {
         let exercise = try XCTUnwrap(ExerciseCatalog.exercises.first)
         return PlannedExercise(exercise: exercise)

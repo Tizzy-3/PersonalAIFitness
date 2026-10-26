@@ -335,7 +335,7 @@ final class FitnessCoreTests: XCTestCase {
     }
 
     func testSnapshotRejectsUnknownVersionEmptyAndMalformedData() {
-        XCTAssertThrowsError(try AppSnapshot(formatVersion: 2).validate())
+        XCTAssertThrowsError(try AppSnapshot(formatVersion: 999).validate())
         XCTAssertThrowsError(try SnapshotCodec.decode(Data()))
         XCTAssertThrowsError(try SnapshotCodec.decode(Data("{\"formatVersion\":1}".utf8)))
         XCTAssertThrowsError(try SnapshotCodec.decode(Data("not-json".utf8)))

@@ -59,9 +59,71 @@ enum FitnessSchemaV1: VersionedSchema {
     }
 }
 
+enum FitnessSchemaV2: VersionedSchema {
+    static var versionIdentifier: Schema.Version { Schema.Version(2, 0, 0) }
+    static var models: [any PersistentModel.Type] {
+        [MetadataRecord.self, PlanVersionRecord.self, SessionRecord.self]
+    }
+
+    @Model
+    final class MetadataRecord {
+        @Attribute(.unique) var id: String
+        var profileData: Data
+        var customExercisesData: Data
+        var activePlanVersionID: UUID?
+        var revision: Int
+        var coachData: Data? = nil
+        var favoriteIDsData: Data? = nil
+
+        init(profileData: Data, customExercisesData: Data, activePlanVersionID: UUID? = nil) {
+            id = "personal-fitness"
+            self.profileData = profileData
+            self.customExercisesData = customExercisesData
+            self.activePlanVersionID = activePlanVersionID
+            revision = 1
+        }
+    }
+
+    @Model
+    final class PlanVersionRecord {
+        @Attribute(.unique) var id: UUID
+        var planID: UUID
+        var version: Int
+        var confirmedAt: Date
+        var payload: Data
+
+        init(id: UUID, planID: UUID, version: Int, confirmedAt: Date, payload: Data) {
+            self.id = id
+            self.planID = planID
+            self.version = version
+            self.confirmedAt = confirmedAt
+            self.payload = payload
+        }
+    }
+
+    @Model
+    final class SessionRecord {
+        @Attribute(.unique) var id: UUID
+        var startedAt: Date
+        var status: String
+        var revision: Int
+        var payload: Data
+
+        init(id: UUID, startedAt: Date, status: String, revision: Int, payload: Data) {
+            self.id = id
+            self.startedAt = startedAt
+            self.status = status
+            self.revision = revision
+            self.payload = payload
+        }
+    }
+}
+
 enum FitnessMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [FitnessSchemaV1.self] }
-    static var stages: [MigrationStage] { [] }
+    static var schemas: [any VersionedSchema.Type] { [FitnessSchemaV1.self, FitnessSchemaV2.self] }
+    static var stages: [MigrationStage] {
+        [.lightweight(fromVersion: FitnessSchemaV1.self, toVersion: FitnessSchemaV2.self)]
+    }
 }
 
 enum StorageError: LocalizedError {

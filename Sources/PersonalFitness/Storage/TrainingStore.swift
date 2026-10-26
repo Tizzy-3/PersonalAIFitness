@@ -10,12 +10,14 @@ final class TrainingStore {
     private(set) var planVersions: [PlanVersion]
     private(set) var sessions: [WorkoutSession]
     private(set) var customExercises: [Exercise]
+    private(set) var coachTurns: [CoachTurn]
+    private(set) var favoriteExerciseIDs: Set<String>
     private(set) var activePlanVersionID: UUID?
     private(set) var recoverySnapshotURL: URL?
 
     @ObservationIgnored private let container: ModelContainer
     @ObservationIgnored private let context: ModelContext
-    @ObservationIgnored private let metadata: FitnessSchemaV1.MetadataRecord
+    @ObservationIgnored private let metadata: FitnessSchemaV2.MetadataRecord
     @ObservationIgnored private let recoveryDirectory: URL?
 
     var currentPlan: PlanVersion? { planVersions.first { $0.id == activePlanVersionID } }
@@ -23,7 +25,7 @@ final class TrainingStore {
     var allExercises: [Exercise] { ExerciseCatalog.exercises + customExercises }
 
     convenience init(inMemory: Bool = false) throws {
-        let schema = Schema(versionedSchema: FitnessSchemaV1.self)
+        let schema = Schema(versionedSchema: FitnessSchemaV2.self)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory, cloudKitDatabase: .none)
         let directory: URL?
         if inMemory { directory = nil }
@@ -33,28 +35,28 @@ final class TrainingStore {
 
     /// A separately located real store permits reopen tests without touching the user's library.
     convenience init(storageURL: URL) throws {
-        let schema = Schema(versionedSchema: FitnessSchemaV1.self)
+        let schema = Schema(versionedSchema: FitnessSchemaV2.self)
         let config = ModelConfiguration(schema: schema, url: storageURL, cloudKitDatabase: .none)
         try self.init(configuration: config, recoveryDirectory: storageURL.deletingLastPathComponent().appendingPathComponent("Recovery", isDirectory: true))
     }
 
     private init(configuration: ModelConfiguration, recoveryDirectory: URL?) throws {
-        let schema = Schema(versionedSchema: FitnessSchemaV1.self)
+        let schema = Schema(versionedSchema: FitnessSchemaV2.self)
         let createdContainer = try ModelContainer(for: schema, migrationPlan: FitnessMigrationPlan.self, configurations: [configuration])
         let createdContext = ModelContext(createdContainer)
         createdContext.autosaveEnabled = false
-        let roots = try createdContext.fetch(FetchDescriptor<FitnessSchemaV1.MetadataRecord>())
-        let planRecords = try createdContext.fetch(FetchDescriptor<FitnessSchemaV1.PlanVersionRecord>())
-        let sessionRecords = try createdContext.fetch(FetchDescriptor<FitnessSchemaV1.SessionRecord>())
+        let roots = try createdContext.fetch(FetchDescriptor<FitnessSchemaV2.MetadataRecord>())
+        let planRecords = try createdContext.fetch(FetchDescriptor<FitnessSchemaV2.PlanVersionRecord>())
+        let sessionRecords = try createdContext.fetch(FetchDescriptor<FitnessSchemaV2.SessionRecord>())
         guard roots.count <= 1 else { throw StorageError.invalidStore("存在多个档案根记录") }
-        let root: FitnessSchemaV1.MetadataRecord
+        let root: FitnessSchemaV2.MetadataRecord
         if let existing = roots.first {
             root = existing
         } else {
             guard planRecords.isEmpty, sessionRecords.isEmpty else {
                 throw StorageError.invalidStore("缺少档案根记录")
             }
-            root = FitnessSchemaV1.MetadataRecord(
+            root = FitnessSchemaV2.MetadataRecord(
                 profileData: try RecordCodec.encode(PersonalProfile()),
                 customExercisesData: try RecordCodec.encode([Exercise]())
             )
@@ -68,7 +70,9 @@ final class TrainingStore {
                 activePlanVersionID: root.activePlanVersionID,
                 planVersions: try planRecords.map { try RecordCodec.decode(PlanVersion.self, from: $0.payload) },
                 sessions: try sessionRecords.map { try RecordCodec.decode(WorkoutSession.self, from: $0.payload) },
-                customExercises: try RecordCodec.decode([Exercise].self, from: root.customExercisesData)
+                customExercises: try RecordCodec.decode([Exercise].self, from: root.customExercisesData),
+                coachTurns: try root.coachData.map { try RecordCodec.decode([CoachTurn].self, from: $0) } ?? [],
+                favoriteExerciseIDs: try root.favoriteIDsData.map { try RecordCodec.decode([String].self, from: $0) } ?? []
             )
             try loaded.validate()
             guard Set(planRecords.map(\.id)) == Set(loaded.planVersions.map(\.id)),
@@ -86,6 +90,8 @@ final class TrainingStore {
         planVersions = loaded.planVersions.sorted { $0.confirmedAt > $1.confirmedAt }
         sessions = loaded.sessions.sorted { $0.startedAt > $1.startedAt }
         customExercises = loaded.customExercises
+        coachTurns = (loaded.coachTurns ?? []).sorted { $0.createdAt > $1.createdAt }
+        favoriteExerciseIDs = Set(loaded.favoriteExerciseIDs ?? [])
         activePlanVersionID = loaded.activePlanVersionID
         recoverySnapshotURL = nil
     }
@@ -125,7 +131,7 @@ final class TrainingStore {
         }
         let data = try RecordCodec.encode(version)
         let committed = try RecordCodec.decode(PlanVersion.self, from: data)
-        let record = FitnessSchemaV1.PlanVersionRecord(id: committed.id, planID: committed.planID, version: committed.version, confirmedAt: committed.confirmedAt, payload: data)
+        let record = FitnessSchemaV2.PlanVersionRecord(id: committed.id, planID: committed.planID, version: committed.version, confirmedAt: committed.confirmedAt, payload: data)
         try write {
             context.insert(record)
             metadata.activePlanVersionID = committed.id
@@ -149,7 +155,7 @@ final class TrainingStore {
         try session.validate()
         let data = try RecordCodec.encode(session)
         let committed = try RecordCodec.decode(WorkoutSession.self, from: data)
-        let record = FitnessSchemaV1.SessionRecord(id: committed.id, startedAt: committed.startedAt, status: committed.status.rawValue, revision: committed.revision, payload: data)
+        let record = FitnessSchemaV2.SessionRecord(id: committed.id, startedAt: committed.startedAt, status: committed.status.rawValue, revision: committed.revision, payload: data)
         try write { context.insert(record) }
         sessions.insert(committed, at: 0)
         return committed
@@ -177,7 +183,7 @@ final class TrainingStore {
         let data = try RecordCodec.encode(updated)
         let committed = try RecordCodec.decode(WorkoutSession.self, from: data)
         let lookupID = id
-        var descriptor = FetchDescriptor<FitnessSchemaV1.SessionRecord>(predicate: #Predicate { $0.id == lookupID })
+        var descriptor = FetchDescriptor<FitnessSchemaV2.SessionRecord>(predicate: #Predicate { $0.id == lookupID })
         descriptor.fetchLimit = 1
         guard let record = try context.fetch(descriptor).first else { throw StorageError.missingSession }
         try write {
@@ -205,8 +211,103 @@ final class TrainingStore {
         customExercises = updated
     }
 
+    func toggleFavorite(exerciseID: String) throws {
+        guard allExercises.contains(where: { $0.id == exerciseID }) else {
+            throw CoreError.notFound("动作")
+        }
+        var updated = favoriteExerciseIDs
+        if updated.contains(exerciseID) { updated.remove(exerciseID) }
+        else { updated.insert(exerciseID) }
+        let data = try RecordCodec.encode(updated.sorted())
+        try write {
+            metadata.favoriteIDsData = data
+            metadata.revision += 1
+        }
+        favoriteExerciseIDs = updated
+    }
+
+    func saveCoachTurn(_ turn: CoachTurn) throws {
+        try turn.validate()
+        guard turn.decision == .pending, turn.appliedPlanVersionID == nil else {
+            throw CoreError.invalidState("新建议不能携带已确认或已应用状态。")
+        }
+        guard !coachTurns.contains(where: { $0.id == turn.id }) else {
+            throw CoreError.duplicateIdentifier("教练记录 ID")
+        }
+        // A late response remains useful history. Applying it separately requires fresh evidence.
+        let committed = try RecordCodec.decode(CoachTurn.self, from: RecordCodec.encode(turn))
+        var updated = coachTurns
+        updated.insert(committed, at: 0)
+        var candidate = try snapshot()
+        candidate.coachTurns = updated
+        try candidate.validate()
+        let data = try RecordCodec.encode(updated)
+        try write {
+            metadata.coachData = data
+            metadata.revision += 1
+        }
+        coachTurns = updated
+    }
+
+    @discardableResult
+    func decideCoachTurn(id: UUID, accept: Bool) throws -> PlanVersion? {
+        guard let index = coachTurns.firstIndex(where: { $0.id == id }) else {
+            throw CoreError.notFound("教练建议")
+        }
+        let original = coachTurns[index]
+        try original.validate()
+        guard original.decision == .pending else {
+            throw CoreError.invalidState("这条建议已经处理，不能重复应用。")
+        }
+        var updated = coachTurns
+        if !accept {
+            updated[index].decision = .rejected
+            let data = try RecordCodec.encode(updated)
+            try write {
+                metadata.coachData = data
+                metadata.revision += 1
+            }
+            coachTurns = updated
+            return nil
+        }
+        guard activeSession == nil else { throw StorageError.activeSessionExists }
+        guard original.context.matches(snapshot: try snapshot()),
+              let proposal = original.reply.proposal,
+              let plan = currentPlan, plan.id == proposal.targetPlanVersionID else {
+            throw CoreError.invalidState("建议依据已变化，请重新分析当前资料和计划后再确认。")
+        }
+        let items = try proposal.validatedItems(context: original.context)
+        try validateExercises(items.map(\.exercise))
+        let proposedVersion = try plan.revised(name: plan.name, items: items)
+        let payload = try RecordCodec.encode(proposedVersion)
+        let committed = try RecordCodec.decode(PlanVersion.self, from: payload)
+        updated[index].decision = .accepted
+        updated[index].appliedPlanVersionID = committed.id
+        var candidate = try snapshot()
+        candidate.planVersions.insert(committed, at: 0)
+        candidate.activePlanVersionID = committed.id
+        candidate.coachTurns = updated
+        try candidate.validate()
+        let coachData = try RecordCodec.encode(updated)
+        let record = FitnessSchemaV2.PlanVersionRecord(id: committed.id, planID: committed.planID,
+            version: committed.version, confirmedAt: committed.confirmedAt, payload: payload)
+        // One transaction makes the new version, active pointer and decision indivisible.
+        try write {
+            context.insert(record)
+            metadata.activePlanVersionID = committed.id
+            metadata.coachData = coachData
+            metadata.revision += 1
+        }
+        planVersions.insert(committed, at: 0)
+        activePlanVersionID = committed.id
+        coachTurns = updated
+        return committed
+    }
+
     func snapshot() throws -> AppSnapshot {
-        let snapshot = AppSnapshot(profile: profile, activePlanVersionID: activePlanVersionID, planVersions: planVersions, sessions: sessions, customExercises: customExercises)
+        let snapshot = AppSnapshot(profile: profile, activePlanVersionID: activePlanVersionID,
+            planVersions: planVersions, sessions: sessions, customExercises: customExercises,
+            coachTurns: coachTurns, favoriteExerciseIDs: favoriteExerciseIDs.sorted())
         try snapshot.validate()
         return snapshot
     }
@@ -218,12 +319,14 @@ final class TrainingStore {
         // Validate and encode everything before changing even an in-memory model.
         let profileData = try RecordCodec.encode(snapshot.profile)
         let customData = try RecordCodec.encode(snapshot.customExercises)
+        let coachData = try RecordCodec.encode(snapshot.coachTurns ?? [])
+        let favoriteData = try RecordCodec.encode(snapshot.favoriteExerciseIDs ?? [])
         let plans = try snapshot.planVersions.map { ($0, try RecordCodec.encode($0)) }
         let restoredSessions = try snapshot.sessions.map { ($0, try RecordCodec.encode($0)) }
         let prior = try self.snapshot()
         let retainedURL = try retainPreRestoreSnapshot(prior)
-        let oldPlans = try context.fetch(FetchDescriptor<FitnessSchemaV1.PlanVersionRecord>())
-        let oldSessions = try context.fetch(FetchDescriptor<FitnessSchemaV1.SessionRecord>())
+        let oldPlans = try context.fetch(FetchDescriptor<FitnessSchemaV2.PlanVersionRecord>())
+        let oldSessions = try context.fetch(FetchDescriptor<FitnessSchemaV2.SessionRecord>())
         let planByID = Dictionary(uniqueKeysWithValues: oldPlans.map { ($0.id, $0) })
         let sessionByID = Dictionary(uniqueKeysWithValues: oldSessions.map { ($0.id, $0) })
         let keptPlanIDs = Set(snapshot.planVersions.map(\.id))
@@ -238,7 +341,7 @@ final class TrainingStore {
                     record.confirmedAt = value.confirmedAt
                     record.payload = payload
                 } else {
-                    context.insert(FitnessSchemaV1.PlanVersionRecord(id: value.id, planID: value.planID, version: value.version, confirmedAt: value.confirmedAt, payload: payload))
+                    context.insert(FitnessSchemaV2.PlanVersionRecord(id: value.id, planID: value.planID, version: value.version, confirmedAt: value.confirmedAt, payload: payload))
                 }
             }
             for (value, payload) in restoredSessions {
@@ -248,11 +351,13 @@ final class TrainingStore {
                     record.revision = value.revision
                     record.payload = payload
                 } else {
-                    context.insert(FitnessSchemaV1.SessionRecord(id: value.id, startedAt: value.startedAt, status: value.status.rawValue, revision: value.revision, payload: payload))
+                    context.insert(FitnessSchemaV2.SessionRecord(id: value.id, startedAt: value.startedAt, status: value.status.rawValue, revision: value.revision, payload: payload))
                 }
             }
             metadata.profileData = profileData
             metadata.customExercisesData = customData
+            metadata.coachData = coachData
+            metadata.favoriteIDsData = favoriteData
             metadata.activePlanVersionID = snapshot.activePlanVersionID
             metadata.revision += 1
         }
@@ -260,6 +365,8 @@ final class TrainingStore {
         planVersions = snapshot.planVersions.sorted { $0.confirmedAt > $1.confirmedAt }
         sessions = snapshot.sessions.sorted { $0.startedAt > $1.startedAt }
         customExercises = snapshot.customExercises
+        coachTurns = (snapshot.coachTurns ?? []).sorted { $0.createdAt > $1.createdAt }
+        favoriteExerciseIDs = Set(snapshot.favoriteExerciseIDs ?? [])
         activePlanVersionID = snapshot.activePlanVersionID
         recoverySnapshotURL = retainedURL
     }

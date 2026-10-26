@@ -8,17 +8,21 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
     public var planVersions: [PlanVersion]
     public var sessions: [WorkoutSession]
     public var customExercises: [Exercise]
+    public var coachTurns: [CoachTurn]?
+    public var favoriteExerciseIDs: [String]?
 
-    public init(formatVersion: Int = 1, exportedAt: Date = Date(), profile: PersonalProfile = PersonalProfile(),
+    public init(formatVersion: Int = 2, exportedAt: Date = Date(), profile: PersonalProfile = PersonalProfile(),
                 activePlanVersionID: UUID? = nil, planVersions: [PlanVersion] = [],
-                sessions: [WorkoutSession] = [], customExercises: [Exercise] = []) {
+                sessions: [WorkoutSession] = [], customExercises: [Exercise] = [],
+                coachTurns: [CoachTurn]? = nil, favoriteExerciseIDs: [String]? = nil) {
         self.formatVersion = formatVersion; self.exportedAt = exportedAt; self.profile = profile
         self.activePlanVersionID = activePlanVersionID; self.planVersions = planVersions
         self.sessions = sessions; self.customExercises = customExercises
+        self.coachTurns = coachTurns; self.favoriteExerciseIDs = favoriteExerciseIDs
     }
 
     public func validate() throws {
-        guard formatVersion == 1 else { throw CoreError.unsupportedFormat(formatVersion) }
+        guard (1...2).contains(formatVersion) else { throw CoreError.unsupportedFormat(formatVersion) }
         try CoreValidation.date(exportedAt, name: "导出时间")
         try profile.validate()
         guard planVersions.count <= 100_000, sessions.count <= 100_000, customExercises.count <= 10_000 else {
@@ -41,6 +45,27 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
             }
         }
         let versions = Dictionary(uniqueKeysWithValues: planVersions.map { ($0.id, $0) })
+        let favorites = favoriteExerciseIDs ?? []
+        let turns = coachTurns ?? []
+        guard favorites.count <= 10_000, turns.count <= 10_000 else { throw CoreError.invalidInput("收藏或教练记录数量过多。") }
+        try CoreValidation.unique(favorites, name: "收藏动作 ID")
+        try CoreValidation.unique(turns.map(\.id), name: "教练记录 ID")
+        guard Set(favorites).isSubset(of: builtInIDs.union(customByID.keys)) else {
+            throw CoreError.missingReference("收藏动作")
+        }
+        for turn in turns {
+            try turn.validate()
+            if let base = turn.context.plan, versions[base.id] != base {
+                throw CoreError.missingReference("教练依据计划版本")
+            }
+            if let appliedID = turn.appliedPlanVersionID {
+                guard let applied = versions[appliedID], let proposal = turn.reply.proposal,
+                      applied.parentVersionID == proposal.targetPlanVersionID,
+                      applied.items == (try proposal.validatedItems(context: turn.context)) else {
+                    throw CoreError.missingReference("教练确认生成的计划版本")
+                }
+            }
+        }
         if let activePlanVersionID, versions[activePlanVersionID] == nil { throw CoreError.missingReference("生效计划版本") }
         var versionNumbers: [UUID: Set<Int>] = [:]
         for version in planVersions {

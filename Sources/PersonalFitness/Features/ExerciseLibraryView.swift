@@ -7,12 +7,21 @@ struct ExerciseLibraryView: View {
     @State private var search = ""
     @State private var kind: TrainingKind?
     @State private var creating = false
+    @State private var muscle = "全部"
+    @State private var equipment = "全部"
+    @State private var onlyFavorites = false
+    @State private var issue: String?
+
+    private var muscles: [String] { Array(Set(store.allExercises.map(\.muscle))).sorted() }
+    private let equipmentOptions = ["全部", "徒手", "哑铃", "杠铃", "器械", "弹力带", "单车"]
 
     private var filtered: [Exercise] {
         store.allExercises.filter { exercise in
-            (kind == nil || exercise.kind == kind) && (search.isEmpty ||
-                "\(exercise.name) \(exercise.englishName) \(exercise.equipment) \(exercise.muscle)"
-                    .localizedCaseInsensitiveContains(search))
+            (kind == nil || exercise.kind == kind) &&
+            (muscle == "全部" || exercise.muscle == muscle) &&
+            (equipment == "全部" || exercise.equipment.contains(equipment) || (equipment == "徒手" && exercise.kind == .bodyweight)) &&
+            (!onlyFavorites || store.favoriteExerciseIDs.contains(exercise.id)) &&
+            ExerciseDetails.matches(exercise, query: search)
         }
     }
 
@@ -23,21 +32,47 @@ struct ExerciseLibraryView: View {
                     Text("全部").tag(nil as TrainingKind?)
                     ForEach(TrainingKind.allCases, id: \.self) { Text($0.title).tag(Optional($0)) }
                 }.pickerStyle(.segmented)
+                HStack {
+                    Menu {
+                        Picker("主要肌群", selection: $muscle) {
+                            Text("全部肌群").tag("全部")
+                            ForEach(muscles, id: \.self) { Text($0).tag($0) }
+                        }
+                    } label: { Label(muscle == "全部" ? "全部肌群" : muscle, systemImage: "figure.strengthtraining.traditional") }
+                    Spacer()
+                    Menu {
+                        Picker("器械", selection: $equipment) {
+                            ForEach(equipmentOptions, id: \.self) { Text($0 == "全部" ? "全部器械" : $0).tag($0) }
+                        }
+                    } label: { Label(equipment == "全部" ? "全部器械" : equipment, systemImage: "slider.horizontal.3") }
+                }.font(.subheadline)
+                Toggle("只看收藏", isOn: $onlyFavorites)
             }
             Section {
                 ForEach(filtered) { exercise in
                     NavigationLink { ExerciseDetailView(exercise: exercise, store: store) } label: {
                         ExerciseListLabel(exercise: exercise)
                     }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button {
+                            do { try store.toggleFavorite(exerciseID: exercise.id) }
+                            catch { issue = error.localizedDescription }
+                        } label: {
+                            Label(store.favoriteExerciseIDs.contains(exercise.id) ? "取消收藏" : "收藏", systemImage: "star")
+                        }.tint(.orange)
+                    }
                 }
                 if filtered.isEmpty { Text("没有符合条件的动作，请修改筛选或创建自定义动作。").foregroundStyle(.secondary) }
+            } header: {
+                Text("\(filtered.count) 个动作")
             } footer: {
-                Text("通用动作目录不是你的个人训练处方。自定义动作暂不参与自动推荐；教学视频尚未提供。")
+                Text("通用动作提示不代表适合你的个人处方。已提供素材的动作可离线查看；示范短片与完整教学视频分开标记。")
             }
         }
-        .navigationTitle("动作库").searchable(text: $search, prompt: "名称、英文、器械或肌群")
+        .navigationTitle("动作库").searchable(text: $search, prompt: "名称、别名、英文、器械或动作模式")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("自定义", systemImage: "plus") { creating = true } } }
         .sheet(isPresented: $creating) { NavigationStack { CustomExerciseView(store: store) } }
+        .fitnessError($issue)
     }
 }
 
@@ -63,7 +98,7 @@ struct ExercisePickerView: View {
     @State private var search = ""
 
     var body: some View {
-        List(store.allExercises.filter { search.isEmpty || "\($0.name) \($0.englishName) \($0.equipment)".localizedCaseInsensitiveContains(search) }) { exercise in
+        List(store.allExercises.filter { ExerciseDetails.matches($0, query: search) }) { exercise in
             Button {
                 select(exercise)
                 dismiss()
@@ -79,23 +114,77 @@ struct ExercisePickerView: View {
 struct ExerciseDetailView: View {
     let exercise: Exercise
     let store: TrainingStore
+    @State private var addingToPlan = false
+    @State private var issue: String?
+
+    private var detail: ExerciseDetail? { ExerciseDetails.details(for: exercise.id) }
 
     var body: some View {
         List {
+            Section { ExerciseDemonstrationView(exerciseID: exercise.id) }
+                .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
             Section { ExerciseListLabel(exercise: exercise)
                 LabeledContent("英文名称", value: exercise.englishName)
+                if let detail {
+                    if !detail.aliases.isEmpty { LabeledContent("别名", value: detail.aliases.joined(separator: "、")) }
+                    LabeledContent("动作模式", value: detail.movementPattern)
+                    LabeledContent("技术难度", value: detail.difficulty)
+                    LabeledContent("主要肌群", value: exercise.muscle)
+                    LabeledContent("辅助肌群", value: detail.secondaryMuscles.joined(separator: "、"))
+                }
                 LabeledContent("记录方式", value: exercise.metric.title)
                 LabeledContent("负重口径", value: exercise.loadConvention.title)
             }
-            Section("文字提示") {
+            Section("分步骤提示") {
                 if exercise.instructions.isEmpty { Text("这个动作尚未填写经过核验的文字说明。").foregroundStyle(.secondary) }
                 ForEach(Array(exercise.instructions.enumerated()), id: \.offset) { index, instruction in
                     Text("\(index + 1). \(instruction)")
                 }
+                NavigationLink {
+                    CoachView(store: store, initialQuestion: "请依据本地动作资料解释「\(exercise.name)」的步骤与常见错误，说明适用性未知，不修改计划。")
+                } label: {
+                    Label("让 AI 解释这个动作", systemImage: "bubble.left.and.bubble.right")
+                }
             }
-            Section("教学素材") {
-                Label("示范动图和完整教学视频尚未提供", systemImage: "video.slash")
-                Text("后续逐项核验授权与动作正确性后接入，不用占位播放按钮冒充真实视频。")
+            if let detail {
+                Section("常见错误") {
+                    ForEach(detail.commonMistakes, id: \.self) { Text($0) }
+                }
+                Section("可比较的替代动作") {
+                    ForEach(detail.alternativeIDs, id: \.self) { id in
+                        if let alternative = ExerciseCatalog.exercise(id: id) {
+                            NavigationLink { ExerciseDetailView(exercise: alternative, store: store) } label: { ExerciseListLabel(exercise: alternative) }
+                        }
+                    }
+                    Text("替代项只用于比较，不保证适合你的伤病、器械或能力；不会自动替换计划。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                if !detail.progressionIDs.isEmpty {
+                    Section("可了解的进阶变式") {
+                        ForEach(detail.progressionIDs, id: \.self) { id in
+                            if let progression = ExerciseCatalog.exercise(id: id) {
+                                NavigationLink { ExerciseDetailView(exercise: progression, store: store) } label: { ExerciseListLabel(exercise: progression) }
+                            }
+                        }
+                        Text("了解变式不代表现在应该升级难度，先以稳定、无痛的执行为前提。")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Section("素材与来源") {
+                if let media = detail?.media {
+                    LabeledContent("素材类型", value: media.kind == .video ? "动作示范短片" : "静态动作图示")
+                    LabeledContent("作者", value: media.author)
+                    if let license = URL(string: media.licenseURL), let source = URL(string: media.sourceURL) {
+                        Link("许可：\(media.licenseName)", destination: license)
+                        Link("查看 wger 原始媒体", destination: source)
+                    }
+                    Text("媒体已压缩或调整尺寸供离线查看，衍生媒体沿用原许可。来源不等于已完成针对你个人的动作评估。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                } else {
+                    Text("这个动作暂未提供已核验的示范媒体。").foregroundStyle(.secondary)
+                }
+                Label("完整教学视频尚未接入", systemImage: "video.slash")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Section("最近个人记录") {
@@ -106,6 +195,21 @@ struct ExerciseDetailView: View {
                 } else { Text("还没有该动作的已完成记录。").foregroundStyle(.secondary) }
             }
         }.navigationTitle(exercise.name).navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    do { try store.toggleFavorite(exerciseID: exercise.id) }
+                    catch { issue = error.localizedDescription }
+                } label: { Image(systemName: store.favoriteExerciseIDs.contains(exercise.id) ? "star.fill" : "star") }
+                .accessibilityLabel(store.favoriteExerciseIDs.contains(exercise.id) ? "取消收藏" : "收藏动作")
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            Button("加入训练计划", systemImage: "plus") { addingToPlan = true }
+                .buttonStyle(FitnessPrimaryButtonStyle()).padding().background(FitnessTheme.canvas)
+        }
+        .sheet(isPresented: $addingToPlan) { NavigationStack { AddExerciseToPlanView(exercise: exercise, store: store) } }
+        .fitnessError($issue)
     }
 }
 

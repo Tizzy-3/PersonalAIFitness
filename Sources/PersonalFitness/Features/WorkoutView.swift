@@ -95,7 +95,10 @@ struct WorkoutView: View {
     private func exerciseCard(_ item: WorkoutExercise, session: WorkoutSession) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                ExerciseTile(exercise: item.exercise, size: 54)
+                ExerciseTile(exercise: item.exercise, size: 54,
+                             animated: session.status == .active && item.id == session.exercises.first(where: {
+                                 !$0.skipped && $0.sets.contains(where: { !$0.isCompleted && !$0.skipped })
+                             })?.id)
                 VStack(alignment: .leading, spacing: 5) {
                     Text(item.exercise.name).font(.headline)
                     Text(item.skipped ? "本次已跳过" : item.exercise.loadConvention.title).font(.caption).foregroundStyle(.secondary)
