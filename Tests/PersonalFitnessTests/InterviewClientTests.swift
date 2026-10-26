@@ -80,8 +80,8 @@ final class InterviewClientTests: XCTestCase {
 
     func testRequestJSONCarriesOnlySettledFactsAndOpenTopics() throws {
         var state = session()
-        state.primaryGoal = .init(value: .strength, provenance: .stated, confirmedAt: Date())
-        state.minutesPerSession = .init(value: 30, provenance: .inferred)
+        state.profile.primaryGoal = .init(value: .strength, provenance: .stated, confirmedAt: Date())
+        state.profile.minutesPerSession = .init(value: 30, provenance: .inferred)
         let json = try InterviewAPI.requestJSON(session: state, model: "test")
         // The settled goal is sent with its human-readable title.
         XCTAssertTrue(json.contains("提高基础力量"))
