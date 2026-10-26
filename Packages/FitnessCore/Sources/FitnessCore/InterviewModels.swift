@@ -304,7 +304,7 @@ public struct InterviewExtraction: Codable, Equatable, Sendable {
             guard !unique.isEmpty else { throw CoreError.invalidInput("器械清单为空。") }
             return .equipment(unique)
         case .equipmentLoads:
-            let loads = Self.list(trimmed).filter { !$0.isEmpty }
+            let loads = try Self.list(trimmed).filter { !$0.isEmpty }
             guard !loads.isEmpty else { throw CoreError.invalidInput("器械重量说明为空。") }
             return .loads(loads)
         case .preferences, .exclusions:

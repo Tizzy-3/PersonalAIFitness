@@ -196,7 +196,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
             try applyNumber(number, topic: question.topic, at: date)
         case .text:
             guard let text = answer.text else { throw CoreError.invalidInput("缺少文字结果。") }
-            try apply(text, for: question.topic, provenance: .stated, at: date)
+            try apply(.text(text), for: question.topic, provenance: .stated, at: date)
         case .boolean:
             guard let flag = answer.boolean else { throw CoreError.invalidInput("缺少是否结果。") }
             try applyBoolean(flag, topic: question.topic, at: date)
@@ -209,15 +209,15 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
             guard choice == "yes" || choice == "是" else {
                 throw CoreError.invalidInput("本批自动计划只面向已明确确认年满 18 岁的健康成人。")
             }
-            adultStatus = .init(value: true, provenance: .stated, confirmedAt: date)
+            profile.adultStatus = .init(value: true, provenance: .stated, confirmedAt: date)
         case .primaryGoal:
             guard let goal = PlanningGoal(rawValue: choice) else { throw CoreError.invalidInput("无法识别的目标选项。") }
-            primaryGoal = .init(value: goal, provenance: .stated, confirmedAt: date)
+            profile.primaryGoal = .init(value: goal, provenance: .stated, confirmedAt: date)
         case .experience:
             guard let value = PlanningExperience(rawValue: choice) else { throw CoreError.invalidInput("无法识别的经验选项。") }
-            experience = .init(value: value, provenance: .stated, confirmedAt: date)
+            profile.experience = .init(value: value, provenance: .stated, confirmedAt: date)
         case .restrictions:
-            restrictions = .init(value: choice, provenance: .stated, confirmedAt: date)
+            profile.restrictions = .init(value: choice, provenance: .stated, confirmedAt: date)
         default:
             throw CoreError.invalidInput("这个主题不接受单选结果。")
         }
@@ -228,24 +228,24 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         case .schedule:
             let days = choices.compactMap { Int($0) }.filter { (1...7).contains($0) }
             guard days.count == choices.count, !days.isEmpty else { throw CoreError.invalidInput("可训练日选项无效。") }
-            weekdays = .init(value: Array(Set(days)).sorted(), provenance: .stated, confirmedAt: date)
+            profile.weekdays = .init(value: Array(Set(days)).sorted(), provenance: .stated, confirmedAt: date)
         case .equipment:
             let gear = choices.compactMap { PlanningEquipment(rawValue: $0) }
             guard gear.count == choices.count, !gear.isEmpty else { throw CoreError.invalidInput("器械选项无效。") }
-            equipment = .init(value: Array(Set(gear)).sorted { $0.rawValue < $1.rawValue },
-                              provenance: .stated, confirmedAt: date)
+            profile.equipment = .init(value: Array(Set(gear)).sorted { $0.rawValue < $1.rawValue },
+                                      provenance: .stated, confirmedAt: date)
         case .secondaryGoals:
             let goals = choices.compactMap { PlanningGoal(rawValue: $0) }
             guard goals.count == choices.count else { throw CoreError.invalidInput("次要目标选项无效。") }
-            secondaryGoals = .init(value: goals, provenance: .stated, confirmedAt: date)
+            profile.secondaryGoals = .init(value: goals, provenance: .stated, confirmedAt: date)
         case .preferences, .exclusions:
             for id in choices where ExerciseCatalog.exercise(id: id) == nil {
                 throw CoreError.missingReference("动作 \(id)")
             }
             if topic == .preferences {
-                preferredExerciseIDs = .init(value: choices, provenance: .stated, confirmedAt: date)
+                profile.preferredExerciseIDs = .init(value: choices, provenance: .stated, confirmedAt: date)
             } else {
-                excludedExerciseIDs = .init(value: choices, provenance: .stated, confirmedAt: date)
+                profile.excludedExerciseIDs = .init(value: choices, provenance: .stated, confirmedAt: date)
             }
         default:
             throw CoreError.invalidInput("这个主题不接受多选结果。")
@@ -258,7 +258,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
             guard number == number.rounded(), (15...120).contains(Int(number)) else {
                 throw CoreError.invalidInput("单次时间需为 15 至 120 分钟的整数。")
             }
-            minutesPerSession = .init(value: Int(number), provenance: .stated, confirmedAt: date)
+            profile.minutesPerSession = .init(value: Int(number), provenance: .stated, confirmedAt: date)
         default:
             throw CoreError.invalidInput("这个主题不接受数值结果。")
         }
@@ -269,8 +269,8 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         case .restrictions:
             // Recording a restriction never silently becomes a plan-ready profile: saying "yes"
             // tells the interview to keep asking until the user explains it.
-            restrictions = .init(value: flag ? "本人表示存在运动限制，需进一步说明" : "无",
-                                 provenance: .stated, confirmedAt: date)
+            profile.restrictions = .init(value: flag ? "本人表示存在运动限制，需进一步说明" : "无",
+                                         provenance: .stated, confirmedAt: date)
             if flag {
                 throw CoreError.invalidInput("你表示存在运动限制。请说明具体情况；在明确之前不会自动生成训练计划。")
             }
@@ -293,25 +293,25 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         let confirmedAt: Date? = provenance == .inferred ? nil : date
         switch (topic, value) {
         case (.adultStatus, .boolean(let flag)):
-            adultStatus = .init(value: flag, provenance: provenance, confirmedAt: confirmedAt)
+            profile.adultStatus = .init(value: flag, provenance: provenance, confirmedAt: confirmedAt)
         case (.primaryGoal, .goal(let goal)):
-            primaryGoal = .init(value: goal, provenance: provenance, confirmedAt: confirmedAt)
+            profile.primaryGoal = .init(value: goal, provenance: provenance, confirmedAt: confirmedAt)
         case (.secondaryGoals, .goals(let goals)):
-            secondaryGoals = .init(value: goals, provenance: provenance, confirmedAt: confirmedAt)
+            profile.secondaryGoals = .init(value: goals, provenance: provenance, confirmedAt: confirmedAt)
         case (.experience, .experience(let experience)):
-            self.experience = .init(value: experience, provenance: provenance, confirmedAt: confirmedAt)
+            profile.experience = .init(value: experience, provenance: provenance, confirmedAt: confirmedAt)
         case (.schedule, .weekdays(let days)):
-            weekdays = .init(value: days, provenance: provenance, confirmedAt: confirmedAt)
+            profile.weekdays = .init(value: days, provenance: provenance, confirmedAt: confirmedAt)
         case (.minutes, .minutes(let minutes)):
-            minutesPerSession = .init(value: minutes, provenance: provenance, confirmedAt: confirmedAt)
+            profile.minutesPerSession = .init(value: minutes, provenance: provenance, confirmedAt: confirmedAt)
         case (.equipment, .equipment(let gear)):
-            equipment = .init(value: gear, provenance: provenance, confirmedAt: confirmedAt)
+            profile.equipment = .init(value: gear, provenance: provenance, confirmedAt: confirmedAt)
         case (.equipmentLoads, .loads(let loads)):
-            equipmentLoads = .init(value: loads, provenance: provenance, confirmedAt: confirmedAt)
+            profile.equipmentLoads = .init(value: loads, provenance: provenance, confirmedAt: confirmedAt)
         case (.preferences, .exerciseIDs(let ids)):
-            preferredExerciseIDs = .init(value: ids, provenance: provenance, confirmedAt: confirmedAt)
+            profile.preferredExerciseIDs = .init(value: ids, provenance: provenance, confirmedAt: confirmedAt)
         case (.exclusions, .exerciseIDs(let ids)):
-            excludedExerciseIDs = .init(value: ids, provenance: provenance, confirmedAt: confirmedAt)
+            profile.excludedExerciseIDs = .init(value: ids, provenance: provenance, confirmedAt: confirmedAt)
         case (.capability, .text(let text)), (.venue, .text(let text)),
              (.restrictions, .text(let text)), (.sleep, .text(let text)),
              (.dailyActivity, .text(let text)), (.adherence, .text(let text)):
@@ -326,12 +326,12 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
                                    provenance: ProfileProvenance, at confirmedAt: Date?) throws {
         let field = ProfileField(value: text, provenance: provenance, confirmedAt: confirmedAt)
         switch topic {
-        case .capability: capabilityNote = field
-        case .venue: venue = field
-        case .restrictions: restrictions = field
-        case .sleep: sleepNote = field
-        case .dailyActivity: dailyActivityNote = field
-        case .adherence: adherenceBarriers = field
+        case .capability: profile.capabilityNote = field
+        case .venue: profile.venue = field
+        case .restrictions: profile.restrictions = field
+        case .sleep: profile.sleepNote = field
+        case .dailyActivity: profile.dailyActivityNote = field
+        case .adherence: profile.adherenceBarriers = field
         default: break
         }
     }
@@ -344,44 +344,44 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
                                  confirmedAt: field.value == nil ? nil : confirmedAt, note: field.note)
         }
         switch topic {
-        case .adultStatus: rewrite(&adultStatus)
-        case .primaryGoal: rewrite(&primaryGoal)
-        case .secondaryGoals: rewrite(&secondaryGoals)
-        case .experience: rewrite(&experience)
-        case .capability: rewrite(&capabilityNote)
-        case .schedule: rewrite(&weekdays)
-        case .minutes: rewrite(&minutesPerSession)
-        case .equipment: rewrite(&equipment)
-        case .equipmentLoads: rewrite(&equipmentLoads)
-        case .venue: rewrite(&venue)
-        case .preferences: rewrite(&preferredExerciseIDs)
-        case .exclusions: rewrite(&excludedExerciseIDs)
-        case .restrictions: rewrite(&restrictions)
-        case .sleep: rewrite(&sleepNote)
-        case .dailyActivity: rewrite(&dailyActivityNote)
-        case .adherence: rewrite(&adherenceBarriers)
+        case .adultStatus: rewrite(&profile.adultStatus)
+        case .primaryGoal: rewrite(&profile.primaryGoal)
+        case .secondaryGoals: rewrite(&profile.secondaryGoals)
+        case .experience: rewrite(&profile.experience)
+        case .capability: rewrite(&profile.capabilityNote)
+        case .schedule: rewrite(&profile.weekdays)
+        case .minutes: rewrite(&profile.minutesPerSession)
+        case .equipment: rewrite(&profile.equipment)
+        case .equipmentLoads: rewrite(&profile.equipmentLoads)
+        case .venue: rewrite(&profile.venue)
+        case .preferences: rewrite(&profile.preferredExerciseIDs)
+        case .exclusions: rewrite(&profile.excludedExerciseIDs)
+        case .restrictions: rewrite(&profile.restrictions)
+        case .sleep: rewrite(&profile.sleepNote)
+        case .dailyActivity: rewrite(&profile.dailyActivityNote)
+        case .adherence: rewrite(&profile.adherenceBarriers)
         }
         try profile.validate()
     }
 
     private mutating func clearTopic(_ topic: InterviewTopic) throws {
         switch topic {
-        case .adultStatus: adultStatus = .unknown
-        case .primaryGoal: primaryGoal = .unknown
-        case .secondaryGoals: secondaryGoals = .unknown
-        case .experience: experience = .unknown
-        case .capability: capabilityNote = .unknown
-        case .schedule: weekdays = .unknown
-        case .minutes: minutesPerSession = .unknown
-        case .equipment: equipment = .unknown
-        case .equipmentLoads: equipmentLoads = .unknown
-        case .venue: venue = .unknown
-        case .preferences: preferredExerciseIDs = .unknown
-        case .exclusions: excludedExerciseIDs = .unknown
-        case .restrictions: restrictions = .unknown
-        case .sleep: sleepNote = .unknown
-        case .dailyActivity: dailyActivityNote = .unknown
-        case .adherence: adherenceBarriers = .unknown
+        case .adultStatus: profile.adultStatus = .unknown
+        case .primaryGoal: profile.primaryGoal = .unknown
+        case .secondaryGoals: profile.secondaryGoals = .unknown
+        case .experience: profile.experience = .unknown
+        case .capability: profile.capabilityNote = .unknown
+        case .schedule: profile.weekdays = .unknown
+        case .minutes: profile.minutesPerSession = .unknown
+        case .equipment: profile.equipment = .unknown
+        case .equipmentLoads: profile.equipmentLoads = .unknown
+        case .venue: profile.venue = .unknown
+        case .preferences: profile.preferredExerciseIDs = .unknown
+        case .exclusions: profile.excludedExerciseIDs = .unknown
+        case .restrictions: profile.restrictions = .unknown
+        case .sleep: profile.sleepNote = .unknown
+        case .dailyActivity: profile.dailyActivityNote = .unknown
+        case .adherence: profile.adherenceBarriers = .unknown
         }
         try profile.validate()
     }
