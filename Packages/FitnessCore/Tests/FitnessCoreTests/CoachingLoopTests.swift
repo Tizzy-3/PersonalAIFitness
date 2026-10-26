@@ -308,21 +308,32 @@ final class CoachingLoopTests: XCTestCase {
         XCTAssertTrue(AdjustmentEngine.isStale(proposal, currently: fingerprint(planID: UUID())))
     }
 
-    func testAcceptedAdjustmentMustRecordAVersion() {
+    func testAcceptedLongTermAdjustmentMustRecordAVersion() {
         // A pending proposal needs no version yet; that is the normal resting state.
-        var proposal = AdjustmentProposal(kind: .keep, reason: "原因", summary: "说明")
+        var proposal = AdjustmentProposal(kind: .progressive, reason: "原因",
+                                          proposedItems: [PlannedExercise(
+                                            exercise: ExerciseCatalog.exercise(id: "builtin.bodyweight-squat")!)],
+                                          summary: "说明")
         XCTAssertEqual(proposal.decision, .pending)
         XCTAssertNoThrow(try proposal.validate())
-        // Accepting without recording the version it produced is a contradiction.
+        // Accepting a long-term change without recording the version it produced is a contradiction.
         proposal.decision = .accepted
         XCTAssertThrowsError(try proposal.validate())
         proposal.appliedPlanVersionID = UUID()
         XCTAssertNoThrow(try proposal.validate())
-        // A rejected proposal keeps no version either.
-        var rejected = proposal
-        rejected.decision = .rejected
-        rejected.appliedPlanVersionID = nil
-        XCTAssertNoThrow(try rejected.validate())
+    }
+
+    func testTodayOnlyAdjustmentNeverClaimsALongTermVersion() {
+        // A one-off change is applied as a snapshot; if it ever carried a new version, the long-term
+        // plan would have been altered without the user's confirmation of that version.
+        var proposal = AdjustmentProposal(kind: .todayOnly, reason: "原因",
+                                          todayItems: [PlannedExercise(
+                                            exercise: ExerciseCatalog.exercise(id: "builtin.bodyweight-squat")!)],
+                                          summary: "说明")
+        proposal.decision = .accepted
+        XCTAssertNoThrow(try proposal.validate())
+        proposal.appliedPlanVersionID = UUID()
+        XCTAssertThrowsError(try proposal.validate())
     }
 
     // MARK: - Health snapshot

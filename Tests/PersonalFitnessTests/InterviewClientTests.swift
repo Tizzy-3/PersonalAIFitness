@@ -90,6 +90,11 @@ final class InterviewClientTests: XCTestCase {
         // It is reported as a pending inference so the model neither re-asks nor treats it as settled.
         XCTAssertTrue(json.contains("pendingInferences"))
         XCTAssertTrue(json.contains("30 分钟"))
-        XCTAssertFalse(json.contains("\"answeredProfile\" : [\n    \"minutes\""))
+        // The settled-facts map must not contain minutes: only the goal belongs there.
+        let answeredStart = try XCTUnwrap(json.range(of: "\"answeredProfile\""))
+        let answeredEnd = try XCTUnwrap(json.range(of: "\"pendingInferences\""))
+        let answeredBlock = json[answeredStart.lowerBound..<answeredEnd.lowerBound]
+        XCTAssertFalse(answeredBlock.contains("minutes"))
+        XCTAssertTrue(answeredBlock.contains("primaryGoal"))
     }
 }

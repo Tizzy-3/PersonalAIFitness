@@ -73,8 +73,19 @@ public struct AdjustmentProposal: Identifiable, Codable, Equatable, Sendable {
         guard evidenceIDs.count <= 30, evidenceIDs.allSatisfy({ $0.count <= 200 }) else {
             throw CoreError.invalidInput("调整依据过多或过长。")
         }
-        guard (decision == .accepted) == (appliedPlanVersionID != nil) else {
-            throw CoreError.invalidState("已确认的调整必须记录生成的计划版本，未确认的不能带。")
+        // A long-term change must record the version it created. A `todayOnly` change is applied as a
+        // one-off snapshot and produces no long-term version, so it is accepted with none.
+        if kind.isLongTerm {
+            guard decision != .accepted || appliedPlanVersionID != nil else {
+                throw CoreError.invalidState("已确认的长期调整必须记录生成的计划版本。")
+            }
+        } else {
+            guard appliedPlanVersionID == nil else {
+                throw CoreError.invalidState("只调整今天或保持原计划不会生成新的长期版本。")
+            }
+        }
+        guard decision == .rejected || decision == .pending || decision == .accepted else {
+            throw CoreError.invalidInput("调整建议的确认状态无效。")
         }
         try basedOn.validate()
         switch kind {
