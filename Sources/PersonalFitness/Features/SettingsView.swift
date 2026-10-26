@@ -13,6 +13,7 @@ struct SettingsView: View {
                 NavigationLink { HealthDiagnosticsView() } label: { Label("Apple 健康基础读取", systemImage: "heart") }
             }
             Section("AI 教练") {
+                NavigationLink { PlannerView(store: store) } label: { Label("为我制定每周训练计划", systemImage: "calendar.badge.plus") }
                 NavigationLink { AISettingsView() } label: { Label("接口、模型与密钥", systemImage: "slider.horizontal.3") }
                 NavigationLink { CoachView(store: store) } label: { Label("问答、复盘与调整建议", systemImage: "bubble.left.and.text.bubble.right") }
             }
@@ -25,7 +26,9 @@ struct SettingsView: View {
                 LabeledContent("手动计划与本地训练", value: "首个试用批次")
                 LabeledContent("健康历史/增量/来源去重", value: "未实现")
                 LabeledContent("身体状态评估", value: "未实现")
-                LabeledContent("规则自动计划", value: "未实现")
+                LabeledContent("规则与 AI 制定计划", value: "保守起始周安排")
+                LabeledContent("长期周期与自动进阶", value: "未实现")
+                LabeledContent("计划删除与恢复", value: "保留训练和版本")
                 LabeledContent("AI 教练与服务配置", value: "OpenAI 兼容接口")
                 LabeledContent("AI 计划调整", value: "已有计划的保守减量")
                 LabeledContent("动作素材", value: "按动作详情显示覆盖范围")

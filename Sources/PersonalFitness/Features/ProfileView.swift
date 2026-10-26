@@ -46,7 +46,7 @@ struct ProfileView: View {
             Section("运动限制与注意事项") {
                 TextField("伤病、疼痛、医生限制或明确填写“无已知限制”", text: $profile.restrictions, axis: .vertical)
                     .lineLimit(3...7)
-                Text("此试用版只保存你手动填写的限制，不会自动筛除动作或生成训练处方。请按已知限制自行选择动作。档案关键修订的完整时间线尚未实现。")
+                Text("自动制定计划会另行确认安全信息、器械和时间。已有伤病限制不会由 AI 自行推断适配，本批会阻止自动制定，请按专业建议手动编辑。档案修订的完整时间线尚未实现。")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Section { Button("保存档案") { save() }.frame(maxWidth: .infinity) }

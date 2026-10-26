@@ -21,7 +21,7 @@ struct BackupView: View {
     var body: some View {
         Form {
             Section("加密备份") {
-                Text("包含本地档案、计划各版本、训练、自定义动作、收藏和教练记录。没有 API 密钥、原始健康样本或视频缓存。口令丢失无法找回。")
+                Text("包含本地档案、计划各版本、周安排与制定草案、删除状态、训练、自定义动作、收藏和教练记录。没有 API 密钥、原始健康样本或视频缓存。口令丢失无法找回。")
                     .font(.footnote).foregroundStyle(.secondary)
                 Button("创建加密备份", systemImage: "square.and.arrow.up") { passwordAction = .export }
                 Button("从备份恢复", systemImage: "square.and.arrow.down") { importSheet = true }
@@ -70,7 +70,7 @@ struct BackupView: View {
             Button("取消", role: .cancel) { restoreCandidate = nil }
         } message: {
             if let restoreCandidate {
-                Text("备份包含 \(restoreCandidate.sessions.count) 次训练、\(restoreCandidate.planVersions.count) 个计划版本、\(restoreCandidate.customExercises.count) 个自定义动作、\(restoreCandidate.coachTurns?.count ?? 0) 条教练记录、\(restoreCandidate.favoriteExerciseIDs?.count ?? 0) 个收藏。替换前会保留保护副本；AI 密钥不包含在备份内。")
+                Text("备份包含 \(restoreCandidate.sessions.count) 次训练、\(restoreCandidate.planVersions.count) 个计划版本、\(restoreCandidate.weeklyPrograms?.count ?? 0) 份周安排、\(restoreCandidate.planningDrafts?.count ?? 0) 份制定草案、\(restoreCandidate.coachTurns?.count ?? 0) 条教练记录与收藏/删除状态。替换前会保留保护副本；AI 密钥不包含在备份内。")
             }
         }
         .fitnessError($issue)

@@ -28,6 +28,21 @@ struct CoachView: View {
     var body: some View {
         List {
             Section {
+                NavigationLink { PlannerView(store: store) } label: {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("为我制定训练计划", systemImage: "calendar.badge.plus")
+                            .font(.title3.weight(.semibold))
+                        Text("填写目标、训练日、时间与器械，让 AI 从可行方案中安排一周；先看每日动作，再由你确认生效。")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }.padding(.vertical, 6)
+                }
+                if let program = store.currentWeeklyProgram {
+                    NavigationLink { WeeklyProgramDetailView(store: store, programID: program.id) } label: {
+                        Label("查看当前每周安排", systemImage: "calendar")
+                    }
+                }
+            }
+            Section {
                 Text("从你的实际记录出发").font(.title3.weight(.semibold))
                 Text("解释计划、查看最近训练、讨论怎样调整。每次发送前都可以核对数据，计划不会因一句回答自动改变。")
                     .font(.subheadline).foregroundStyle(.secondary)
@@ -82,7 +97,7 @@ struct CoachView: View {
                 }
             }
             Section {
-                Text("AI 回答是模型解释，不能保证每句话准确。计划变更还要经过本地结构校验和你的确认。当前只支持现有计划的保守减量，自动制定训练周期、完整健康评估与动作替换仍未实现。")
+                Text("上方“为我制定训练计划”可创建经规则校验的起步周安排。本问答中的调整仍只支持已有手动单日计划的保守减量。模型解释可能有误，所有生效变更都需确认；完整健康评估、长期自动进阶与周期化仍未完成。")
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
@@ -157,7 +172,7 @@ private struct CoachConsentView: View {
                 LabeledContent("模型", value: prepared.configuration.model)
             }
             Section("本次数据范围") {
-                Text("你的问题、已保存档案摘要、当前计划、最近最多10次训练及近28天程序统计，并按问题和计划附最多8个本地动作的通用提示。运动限制只发送存在标记，训练备注不发送；没有接入 HealthKit 摘要。")
+                Text("你的问题、已保存档案摘要、当前手动计划或每周安排、最近最多10次训练及近28天程序统计，并附最多8个本地动作的通用提示。运动限制只发送存在标记，训练备注不发送；没有接入 HealthKit 摘要。")
                 Text("API Key 只作为请求认证发往上述服务器，不会出现在下面的数据、教练记录或备份中。服务可能留存你发送的资料。")
                     .font(.footnote).foregroundStyle(.secondary)
                 CoachStatisticsRows(context: prepared.context)

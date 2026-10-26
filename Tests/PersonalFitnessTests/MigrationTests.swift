@@ -47,11 +47,11 @@ final class MigrationTests: XCTestCase {
         }
 
         XCTAssertThrowsError(try TrainingStore(storageURL: url))
-        let schema = Schema(versionedSchema: FitnessSchemaV2.self)
+        let schema = Schema(versionedSchema: FitnessSchemaV3.self)
         let configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, migrationPlan: FitnessMigrationPlan.self, configurations: [configuration])
         let context = ModelContext(container)
-        let records = try context.fetch(FetchDescriptor<FitnessSchemaV2.MetadataRecord>())
+        let records = try context.fetch(FetchDescriptor<FitnessSchemaV3.MetadataRecord>())
         XCTAssertEqual(records.count, 1)
         XCTAssertEqual(records.first?.profileData, corrupt)
     }

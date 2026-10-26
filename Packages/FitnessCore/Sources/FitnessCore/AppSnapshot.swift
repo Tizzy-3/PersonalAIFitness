@@ -10,19 +10,30 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
     public var customExercises: [Exercise]
     public var coachTurns: [CoachTurn]?
     public var favoriteExerciseIDs: [String]?
+    public var planningDrafts: [PlanningDraft]?
+    public var weeklyPrograms: [WeeklyProgram]?
+    public var activeWeeklyProgramID: UUID?
+    public var deletedPlanIDs: [UUID]?
+    public var deletedWeeklyProgramIDs: [UUID]?
 
-    public init(formatVersion: Int = 2, exportedAt: Date = Date(), profile: PersonalProfile = PersonalProfile(),
+    public init(formatVersion: Int = 3, exportedAt: Date = Date(), profile: PersonalProfile = PersonalProfile(),
                 activePlanVersionID: UUID? = nil, planVersions: [PlanVersion] = [],
                 sessions: [WorkoutSession] = [], customExercises: [Exercise] = [],
-                coachTurns: [CoachTurn]? = nil, favoriteExerciseIDs: [String]? = nil) {
+                coachTurns: [CoachTurn]? = nil, favoriteExerciseIDs: [String]? = nil,
+                planningDrafts: [PlanningDraft]? = nil, weeklyPrograms: [WeeklyProgram]? = nil,
+                activeWeeklyProgramID: UUID? = nil, deletedPlanIDs: [UUID]? = nil,
+                deletedWeeklyProgramIDs: [UUID]? = nil) {
         self.formatVersion = formatVersion; self.exportedAt = exportedAt; self.profile = profile
         self.activePlanVersionID = activePlanVersionID; self.planVersions = planVersions
         self.sessions = sessions; self.customExercises = customExercises
         self.coachTurns = coachTurns; self.favoriteExerciseIDs = favoriteExerciseIDs
+        self.planningDrafts = planningDrafts; self.weeklyPrograms = weeklyPrograms
+        self.activeWeeklyProgramID = activeWeeklyProgramID; self.deletedPlanIDs = deletedPlanIDs
+        self.deletedWeeklyProgramIDs = deletedWeeklyProgramIDs
     }
 
     public func validate() throws {
-        guard (1...2).contains(formatVersion) else { throw CoreError.unsupportedFormat(formatVersion) }
+        guard (1...3).contains(formatVersion) else { throw CoreError.unsupportedFormat(formatVersion) }
         try CoreValidation.date(exportedAt, name: "导出时间")
         try profile.validate()
         guard planVersions.count <= 100_000, sessions.count <= 100_000, customExercises.count <= 10_000 else {
@@ -58,6 +69,10 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
             if let base = turn.context.plan, versions[base.id] != base {
                 throw CoreError.missingReference("教练依据计划版本")
             }
+            if let id = turn.context.weeklyProgramID,
+               weeklyPrograms?.first(where: { $0.id == id })?.selectedOption != turn.context.weeklyPlan {
+                throw CoreError.missingReference("教练依据的周计划")
+            }
             if let appliedID = turn.appliedPlanVersionID {
                 guard let applied = versions[appliedID], let proposal = turn.reply.proposal,
                       applied.parentVersionID == proposal.targetPlanVersionID,
@@ -89,6 +104,61 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
                 }
             }
             for entry in session.exercises { try validateReference(entry.exercise, builtInIDs: builtInIDs, customByID: customByID) }
+        }
+        try validatePlanning(versions: versions)
+    }
+
+    private func validatePlanning(versions: [UUID: PlanVersion]) throws {
+        let drafts = planningDrafts ?? []
+        let programs = weeklyPrograms ?? []
+        let deletedPlans = deletedPlanIDs ?? []
+        let deletedPrograms = deletedWeeklyProgramIDs ?? []
+        guard drafts.count <= 10_000, programs.count <= 10_000 else { throw CoreError.invalidInput("周计划或草案数量超出支持范围。") }
+        try CoreValidation.unique(drafts.map(\.id), name: "计划草案 ID")
+        try CoreValidation.unique(programs.map(\.id), name: "周计划 ID")
+        try CoreValidation.unique(deletedPlans, name: "已删除计划 ID")
+        try CoreValidation.unique(deletedPrograms, name: "已删除周计划 ID")
+        let byDraft = Dictionary(uniqueKeysWithValues: drafts.map { ($0.id, $0) })
+        let byProgram = Dictionary(uniqueKeysWithValues: programs.map { ($0.id, $0) })
+        guard Set(deletedPlans).isSubset(of: Set(planVersions.map(\.planID))),
+              Set(deletedPrograms).isSubset(of: Set(programs.map(\.id))) else {
+            throw CoreError.missingReference("已删除的计划")
+        }
+        if let activePlanVersionID, let plan = versions[activePlanVersionID], deletedPlans.contains(plan.planID) {
+            throw CoreError.invalidState("已删除计划不能仍处于生效状态。")
+        }
+        if let activeWeeklyProgramID {
+            guard byProgram[activeWeeklyProgramID] != nil, !deletedPrograms.contains(activeWeeklyProgramID),
+                  activePlanVersionID == nil else { throw CoreError.invalidState("生效周计划关联无效或与手动计划冲突。") }
+        }
+        for draft in drafts {
+            try draft.validate()
+            if let source = draft.sourceActivePlanVersionID, versions[source] == nil { throw CoreError.missingReference("制定计划时的手动版本") }
+            if let source = draft.sourceActiveWeeklyProgramID, byProgram[source] == nil { throw CoreError.missingReference("制定计划时的周计划") }
+            if let applied = draft.appliedProgramID {
+                guard byProgram[applied]?.draft.id == draft.id else { throw CoreError.missingReference("确认生成的周计划") }
+            }
+        }
+        for program in programs {
+            try program.validate()
+            guard var accepted = byDraft[program.draft.id], accepted.decision == .accepted,
+                  accepted.appliedProgramID == program.id else { throw CoreError.missingReference("周计划的用户确认记录") }
+            accepted.decision = .pending; accepted.appliedProgramID = nil
+            guard accepted == program.draft, let option = program.selectedOption else {
+                throw CoreError.invalidInput("周计划与冻结的草案输入不一致。")
+            }
+            for day in option.days where !day.isRestDay {
+                guard let id = program.dayPlanVersionIDs[day.weekday], let version = versions[id],
+                      version.items.count == day.items.count else { throw CoreError.missingReference("周计划训练日版本") }
+                for (item, planned) in zip(day.items, version.items) {
+                    guard item.exerciseID == planned.exercise.id, item.setCount == planned.setCount,
+                          item.targetReps == planned.targetReps, item.targetSeconds == planned.targetSeconds,
+                          item.restSeconds == planned.restSeconds else { throw CoreError.invalidInput("周计划训练内容与已确认版本不一致。") }
+                }
+                if activeWeeklyProgramID == program.id, deletedPlans.contains(version.planID) {
+                    throw CoreError.invalidState("生效周计划包含已删除的训练日。")
+                }
+            }
         }
     }
 

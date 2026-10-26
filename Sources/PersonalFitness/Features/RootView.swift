@@ -14,12 +14,14 @@ struct RootView: View {
     @State private var workout: WorkoutRoute?
     @State private var planEditor: PlanEditorRoute?
     @State private var settings = false
+    @State private var capturePlanner = false
 
     init(store: TrainingStore) {
         self.store = store
         #if DEBUG
         // CI captures actual empty-state screens, without adding fabricated user data.
         let arguments = ProcessInfo.processInfo.arguments
+        _capturePlanner = State(initialValue: arguments.contains("--capture-planner"))
         if let index = arguments.firstIndex(of: "--capture-tab"), arguments.indices.contains(index + 1),
            let tab = Int(arguments[index + 1]), (0...4).contains(tab) {
             _selectedTab = State(initialValue: tab)
@@ -50,6 +52,7 @@ struct RootView: View {
         .tint(.primary)
         .sheet(item: $planEditor) { route in NavigationStack { PlanEditorView(store: store, revising: route.plan) } }
         .sheet(isPresented: $settings) { NavigationStack { SettingsView(store: store) } }
+        .sheet(isPresented: $capturePlanner) { NavigationStack { PlannerView(store: store) } }
         .fullScreenCover(item: $workout) { route in
             NavigationStack { WorkoutView(store: store, sessionID: route.id) }
         }
@@ -68,6 +71,18 @@ struct TodayView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 weekStrip
+                if let program = store.currentWeeklyProgram {
+                    NavigationLink { WeeklyProgramDetailView(store: store, programID: program.id, openWorkout: openWorkout) } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("我的每周安排").font(.headline)
+                                Text("\(program.selectedOption?.title ?? "已确认计划") · 查看七天训练与休息")
+                                    .font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            Spacer(); Image(systemName: "chevron.right")
+                        }.padding(16).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+                    }.buttonStyle(.plain)
+                }
                 if let ongoing = store.activeSession {
                     Button { openWorkout(ongoing.id) } label: {
                         Label("恢复\(ongoing.status == .paused ? "已暂停" : "未结束")的训练", systemImage: "arrow.clockwise")
@@ -75,12 +90,14 @@ struct TodayView: View {
                             .background(FitnessTheme.accent.opacity(0.2), in: RoundedRectangle(cornerRadius: 14))
                     }
                 }
-                if let plan = store.currentPlan {
+                if let plan = store.scheduledPlan() {
                     planCover(plan)
                     HStack {
                         Text("这次要练的动作").font(.headline)
                         Spacer()
-                        Button("编辑计划") { editPlan(plan) }.font(.subheadline)
+                        if let program = store.currentWeeklyProgram {
+                            NavigationLink("查看周计划") { WeeklyProgramDetailView(store: store, programID: program.id, openWorkout: openWorkout) }.font(.subheadline)
+                        } else { Button("编辑计划") { editPlan(plan) }.font(.subheadline) }
                     }
                     VStack(spacing: 0) {
                         ForEach(plan.items) { item in
@@ -102,9 +119,20 @@ struct TodayView: View {
                             if item.id != plan.items.last?.id { Divider().padding(.leading, 72) }
                         }
                     }.background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+                } else if store.currentWeeklyProgram != nil {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("今天按计划休息", systemImage: "moon.zzz").font(.title3.weight(.semibold))
+                        Text("没有安排正式训练。已确认的每周计划和历史仍保留，可查看其他训练日。")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
+                        .background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                 } else {
                     ContentUnavailableView("从你的计划开始", systemImage: "calendar.badge.plus", description: Text("手动选择动作、组数与目标，确认后开始训练。这里没有预置的个人训练成绩。"))
                     Button("创建手动计划") { editPlan(nil) }.buttonStyle(FitnessPrimaryButtonStyle())
+                    NavigationLink { PlannerView(store: store) } label: {
+                        Label("让 AI 为我制定计划", systemImage: "calendar.badge.plus")
+                            .font(.headline).frame(maxWidth: .infinity, minHeight: 48)
+                    }
                 }
                 NavigationLink { ProfileView(store: store) } label: {
                     Label {
@@ -134,14 +162,15 @@ struct TodayView: View {
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
                         .background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                 }.buttonStyle(.plain)
-                Text("身体状态评估与规则自动计划尚未实现；AI 回答不是恢复评估或医学诊断。")
+                Text("已支持保守起始周计划；完整身体状态评估与长期自动进阶尚未实现。")
                     .font(.footnote).foregroundStyle(.secondary)
             }.padding(20)
         }
         .background(FitnessTheme.canvas)
         .navigationTitle("今天")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) { Text(Date.now, format: .dateTime.month().day().weekday()).font(.caption).foregroundStyle(.secondary) }
+            ToolbarItem(placement: .topBarLeading) { Text(Date.now, format: .dateTime.month().day().weekday()).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: true, vertical: false) }
+                .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .topBarTrailing) { Button(action: openSettings) { Image(systemName: "person.crop.circle") }.accessibilityLabel("设置与个人资料") }
         }
         .safeAreaInset(edge: .bottom) {
@@ -149,7 +178,7 @@ struct TodayView: View {
                 if let active = store.activeSession {
                     Button("继续这次训练") { openWorkout(active.id) }.buttonStyle(FitnessPrimaryButtonStyle())
                 } else {
-                    Button(store.currentPlan == nil ? "开始自由训练" : "开始这次训练") { start() }
+                    Button(store.scheduledPlan() == nil ? "开始自由训练" : "开始今天的训练") { start() }
                         .buttonStyle(FitnessPrimaryButtonStyle())
                 }
             }.padding(.horizontal, 20).padding(.vertical, 10).background(FitnessTheme.canvas)
@@ -179,7 +208,8 @@ struct TodayView: View {
         ZStack(alignment: .leading) {
             HStack { Spacer(); Image("Equipment").resizable().scaledToFit().frame(width: 230).opacity(0.65).offset(x: 40) }
             VStack(alignment: .leading, spacing: 12) {
-                Text("当前手动计划 · v\(plan.version)").font(.caption).foregroundStyle(.white.opacity(0.75))
+                Text(store.currentWeeklyProgram == nil ? "当前手动计划 · v\(plan.version)" : "今天的训练 · 每周安排")
+                    .font(.caption).foregroundStyle(.white.opacity(0.75))
                 Text(plan.name).font(.title2.weight(.bold)).lineLimit(3).frame(maxWidth: 250, alignment: .leading)
                 Spacer(minLength: 15)
                 Text("\(plan.items.count) 个动作  ·  \(plan.items.reduce(0) { $0 + $1.setCount }) 组")
@@ -189,7 +219,7 @@ struct TodayView: View {
     }
 
     private func start() {
-        do { openWorkout(try store.startWorkout(plan: store.currentPlan).id) }
+        do { openWorkout(try store.startWorkout(plan: store.scheduledPlan()).id) }
         catch { issue = error.localizedDescription }
     }
 }

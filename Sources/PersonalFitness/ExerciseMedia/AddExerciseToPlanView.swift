@@ -31,6 +31,8 @@ struct AddExerciseToPlanView: View {
                     ForEach(basePlan.items) { item in
                         LabeledContent(item.exercise.name, value: "\(item.setCount) 组")
                     }
+                } else if store.currentWeeklyProgram != nil {
+                    Text("当前使用每周安排。确认后另建独立手动计划并切换使用；原周计划和训练历史保留。")
                 } else {
                     Text("当前还没有生效计划，确认后创建 v1。")
                 }

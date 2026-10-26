@@ -5,6 +5,7 @@ import FitnessCore
 struct PlanEditorView: View {
     let store: TrainingStore
     let revising: PlanVersion?
+    let template: PlanVersion?
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
     @State private var items: [PlannedExercise]
@@ -12,11 +13,17 @@ struct PlanEditorView: View {
     @State private var confirmation = false
     @State private var issue: String?
 
-    init(store: TrainingStore, revising: PlanVersion?) {
+    init(store: TrainingStore, revising: PlanVersion?, template: PlanVersion? = nil) {
         self.store = store
         self.revising = revising
-        _name = State(initialValue: revising?.name ?? "")
-        _items = State(initialValue: revising?.items ?? [])
+        self.template = template
+        _name = State(initialValue: revising?.name ?? template.map { $0.name + "副本" } ?? "")
+        let copiedItems = template?.items.map { item in
+            var copy = item
+            copy.id = UUID()
+            return copy
+        } ?? []
+        _items = State(initialValue: revising?.items ?? copiedItems)
     }
 
     var body: some View {
@@ -26,8 +33,19 @@ struct PlanEditorView: View {
                 if let revising {
                     Text("正在编辑 v\(revising.version) 的副本。确认后产生新版本；旧版及已开始的训练保持原样。")
                         .font(.footnote).foregroundStyle(.secondary)
+                } else if let template {
+                    Text("以“\(template.name)”为起点，另存为独立的手动计划。确认前不会修改原计划或周安排。")
+                        .font(.footnote).foregroundStyle(.secondary)
                 } else {
                     Text("这是完全手动创建的计划，不是 AI 或算法为你制定的处方。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                if store.currentWeeklyProgram != nil {
+                    Text("确认保存后会切换为这个手动计划；原周计划保留在计划库，内容和训练历史不变。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                if let revising, store.deletedPlanIDs.contains(revising.planID) {
+                    Text("这个计划已被删除，不能继续保存此编辑副本。请取消后从“已删除计划”恢复，再重新编辑。")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
@@ -41,13 +59,25 @@ struct PlanEditorView: View {
                 Section(item.exercise.name) {
                     Stepper("正式组：\(item.setCount) 组", value: $item.setCount, in: 1...30)
                     if item.exercise.metric == .repetitions {
-                        Stepper("目标次数：\(item.targetReps ?? 10) 次", value: Binding(
-                            get: { item.targetReps ?? 10 }, set: { item.targetReps = $0 }
-                        ), in: 1...100)
+                        if let reps = item.targetReps {
+                            Stepper("目标次数：\(reps) 次", value: Binding(
+                                get: { item.targetReps ?? reps }, set: { item.targetReps = $0 }
+                            ), in: 1...100)
+                        } else {
+                            LabeledContent("目标次数", value: "未知")
+                            Button("填写目标次数（初值 10 次）") { item.targetReps = 10 }
+                        }
                     } else {
-                        Stepper("目标时长：\(UIInput.number(item.targetSeconds ?? 30)) 秒", value: Binding(
-                            get: { item.targetSeconds ?? 30 }, set: { item.targetSeconds = $0 }
-                        ), in: 5...14_400, step: item.exercise.metric == .cardio ? 60 : 5)
+                        if let seconds = item.targetSeconds {
+                            Stepper("目标时长：\(UIInput.number(seconds)) 秒", value: Binding(
+                                get: { item.targetSeconds ?? seconds }, set: { item.targetSeconds = $0 }
+                            ), in: 5...14_400, step: item.exercise.metric == .cardio ? 60 : 5)
+                        } else {
+                            LabeledContent("目标时长", value: "未知")
+                            Button(item.exercise.metric == .cardio ? "填写目标时长（初值 10 分钟）" : "填写目标时长（初值 30 秒）") {
+                                item.targetSeconds = item.exercise.metric == .cardio ? 600 : 30
+                            }
+                        }
                     }
                     Stepper("组间休息：\(UIInput.number(item.restSeconds)) 秒", value: $item.restSeconds, in: 0...900, step: 15)
                     Text("负重口径：\(item.exercise.loadConvention.title)。实际重量开训后由你填写，系统不猜最佳重量。")
@@ -59,12 +89,15 @@ struct PlanEditorView: View {
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .navigationTitle(revising == nil ? "创建手动计划" : "编辑计划副本")
+        .navigationTitle(revising != nil ? "编辑计划副本" : template != nil ? "另存手动副本" : "创建手动计划")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .topBarTrailing) { EditButton() }
-            ToolbarItem(placement: .confirmationAction) { Button("预览确认") { validateDraft() }.disabled(items.isEmpty || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("预览确认") { validateDraft() }
+                    .disabled(items.isEmpty || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isDeletedRevision)
+            }
         }
         .sheet(isPresented: $picking) {
             NavigationStack {
@@ -78,9 +111,13 @@ struct PlanEditorView: View {
             Button("确认保存并生效") { confirm() }
             Button("继续编辑", role: .cancel) { }
         } message: {
-            Text("\(name) · \(items.count) 个动作 · \(items.reduce(0) { $0 + $1.setCount }) 组。\(revising == nil ? "将创建新的生效计划。" : "将产生 v\((revising?.version ?? 0) + 1)，保留旧版本。")")
+            Text("\(name) · \(items.count) 个动作 · \(items.reduce(0) { $0 + $1.setCount }) 组。\(revising == nil ? "将创建独立的新计划并设为当前。" : "将产生 v\((revising?.version ?? 0) + 1) 并设为当前，保留旧版本。")\(store.currentWeeklyProgram != nil ? "原周计划将保留在计划库，不再作为当前安排。" : "")")
         }
         .fitnessError($issue)
+    }
+
+    private var isDeletedRevision: Bool {
+        revising.map { store.deletedPlanIDs.contains($0.planID) } ?? false
     }
 
     private func validateDraft() {

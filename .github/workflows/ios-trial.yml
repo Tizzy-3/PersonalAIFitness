@@ -65,12 +65,16 @@ jobs:
           set -euo pipefail
           device_id=$(python3 scripts/select_simulator.py --boot)
           xcrun simctl install "$device_id" "$PF_DERIVED/Build/Products/Debug-iphonesimulator/PersonalFitness.app"
-          for tab in 0 2 4; do
+          for tab in 0 1 2 4; do
             xcrun simctl terminate "$device_id" com.personalfitness.private >/dev/null 2>&1 || true
             xcrun simctl launch "$device_id" com.personalfitness.private --capture-tab "$tab"
             sleep 3
             xcrun simctl io "$device_id" screenshot "$PF_OUTPUT/native-tab-$tab.png"
           done
+          xcrun simctl terminate "$device_id" com.personalfitness.private >/dev/null 2>&1 || true
+          xcrun simctl launch "$device_id" com.personalfitness.private --capture-planner
+          sleep 3
+          xcrun simctl io "$device_id" screenshot "$PF_OUTPUT/native-planner.png"
 
       - name: Build unsigned iPhone app
         shell: bash
@@ -95,16 +99,16 @@ jobs:
           (cd "$staging" && /usr/bin/zip -qry "$PF_OUTPUT/PersonalFitness-unsigned.ipa" Payload)
           shasum -a 256 "$PF_OUTPUT/PersonalFitness-unsigned.ipa" > "$PF_OUTPUT/SHA256.txt"
           printf '%s\n' \
-            'Personal Fitness 0.2 trial; native SwiftUI + SwiftData.' \
+            'Personal Fitness 0.3 trial; native SwiftUI + SwiftData.' \
             "Source commit: $GITHUB_SHA" \
             "Workflow run: $GITHUB_RUN_ID / $GITHUB_RUN_ATTEMPT" \
             'Minimum iOS: 27.0. Unsigned IPA: sign before installation.' \
             'Default bundle ID: com.personalfitness.private; use a matching profile and preserve com.apple.developer.healthkit.' \
             'No seeded personal plans, workouts or health data.' \
-            'Includes: configurable AI coach, confirmed conservative adjustments, expanded exercise library with licensed demo clips. Not implemented: readiness engine, automatic planning, complete HealthKit sync, full teaching videos.' \
+            'Includes: AI-assisted validated starter weekly planning with explicit confirmation; reversible plan deletion preserving history; configurable coach; licensed exercise demo clips. Not implemented: complete readiness/HealthKit sync, long-term periodization/progression, full teaching videos.' \
             'CI and Simulator success do not prove device signing or HealthKit access.' \
             > "$PF_OUTPUT/BUILD-INFO.txt"
-          { echo '### Personal Fitness 0.2'; echo 'Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'HealthKit requires a compatible final signature/profile. Device behavior remains unverified.'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '### Personal Fitness 0.3'; echo 'Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'HealthKit requires a compatible final signature/profile. Device behavior remains unverified.'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -124,7 +128,7 @@ jobs:
           name: PersonalFitness-build-diagnostics
           path: |
             output/*.log
-            output/native-tab-*.png
+            output/native-*.png
             output/NativeTests.xcresult
           if-no-files-found: warn
           retention-days: 7

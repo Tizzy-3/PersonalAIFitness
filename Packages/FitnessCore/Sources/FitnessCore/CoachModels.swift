@@ -23,10 +23,16 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
     public var statistics: CoachStatistics
     public var rulesVersion: String = "coach-reduction-1"
     public var movementKnowledge: [CoachMovementKnowledge]? = nil
+    public var weeklyPlan: WeeklyPlanOption? = nil
+    public var weeklyProgramID: UUID? = nil
 
     public var evidenceIDs: [String] {
-        ["profile", "statistics"] + (plan == nil ? [] : ["plan"]) + recentSessions.map { "session:\($0.id.uuidString)" }
-            + (movementKnowledge ?? []).map { "exercise:\($0.exercise.id)" }
+        var ids = ["profile", "statistics"]
+        if plan != nil { ids.append("plan") }
+        ids.append(contentsOf: recentSessions.map { "session:\($0.id.uuidString)" })
+        ids.append(contentsOf: (movementKnowledge ?? []).map { "exercise:\($0.exercise.id)" })
+        if weeklyProgramID != nil { ids.append("weekly-plan") }
+        return ids
     }
 
     public static func make(snapshot: AppSnapshot, at: Date = Date()) throws -> CoachContext {
@@ -51,10 +57,14 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
                                     completedSets: finished.reduce(0) { $0 + $1.completedWorkingSets },
                                     totalTrainingSeconds: finished.reduce(0) { $0 + $1.elapsed(at: at) })
         let active = snapshot.planVersions.first { $0.id == snapshot.activePlanVersionID }
-        return CoachContext(id: UUID(), createdAt: at, profile: profile, plan: active,
+        var result = CoachContext(id: UUID(), createdAt: at, profile: profile, plan: active,
                             recentSessions: sanitized,
                             sessionRevisions: Dictionary(uniqueKeysWithValues: recent.map { ($0.id.uuidString, $0.revision) }),
                             statistics: stats)
+        if let program = snapshot.weeklyPrograms?.first(where: { $0.id == snapshot.activeWeeklyProgramID }) {
+            result.weeklyProgramID = program.id; result.weeklyPlan = program.selectedOption
+        }
+        return result
     }
 
     public func matches(snapshot: AppSnapshot) -> Bool {
@@ -63,12 +73,16 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
         return age >= -300 && age <= 7 * 86_400 && profile == current.profile && plan == current.plan
             && sessionRevisions == current.sessionRevisions && statistics == current.statistics
             && recentSessions == current.recentSessions && rulesVersion == current.rulesVersion
+            && weeklyProgramID == current.weeklyProgramID && weeklyPlan == current.weeklyPlan
     }
 
     public func validate() throws {
         try CoreValidation.date(createdAt, name: "上下文时间")
         try profile.validate()
         if let plan { try plan.validate() }
+        guard (weeklyPlan == nil) == (weeklyProgramID == nil), weeklyProgramID == nil || plan == nil else {
+            throw CoreError.invalidInput("教练上下文的手动计划与周安排关联不一致。")
+        }
         guard rulesVersion == "coach-reduction-1", recentSessions.count <= 10,
               statistics.completedSessions >= 0, statistics.completedSets >= 0,
               statistics.lookbackDays == 28 else { throw CoreError.invalidInput("教练上下文格式或规则版本不受支持。") }
@@ -91,6 +105,7 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
         if id == "profile" { return "本次发送的档案摘要" }
         if id == "statistics" { return "近 28 天的程序统计" }
         if id == "plan" { return "当前计划 v\(plan?.version ?? 0)" }
+        if id == "weekly-plan" { return "已确认的每周训练安排" }
         if let item = movementKnowledge?.first(where: { "exercise:\($0.exercise.id)" == id }) { return "本地动作资料：\(item.exercise.name)" }
         if let session = recentSessions.first(where: { "session:\($0.id.uuidString)" == id }) {
             return "训练记录：\(session.name) · \(session.startedAt.formatted(date: .abbreviated, time: .omitted))"
@@ -104,7 +119,8 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
             let terms = [exercise.name, exercise.englishName] + (ExerciseDetails.details(for: exercise.id)?.aliases ?? [])
             return terms.contains { !$0.isEmpty && question.localizedCaseInsensitiveContains($0) }
         }
-        let planExercises = plan?.items.compactMap { ExerciseCatalog.exercise(id: $0.exercise.id) } ?? []
+        let planExercises = (plan?.items.compactMap { ExerciseCatalog.exercise(id: $0.exercise.id) } ?? [])
+            + (weeklyPlan?.days.flatMap(\.items).compactMap { ExerciseCatalog.exercise(id: $0.exerciseID) } ?? [])
         var seen: Set<String> = []
         result.movementKnowledge = (matches + planExercises).filter { seen.insert($0.id).inserted }.prefix(8).map {
             CoachMovementKnowledge(exercise: $0, detail: ExerciseDetails.details(for: $0.id))
