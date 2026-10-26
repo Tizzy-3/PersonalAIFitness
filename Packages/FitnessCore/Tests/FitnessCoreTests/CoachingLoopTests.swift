@@ -217,8 +217,8 @@ final class CoachingLoopTests: XCTestCase {
                                                    profile: profile, now: now)
         XCTAssertEqual(assessment.verdict, .normal)
         XCTAssertFalse(assessment.evidence.isEmpty)
-        XCTAssertThrowsError(try ReadinessAssessment(safety: "测试", todaySuggestion: "继续",
-                                                     confidence: "测试", verdict: .normal,
+        XCTAssertThrowsError(try ReadinessAssessment(safety: "测试", confidence: "测试",
+                                                     todaySuggestion: "继续", verdict: .normal,
                                                      evidence: []).validate())
     }
 

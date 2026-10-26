@@ -269,12 +269,12 @@ final class InterviewCoreTests: XCTestCase {
         try session.applyExtraction(InterviewExtraction(topic: .minutes, rawValue: "30"), at: start)
         XCTAssertEqual(session.derivedPhase, .awaitingReview)
         try session.confirmInference(.minutes, accept: true, at: start.addingTimeInterval(10))
-        session.adultStatus = .init(value: true, provenance: .stated, confirmedAt: start)
-        session.primaryGoal = .init(value: .generalFitness, provenance: .stated, confirmedAt: start)
-        session.experience = .init(value: .beginner, provenance: .stated, confirmedAt: start)
-        session.weekdays = .init(value: [1, 3], provenance: .stated, confirmedAt: start)
-        session.equipment = .init(value: [.bodyweight], provenance: .stated, confirmedAt: start)
-        session.restrictions = .init(value: "无", provenance: .stated, confirmedAt: start)
+        session.profile.adultStatus = .init(value: true, provenance: .stated, confirmedAt: start)
+        session.profile.primaryGoal = .init(value: .generalFitness, provenance: .stated, confirmedAt: start)
+        session.profile.experience = .init(value: .beginner, provenance: .stated, confirmedAt: start)
+        session.profile.weekdays = .init(value: [1, 3], provenance: .stated, confirmedAt: start)
+        session.profile.equipment = .init(value: [.bodyweight], provenance: .stated, confirmedAt: start)
+        session.profile.restrictions = .init(value: "无", provenance: .stated, confirmedAt: start)
         XCTAssertEqual(session.derivedPhase, .ready)
     }
 
@@ -282,7 +282,9 @@ final class InterviewCoreTests: XCTestCase {
         let question = goalQuestion()
         var session = makeSession()
         try session.appendTurn(InterviewTurn(questions: [question]), at: start)
-        session.turns.append(InterviewTurn(questions: [question], createdAt: start.addingTimeInterval(60)))
+        var duplicateTurn = InterviewTurn(questions: [question])
+        duplicateTurn.createdAt = start.addingTimeInterval(60)
+        session.turns.append(duplicateTurn)
         XCTAssertThrowsError(try session.validate())
     }
 }
