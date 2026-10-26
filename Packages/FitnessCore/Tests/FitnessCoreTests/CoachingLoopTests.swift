@@ -76,14 +76,29 @@ final class CoachingLoopTests: XCTestCase {
         }
     }
 
-    func testSynthesisFailsExplicitlyWhenEveryMovementIsExcluded() {
-        // Excluding the only bodyweight squat pattern leaves nothing to prescribe; the engine must
-        // refuse rather than silently invent a substitute.
-        XCTAssertThrowsError(try PlannerEngine.synthesize(input: {
-            var value = input()
-            value.excludedExerciseIDs = ["builtin.bodyweight-squat"]
-            return value
-        }()))
+    func testExcludingAMovementDropsItsPatternInsteadOfSubstituting() throws {
+        // Bodyweight-only supports exactly one squat movement. Excluding it must drop that pattern
+        // rather than invent a substitute, and the remaining week must still validate.
+        var constrained = input()
+        constrained.excludedExerciseIDs = ["builtin.bodyweight-squat"]
+        let option = try PlannerEngine.synthesize(input: constrained)
+        for day in option.days {
+            for item in day.items {
+                XCTAssertNotEqual(item.exerciseID, "builtin.bodyweight-squat")
+            }
+        }
+        XCTAssertNoThrow(try option.validate(input: constrained))
+    }
+
+    func testSynthesisRefusesWhenTooFewMovementsRemain() {
+        // Excluding every movement the equipment supports leaves nothing prescribable, so the engine
+        // refuses instead of emitting an empty or fabricated week.
+        var blocked = input()
+        let equipment = blocked.equipment
+        blocked.excludedExerciseIDs = ExerciseCatalog.exercises
+            .filter { PlannerEngine.isAvailable(exerciseID: $0.id, equipment: equipment) }
+            .map(\.id)
+        XCTAssertThrowsError(try PlannerEngine.synthesize(input: blocked))
     }
 
     func testSynthesisRejectsASubMinimumTimeBudget() {
@@ -109,9 +124,17 @@ final class CoachingLoopTests: XCTestCase {
         let draft = try PlanningDraft.make(input: input(), snapshot: snapshot, option: option, at: now)
         XCTAssertEqual(draft.options.count, 1)
         XCTAssertTrue(draft.matches(snapshot: snapshot, at: now))
-        // A tampered option is refused by the draft validator itself.
+        // An option whose week no longer satisfies the rules is refused by the draft validator.
         var tampered = draft.options[0]
-        tampered.title = "被改过的标题"
+        tampered.days = tampered.days.map { day in
+            var changed = day
+            changed.items = day.items.map { item in
+                var adjusted = item
+                adjusted.restSeconds = 0   // outside the conservative 60–120 s band
+                return adjusted
+            }
+            return changed
+        }
         var badDraft = draft
         badDraft.options = [tampered]
         XCTAssertThrowsError(try badDraft.validate())
