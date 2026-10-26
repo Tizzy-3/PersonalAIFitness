@@ -163,7 +163,8 @@ struct CoachInterviewView: View {
 
     private func askNext() async {
         guard let configuration, request == nil else { return }
-        guard let key = try? AIKeychain.load(for: configuration), let key else {
+        let storedKey = try? AIKeychain.load(for: configuration)
+        guard let key = storedKey ?? nil else {
             issue = CoachClientError.configuration("没有找到本机密钥，请先在接口设置中填写。").localizedDescription
             return
         }
@@ -179,7 +180,7 @@ struct CoachInterviewView: View {
                 try updated.appendTurn(turn)
                 // Extractions stay provisional until the user confirms them one by one.
                 for extraction in turn.extractions {
-                    try updated.applyExtraction(extraction)
+                    try updated.applyExtraction(extraction, at: Date())
                 }
                 try store.saveInterview(updated)
                 session = store.interview
