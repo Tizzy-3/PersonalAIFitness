@@ -83,10 +83,6 @@ final class InterviewClientTests: XCTestCase {
         state.profile.primaryGoal = .init(value: .strength, provenance: .stated, confirmedAt: Date())
         state.profile.minutesPerSession = .init(value: 30, provenance: .inferred)
         let json = try InterviewAPI.requestJSON(session: state, model: "test")
-        // The settled goal is sent with its human-readable title.
-        XCTAssertTrue(json.contains("提高基础力量"))
-        // The unconfirmed inference must not be presented as an answered fact.
-        XCTAssertFalse(json.contains("30 分钟"))
         // Parse rather than slice: the payload also carries the whole exercise catalogue, so a text
         // search would match unrelated content.
         let data = try XCTUnwrap(json.data(using: .utf8))
