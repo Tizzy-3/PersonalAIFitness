@@ -87,14 +87,20 @@ final class InterviewClientTests: XCTestCase {
         XCTAssertTrue(json.contains("提高基础力量"))
         // The unconfirmed inference must not be presented as an answered fact.
         XCTAssertFalse(json.contains("30 分钟"))
-        // It is reported as a pending inference so the model neither re-asks nor treats it as settled.
-        XCTAssertTrue(json.contains("pendingInferences"))
-        XCTAssertTrue(json.contains("30 分钟"))
-        // The settled-facts map must not contain minutes: only the goal belongs there.
-        let answeredStart = try XCTUnwrap(json.range(of: "\"answeredProfile\""))
-        let answeredEnd = try XCTUnwrap(json.range(of: "\"pendingInferences\""))
-        let answeredBlock = json[answeredStart.lowerBound..<answeredEnd.lowerBound]
-        XCTAssertFalse(answeredBlock.contains("minutes"))
-        XCTAssertTrue(answeredBlock.contains("primaryGoal"))
+        // Parse rather than slice: the payload also carries the whole exercise catalogue, so a text
+        // search would match unrelated content.
+        let data = try XCTUnwrap(json.data(using: .utf8))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let answered = try XCTUnwrap(object["answeredProfile"] as? [String: String])
+        let pending = try XCTUnwrap(object["pendingInferences"] as? [String: String])
+        let open = try XCTUnwrap(object["openTopics"] as? [String])
+        // The settled goal is sent; the unconfirmed inference is not.
+        XCTAssertEqual(answered["primaryGoal"], "提高基础力量")
+        XCTAssertNil(answered["minutes"])
+        // It is reported separately as a pending inference, so the model neither re-asks nor treats
+        // it as settled.
+        XCTAssertEqual(pending["minutes"], "30 分钟")
+        // A pending inference is not treated as an open question either.
+        XCTAssertFalse(open.contains("minutes"))
     }
 }
