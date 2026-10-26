@@ -28,6 +28,19 @@ struct CoachView: View {
     var body: some View {
         List {
             Section {
+                NavigationLink { CoachInterviewView(store: store) } label: {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("让教练先了解我（建档访谈）", systemImage: "person.text.rectangle")
+                            .font(.title3.weight(.semibold))
+                        Text("教练会详细询问你的情况与目标，猜测的内容会先问你；核对档案后才制定第一版计划。需要联网。")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }.padding(.vertical, 6)
+                }
+                NavigationLink { CoachProfileReviewView(store: store) } label: {
+                    Label("查看我的训练档案", systemImage: "list.bullet.rectangle")
+                }
+            }
+            Section {
                 NavigationLink { PlannerView(store: store) } label: {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("为我制定训练计划", systemImage: "calendar.badge.plus")
@@ -40,6 +53,27 @@ struct CoachView: View {
                     NavigationLink { WeeklyProgramDetailView(store: store, programID: program.id) } label: {
                         Label("查看当前每周安排", systemImage: "calendar")
                     }
+                }
+            }
+            Section("每天跟进") {
+                NavigationLink { CheckInView(store: store) } label: {
+                    Label("今天的训练前记录", systemImage: "checklist")
+                }
+                NavigationLink { ReadinessView(store: store) } label: {
+                    Label("今天的状态与建议", systemImage: "waveform.path.ecg")
+                }
+                NavigationLink { AdjustmentReviewView(store: store) } label: {
+                    HStack {
+                        Label("调整建议", systemImage: "arrow.triangle.2.circlepath")
+                        Spacer()
+                        if store.pendingAdjustment != nil { Text("待确认").font(.caption).foregroundStyle(.orange) }
+                    }
+                }
+                NavigationLink { ReviewView(store: store) } label: {
+                    Label("周月复盘", systemImage: "chart.line.uptrend.xyaxis")
+                }
+                NavigationLink { HealthStatusView(store: store) } label: {
+                    Label("Apple 健康数据", systemImage: "heart.text.square")
                 }
             }
             Section {

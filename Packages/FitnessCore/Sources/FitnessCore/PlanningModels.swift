@@ -192,6 +192,29 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
         return draft
     }
 
+    /// Builds a draft around an already validated option, e.g. one assembled from the interview
+    /// profile. The option is re-validated here, so a hand-built week cannot bypass the rules.
+    public static func make(input: PlanningInput, snapshot: AppSnapshot, option: WeeklyPlanOption,
+                            at: Date = Date()) throws -> PlanningDraft {
+        try CoreValidation.date(at, name: "计划草案时间")
+        try snapshot.validate()
+        try validateProfile(snapshot.profile, input: input, at: at)
+        let normalized = normalizedHistory(input: input, snapshot: snapshot, at: at)
+        try normalized.validate()
+        try option.validate(input: normalized)
+        let recent = Array(snapshot.sessions.sorted { $0.startedAt > $1.startedAt }.prefix(10))
+        try CoreValidation.unique(recent.map(\.id), name: "计划依据训练 ID")
+        let draft = PlanningDraft(id: UUID(), createdAt: at, input: normalized, options: [option],
+                                  sourceProfile: snapshot.profile,
+                                  sourceActivePlanVersionID: snapshot.activePlanVersionID,
+                                  sourceActiveWeeklyProgramID: snapshot.activeWeeklyProgramID,
+                                  sourceSessionRevisions: Dictionary(uniqueKeysWithValues: recent.map { ($0.id.uuidString, $0.revision) }),
+                                  selection: nil, providerHost: nil, model: nil, decision: .pending,
+                                  appliedProgramID: nil)
+        try draft.validate()
+        return draft
+    }
+
     public func matches(snapshot: AppSnapshot, at: Date = Date()) -> Bool {
         let age = at.timeIntervalSince(createdAt)
         guard age >= -300, age <= 7 * 86_400, sourceProfile == snapshot.profile,
@@ -208,10 +231,15 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
         try CoreValidation.date(createdAt, name: "计划草案时间")
         try Self.validateProfile(sourceProfile, input: input, at: createdAt)
         try input.validate()
-        guard options == (try PlannerEngine.options(for: input)), sourceSessionRevisions.count <= 10,
+        // Either the exact deterministic templates, or a single option that this same engine
+        // validates — a profile-fitted week is still bound by every safety rule.
+        let matchesTemplates = options == (try PlannerEngine.options(for: input))
+        let isProfileFitted = options.count == 1 && options[0].id == PlannerEngine.profileOptionID
+        guard matchesTemplates || isProfileFitted, sourceSessionRevisions.count <= 10,
               sourceSessionRevisions.values.allSatisfy({ $0 >= 0 }), sourceSessionRevisions.keys.allSatisfy({ UUID(uuidString: $0) != nil }) else {
             throw CoreError.invalidInput("计划草案与保存的规则输入不一致，不能确认或恢复。")
         }
+        if isProfileFitted { try options[0].validate(input: input) }
         if let selection { try selection.validate(options: options) }
         guard (decision == .accepted) == (appliedProgramID != nil),
               (providerHost == nil) == (model == nil), providerHost.map({ !$0.isEmpty && $0.count <= 255 }) ?? true,

@@ -38,6 +38,28 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "E4F9131AE6A9BD319E4BCFE2";
 		};
+		"2AACEEFA0A5AA9CAF2FD7185" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "CoachInterviewView.swift";
+			"path" = "Sources/PersonalFitness/Coach/CoachInterviewView.swift";
+			"sourceTree" = "<group>";
+		};
+		"CF61F2A71D9642888F0A56E7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2AACEEFA0A5AA9CAF2FD7185";
+		};
+		"8A15A5CB83CA8486FE13BC7A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "CoachProfileReviewView.swift";
+			"path" = "Sources/PersonalFitness/Coach/CoachProfileReviewView.swift";
+			"sourceTree" = "<group>";
+		};
+		"7BA24A3CD928B2DA7E8F289B" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "8A15A5CB83CA8486FE13BC7A";
+		};
 		"1BA84DCB2A03119290CB23EA" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -48,6 +70,17 @@
 		"E1D9B1C4CD7F8D88D4C490D9" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "1BA84DCB2A03119290CB23EA";
+		};
+		"9B42A773224D44DAA1BE0F88" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "InterviewAPI.swift";
+			"path" = "Sources/PersonalFitness/Coach/InterviewAPI.swift";
+			"sourceTree" = "<group>";
+		};
+		"98E83A580817B301044EBEBF" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "9B42A773224D44DAA1BE0F88";
 		};
 		"8D9692CE55029F252404034A" = {
 			"isa" = "PBXFileReference";
@@ -93,6 +126,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "DEC00C5F5191784C6766B1FB";
 		};
+		"9DFAFD641297708A6B6B8756" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "AdjustmentReviewViews.swift";
+			"path" = "Sources/PersonalFitness/Features/AdjustmentReviewViews.swift";
+			"sourceTree" = "<group>";
+		};
+		"B07EFA7459CBAE6151CAE7F4" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "9DFAFD641297708A6B6B8756";
+		};
 		"F894DD279BC61A34C71F45C6" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -103,6 +147,17 @@
 		"5EE3014CE45AA772EFCCE9A2" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "F894DD279BC61A34C71F45C6";
+		};
+		"77989F2E581723A754B34DEC" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "DailyFeedbackViews.swift";
+			"path" = "Sources/PersonalFitness/Features/DailyFeedbackViews.swift";
+			"sourceTree" = "<group>";
+		};
+		"BC41BA1F7E95FAAB455F75F7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "77989F2E581723A754B34DEC";
 		};
 		"3D69C43487EDD8ED284A70A0" = {
 			"isa" = "PBXFileReference";
@@ -136,6 +191,17 @@
 		"144A1AC18697959DA577A136" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "82A210C33A787A07C53F4617";
+		};
+		"5EC102EF6494AF0BF8F2D1A1" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "PostWorkoutFeedbackView.swift";
+			"path" = "Sources/PersonalFitness/Features/PostWorkoutFeedbackView.swift";
+			"sourceTree" = "<group>";
+		};
+		"225A67529D3FA09D4390DB99" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "5EC102EF6494AF0BF8F2D1A1";
 		};
 		"EAB6A5EC592027FCB819AF12" = {
 			"isa" = "PBXFileReference";
@@ -202,6 +268,17 @@
 		"80BD845F9F73C602FD6C3959" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "245CCCA2A448C6D2AF412757";
+		};
+		"4340405F6BBAD4431352B85C" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "HealthImporter.swift";
+			"path" = "Sources/PersonalFitness/Health/HealthImporter.swift";
+			"sourceTree" = "<group>";
+		};
+		"A3DE4B8BE19D4456E62A8D73" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4340405F6BBAD4431352B85C";
 		};
 		"74B39F9208AC7B733A9AD715" = {
 			"isa" = "PBXFileReference";
@@ -302,6 +379,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "2DD80D77EBFF4127337D239B";
 		};
+		"CA7CA7BFD11CAF7B05684A31" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "TrainingStore+Coaching.swift";
+			"path" = "Sources/PersonalFitness/Storage/TrainingStore+Coaching.swift";
+			"sourceTree" = "<group>";
+		};
+		"2E85EFDCD055C17DEA8EBC28" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "CA7CA7BFD11CAF7B05684A31";
+		};
 		"26EDFB3DE3A972300FE6DE1E" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -335,6 +423,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "62F75C8295352B5E91AEFD38";
 		};
+		"4A09F25F2EB737D7C128AA3F" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "CoachingStoreTests.swift";
+			"path" = "Tests/PersonalFitnessTests/CoachingStoreTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"6D31AD4620AE30142F597D7F" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4A09F25F2EB737D7C128AA3F";
+		};
 		"8D82CFFCDAE046BBD34BE595" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -345,6 +444,17 @@
 		"3A86B64746C685740F4D7FD0" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "8D82CFFCDAE046BBD34BE595";
+		};
+		"B00E02665249C53DDC995CBB" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "InterviewClientTests.swift";
+			"path" = "Tests/PersonalFitnessTests/InterviewClientTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"CF2DE9EF9C69F45396A28D4B" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B00E02665249C53DDC995CBB";
 		};
 		"C56AC68247914FE8F70FE931" = {
 			"isa" = "PBXFileReference";
@@ -500,21 +610,28 @@
 				"0CCF8B887BDC2C5CDAD14D24",
 				"6FF8A234F2BFB84A4E4D03BE",
 				"467FB692AF2CE93F92F60EFA",
+				"CF61F2A71D9642888F0A56E7",
+				"7BA24A3CD928B2DA7E8F289B",
 				"E1D9B1C4CD7F8D88D4C490D9",
+				"98E83A580817B301044EBEBF",
 				"74CED60AB44B00D1B024E12B",
 				"7B0A2906A69338CDF6362E13",
 				"7A1C3850A48669D47C2F3124",
 				"126F4518441A391BAC52CF09",
+				"B07EFA7459CBAE6151CAE7F4",
 				"5EE3014CE45AA772EFCCE9A2",
+				"BC41BA1F7E95FAAB455F75F7",
 				"D24AA41773C88E940F98ACFE",
 				"B223E84FD6DAC5F164908229",
 				"144A1AC18697959DA577A136",
+				"225A67529D3FA09D4390DB99",
 				"7F0DF483B2A500C54BDD3977",
 				"AA492A0ACE171A736E428011",
 				"6AF9C7B4AC3856ADF4B556FD",
 				"ECDBCDD405A032CCC986C484",
 				"F4A7EA801E7FE759DF8D0D6A",
 				"80BD845F9F73C602FD6C3959",
+				"A3DE4B8BE19D4456E62A8D73",
 				"52A7C2B4812E8FBB8BDC58C7",
 				"370E80671EEC8BB0D97DB7C1",
 				"AA42A48503C91AFD02240B65",
@@ -524,6 +641,7 @@
 				"347BD1C24E7E73FA639FBD01",
 				"AD95421909630568C22A5EBC",
 				"28E9C1094A76770212760B15",
+				"2E85EFDCD055C17DEA8EBC28",
 				"77CA78578B828F53C1C426E6",
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
@@ -534,7 +652,9 @@
 			"files" = (
 				"E8900A0362FD1684FBE02400",
 				"82BE56E004741CAA910E5BA8",
+				"6D31AD4620AE30142F597D7F",
 				"3A86B64746C685740F4D7FD0",
+				"CF2DE9EF9C69F45396A28D4B",
 				"03E4C54818B35DB8EB6B7700",
 				"86266CF6B94A70F6E7587FA4",
 				"41FB0E073CC567DCB0D34868",
@@ -550,21 +670,28 @@
 				"685B2D0A45AEC2EB1C324629",
 				"479D651DBE17D030BE5F6924",
 				"E4F9131AE6A9BD319E4BCFE2",
+				"2AACEEFA0A5AA9CAF2FD7185",
+				"8A15A5CB83CA8486FE13BC7A",
 				"1BA84DCB2A03119290CB23EA",
+				"9B42A773224D44DAA1BE0F88",
 				"8D9692CE55029F252404034A",
 				"00EEB50CEB93BA0D7A4BFF36",
 				"05DCE857DB7A2D346CDCEA9E",
 				"DEC00C5F5191784C6766B1FB",
+				"9DFAFD641297708A6B6B8756",
 				"F894DD279BC61A34C71F45C6",
+				"77989F2E581723A754B34DEC",
 				"3D69C43487EDD8ED284A70A0",
 				"3F85350990F74D8B94427D82",
 				"82A210C33A787A07C53F4617",
+				"5EC102EF6494AF0BF8F2D1A1",
 				"EAB6A5EC592027FCB819AF12",
 				"C1F9CE1F756CF34D51310E73",
 				"4792DF118964A3D14871ED15",
 				"4FE6BD332487507887B4F218",
 				"26D67C58D4C8EFC0BA3EDA44",
 				"245CCCA2A448C6D2AF412757",
+				"4340405F6BBAD4431352B85C",
 				"74B39F9208AC7B733A9AD715",
 				"A319D127F9EDE8AD03734C2A",
 				"14303697DC85A0399E934A18",
@@ -574,6 +701,7 @@
 				"D7275E65505C76EA3BF90A0A",
 				"708F16D8C9139EF4AB78C536",
 				"2DD80D77EBFF4127337D239B",
+				"CA7CA7BFD11CAF7B05684A31",
 				"26EDFB3DE3A972300FE6DE1E",
 			);
 			"name" = "App Sources";
@@ -584,7 +712,9 @@
 			"children" = (
 				"96E27C20C247E2BD2972D5A6",
 				"62F75C8295352B5E91AEFD38",
+				"4A09F25F2EB737D7C128AA3F",
 				"8D82CFFCDAE046BBD34BE595",
+				"B00E02665249C53DDC995CBB",
 				"C56AC68247914FE8F70FE931",
 				"45238160EB809A6EE27C458F",
 				"BFF448F4D0A4992FA8B3292D",
@@ -672,8 +802,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.3.0";
-				"CURRENT_PROJECT_VERSION" = "4";
+				"MARKETING_VERSION" = "0.4.0";
+				"CURRENT_PROJECT_VERSION" = "6";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";
@@ -701,8 +831,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.3.0";
-				"CURRENT_PROJECT_VERSION" = "4";
+				"MARKETING_VERSION" = "0.4.0";
+				"CURRENT_PROJECT_VERSION" = "6";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";

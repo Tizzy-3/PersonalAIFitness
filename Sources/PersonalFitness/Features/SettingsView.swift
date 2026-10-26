@@ -24,13 +24,14 @@ struct SettingsView: View {
             }
             Section("功能实现状态") {
                 LabeledContent("手动计划与本地训练", value: "首个试用批次")
-                LabeledContent("健康历史/增量/来源去重", value: "未实现")
-                LabeledContent("身体状态评估", value: "未实现")
-                LabeledContent("规则与 AI 制定计划", value: "保守起始周安排")
+                LabeledContent("健康历史/增量/来源去重", value: "本批实现，真机待验")
+                LabeledContent("身体状态评估", value: "本批实现，无综合分")
+                LabeledContent("规则与 AI 制定计划", value: "档案组合 + 候选选择")
                 LabeledContent("长期周期与自动进阶", value: "未实现")
                 LabeledContent("计划删除与恢复", value: "保留训练和版本")
                 LabeledContent("AI 教练与服务配置", value: "OpenAI 兼容接口")
-                LabeledContent("AI 计划调整", value: "已有计划的保守减量")
+                LabeledContent("AI 计划调整", value: "保持/仅本次/渐进建议")
+                LabeledContent("建档访谈", value: "本批实现，需联网")
                 LabeledContent("动作素材", value: "按动作详情显示覆盖范围")
                 LabeledContent("历史更正与完整趋势", value: "未实现")
             }

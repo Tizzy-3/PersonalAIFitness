@@ -2,6 +2,8 @@ import SwiftUI
 import FitnessCore
 
 struct WorkoutRoute: Identifiable { let id: UUID }
+/// Navigation route for a draft produced by the interview, so it opens the same confirm screen.
+struct InterviewDraftRoute: Identifiable, Hashable { let id: UUID }
 struct PlanEditorRoute: Identifiable {
     let id = UUID()
     let plan: PlanVersion?

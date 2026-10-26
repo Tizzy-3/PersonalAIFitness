@@ -10,6 +10,7 @@ struct WorkoutView: View {
     @State private var adding = false
     @State private var finishing = false
     @State private var noteTarget: NoteRoute?
+    @State private var pendingFeedback: PostWorkoutRoute?
 
     private var session: WorkoutSession? { store.session(id: sessionID) }
 
@@ -76,6 +77,11 @@ struct WorkoutView: View {
                     current.exercises[index].note = text
                 }
             } }
+        }
+        .sheet(item: $pendingFeedback) { route in
+            NavigationStack {
+                PostWorkoutFeedbackView(store: store, sessionID: route.id) { dismiss() }
+            }
         }
         .confirmationDialog("结束并保留这次训练？", isPresented: $finishing, titleVisibility: .visible) {
             Button("正常结束并保存") { finish(early: false) }
@@ -202,10 +208,13 @@ struct WorkoutView: View {
     private func finish(early: Bool) {
         do {
             try store.updateSession(id: sessionID) { try $0.finish(early: early) }
-            dismiss()
+            pendingFeedback = PostWorkoutRoute(id: sessionID)
         } catch { issue = error.localizedDescription }
     }
 }
+
+/// Route for the post-workout feedback sheet shown after a session is saved.
+struct PostWorkoutRoute: Identifiable, Hashable { let id: UUID }
 
 private struct NoteRoute: Identifiable { let id: UUID; let note: String }
 

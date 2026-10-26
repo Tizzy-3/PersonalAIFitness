@@ -1,0 +1,83 @@
+import SwiftUI
+import FitnessCore
+
+/// The profile review screen: every field shows its value, where it came from, and can be edited.
+/// Unconfirmed inferences are highlighted as such and never look like settled facts.
+@MainActor
+struct CoachProfileReviewView: View {
+    let store: TrainingStore
+    @State private var issue: String?
+    @State private var status: String?
+
+    private var profile: StructuredProfile { store.interview?.profile ?? StructuredProfile() }
+
+    var body: some View {
+        List {
+            Section {
+                Text("这里是教练目前理解的你的情况。每项都标了来源：本人回答、本人确认、健康数据，或还是待确认的推断。未知的项不会被当成“没有”。")
+                    .font(.footnote).foregroundStyle(.secondary)
+                if let status { Text(status).font(.footnote).foregroundStyle(.secondary) }
+            }
+            ForEach(InterviewTopic.allCases, id: \.self) { topic in
+                row(topic)
+            }
+        }
+        .navigationTitle("我的训练档案")
+        .navigationBarTitleDisplayMode(.inline)
+        .fitnessError($issue)
+    }
+
+    @ViewBuilder private func row(_ topic: InterviewTopic) -> some View {
+        let provenance = profile.provenance(of: topic)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(topic.title).font(.subheadline.weight(.semibold))
+                Spacer()
+                Text(provenance.title)
+                    .font(.caption2)
+                    .foregroundStyle(color(for: provenance))
+            }
+            Text(InterviewAPI.describe(topic, profile: profile))
+                .font(.footnote).foregroundStyle(.secondary)
+            if provenance == .inferred {
+                HStack {
+                    Button("确认") { confirm(topic, accept: true) }
+                    Button("删掉") { confirm(topic, accept: false) }.foregroundStyle(.red)
+                }.buttonStyle(.borderless)
+            } else {
+                Button("标记为未知") { markUnknown(topic) }.font(.footnote).buttonStyle(.borderless)
+            }
+        }.padding(.vertical, 3)
+    }
+
+    private func color(for provenance: ProfileProvenance) -> Color {
+        switch provenance {
+        case .stated, .confirmed: return .secondary
+        case .healthSource: return .blue
+        case .inferred: return .orange
+        case .unknown: return .secondary
+        }
+    }
+
+    private func confirm(_ topic: InterviewTopic, accept: Bool) {
+        guard var session = store.interview else { issue = "还没有进行中的访谈。"; return }
+        do {
+            try session.confirmInference(topic, accept: accept)
+            try store.saveInterview(session)
+            status = accept ? "已确认\(topic.title)。" : "已删除这条推断。"
+        } catch {
+            issue = error.localizedDescription
+        }
+    }
+
+    private func markUnknown(_ topic: InterviewTopic) {
+        guard var session = store.interview else { issue = "还没有进行中的访谈。"; return }
+        do {
+            try session.markUnknown(topic)
+            try store.saveInterview(session)
+            status = "\(topic.title)已标记为未知，访谈不会再追问这一项。"
+        } catch {
+            issue = error.localizedDescription
+        }
+    }
+}

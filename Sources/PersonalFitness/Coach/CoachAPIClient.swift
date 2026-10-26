@@ -13,6 +13,7 @@ enum CoachClientError: Error, LocalizedError, Equatable {
     case emptyReply
     case refused
     case network(String)
+    case decoding(String)
 
     var errorDescription: String? {
         switch self {
@@ -27,6 +28,7 @@ enum CoachClientError: Error, LocalizedError, Equatable {
         case .emptyReply: return "服务返回了空回答或输出被截断。你的提问仍保留，可调整问题后手动重试。"
         case .refused: return "模型没有回答这次请求。训练计划未改变，可修改问题后再试。"
         case .network(let message): return message
+        case .decoding(let message): return "服务返回的内容不符合约定格式，未采用：\(message)"
         }
     }
 }

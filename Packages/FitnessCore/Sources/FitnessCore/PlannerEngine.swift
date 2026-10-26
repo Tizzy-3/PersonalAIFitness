@@ -6,14 +6,14 @@ public enum PlannerEngine {
     public static let catalogVersion = "2026.10.26.2"
     public static let timingVersion = "starter-time-1"
 
-    private enum Pattern: String { case squat, hinge, push, pull, core, cardio }
-    private struct Movement {
+    enum Pattern: String { case squat, hinge, push, pull, core, cardio }
+    struct Movement {
         let id: String
         let pattern: Pattern
         /// Any one requirement set is sufficient; an empty set means no dedicated equipment.
         let requirements: [Set<PlanningEquipment>]
     }
-    private static let movements: [Movement] = [
+    static let movements: [Movement] = [
         Movement(id: "builtin.bodyweight-squat", pattern: .squat, requirements: [[.bodyweight]]),
         Movement(id: "builtin.goblet-squat", pattern: .squat, requirements: [[.dumbbells]]),
         Movement(id: "builtin.leg-press", pattern: .squat, requirements: [[.legPress]]),
@@ -53,7 +53,8 @@ public enum PlannerEngine {
 
     public static func validate(option: WeeklyPlanOption, input: PlanningInput) throws {
         try input.validate()
-        guard ["equipment-first", "simple-first"].contains(option.id), option.rulesVersion == rulesVersion,
+        guard ["equipment-first", "simple-first", profileOptionID].contains(option.id),
+              option.rulesVersion == rulesVersion,
               option.days.map(\.weekday) == Array(1...7), option.title.count <= 100,
               option.rationale.count <= 20, option.limitations.count <= 20 else {
             throw CoreError.invalidInput("周计划结构、版本或星期安排不符合本地规则。")
@@ -188,7 +189,7 @@ public enum PlannerEngine {
         return result
     }
 
-    private static func strengthItems(input: PlanningInput, simple: Bool, index: Int) throws -> [PlanningItem] {
+    static func strengthItems(input: PlanningInput, simple: Bool, index: Int) throws -> [PlanningItem] {
         let groups: [Pattern] = index == 1 ? [.hinge, .push, .pull, .squat, .core] : [.squat, .push, .pull, .hinge, .core]
         var selected: [Movement] = []
         for group in groups {
@@ -218,7 +219,7 @@ public enum PlannerEngine {
         return items
     }
 
-    private static func cardioItems(input: PlanningInput, simple: Bool) throws -> [PlanningItem] {
+    static func cardioItems(input: PlanningInput, simple: Bool) throws -> [PlanningItem] {
         guard let chosen = candidates(pattern: .cardio, input: input, simple: simple).first else {
             throw CoreError.invalidInput("当前安排需要轻有氧日，但没有可用安全步行空间或适合的有氧器械。请补充可用条件、调整星期或手动创建。")
         }
@@ -233,7 +234,7 @@ public enum PlannerEngine {
         return [item]
     }
 
-    private static func candidates(pattern: Pattern, input: PlanningInput, simple: Bool) -> [Movement] {
+    static func candidates(pattern: Pattern, input: PlanningInput, simple: Bool) -> [Movement] {
         let ranks: [String]
         switch pattern {
         case .squat: ranks = simple ? ["bodyweight-squat", "box-squat", "goblet-squat", "leg-press"] : ["leg-press", "goblet-squat", "bodyweight-squat", "box-squat"]
@@ -250,7 +251,7 @@ public enum PlannerEngine {
                 && (input.experience == .regular || $0.id != "builtin.rowing-ergometer") }
     }
 
-    private static func cyclicDistance(_ first: Int, _ second: Int) -> Int {
+    static func cyclicDistance(_ first: Int, _ second: Int) -> Int {
         let distance = abs(first - second)
         return min(distance, 7 - distance)
     }

@@ -15,14 +15,27 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
     public var activeWeeklyProgramID: UUID?
     public var deletedPlanIDs: [UUID]?
     public var deletedWeeklyProgramIDs: [UUID]?
+    // Format 4 additions. All optional so backups 1–3 still decode without inventing data.
+    public var interview: InterviewSession?
+    public var preWorkoutCheckIns: [PreWorkoutCheckIn]?
+    public var sessionFeedback: [SessionFeedback]?
+    public var healthSnapshot: HealthSnapshot?
+    public var adjustments: [AdjustmentProposal]?
+    public var reviewSummaries: [ReviewSummary]?
+    public var latestReadiness: ReadinessAssessment?
 
-    public init(formatVersion: Int = 3, exportedAt: Date = Date(), profile: PersonalProfile = PersonalProfile(),
+    public init(formatVersion: Int = 4, exportedAt: Date = Date(), profile: PersonalProfile = PersonalProfile(),
                 activePlanVersionID: UUID? = nil, planVersions: [PlanVersion] = [],
                 sessions: [WorkoutSession] = [], customExercises: [Exercise] = [],
                 coachTurns: [CoachTurn]? = nil, favoriteExerciseIDs: [String]? = nil,
                 planningDrafts: [PlanningDraft]? = nil, weeklyPrograms: [WeeklyProgram]? = nil,
                 activeWeeklyProgramID: UUID? = nil, deletedPlanIDs: [UUID]? = nil,
-                deletedWeeklyProgramIDs: [UUID]? = nil) {
+                deletedWeeklyProgramIDs: [UUID]? = nil, interview: InterviewSession? = nil,
+                preWorkoutCheckIns: [PreWorkoutCheckIn]? = nil,
+                sessionFeedback: [SessionFeedback]? = nil, healthSnapshot: HealthSnapshot? = nil,
+                adjustments: [AdjustmentProposal]? = nil,
+                reviewSummaries: [ReviewSummary]? = nil,
+                latestReadiness: ReadinessAssessment? = nil) {
         self.formatVersion = formatVersion; self.exportedAt = exportedAt; self.profile = profile
         self.activePlanVersionID = activePlanVersionID; self.planVersions = planVersions
         self.sessions = sessions; self.customExercises = customExercises
@@ -30,10 +43,14 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
         self.planningDrafts = planningDrafts; self.weeklyPrograms = weeklyPrograms
         self.activeWeeklyProgramID = activeWeeklyProgramID; self.deletedPlanIDs = deletedPlanIDs
         self.deletedWeeklyProgramIDs = deletedWeeklyProgramIDs
+        self.interview = interview; self.preWorkoutCheckIns = preWorkoutCheckIns
+        self.sessionFeedback = sessionFeedback; self.healthSnapshot = healthSnapshot
+        self.adjustments = adjustments; self.reviewSummaries = reviewSummaries
+        self.latestReadiness = latestReadiness
     }
 
     public func validate() throws {
-        guard (1...3).contains(formatVersion) else { throw CoreError.unsupportedFormat(formatVersion) }
+        guard (1...4).contains(formatVersion) else { throw CoreError.unsupportedFormat(formatVersion) }
         try CoreValidation.date(exportedAt, name: "导出时间")
         try profile.validate()
         guard planVersions.count <= 100_000, sessions.count <= 100_000, customExercises.count <= 10_000 else {
@@ -106,6 +123,76 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
             for entry in session.exercises { try validateReference(entry.exercise, builtInIDs: builtInIDs, customByID: customByID) }
         }
         try validatePlanning(versions: versions)
+        try validateCoachLoop(versions: versions)
+    }
+
+    /// Format 4 data: interview, daily feedback, health snapshot, adjustments and reviews.
+    ///
+    /// Backups of format 1–3 legitimately have none of it, so absence is valid. What must never pass
+    /// is a reference dangling out of the file: an accepted adjustment without its version, feedback
+    /// for a session that is not here, or a plan the interview claims to have applied but does not
+    /// exist.
+    private func validateCoachLoop(versions: [UUID: PlanVersion]) throws {
+        let checkIns = preWorkoutCheckIns ?? []
+        let feedback = sessionFeedback ?? []
+        let adjustments = self.adjustments ?? []
+        let reviews = reviewSummaries ?? []
+        guard checkIns.count <= 100_000, feedback.count <= 100_000,
+              adjustments.count <= 10_000, reviews.count <= 1_000 else {
+            throw CoreError.invalidInput("访谈、反馈或调整记录数量超出支持范围。")
+        }
+        try CoreValidation.unique(checkIns.map(\.id), name: "训练前记录 ID")
+        for checkIn in checkIns { try checkIn.validate() }
+        try CoreValidation.unique(feedback.map(\.id), name: "训练后反馈 ID")
+        try CoreValidation.unique(feedback.map(\.sessionID), name: "训练后反馈关联的训练")
+        let sessionIDs = Set(sessions.map(\.id))
+        for item in feedback {
+            try item.validate()
+            guard sessionIDs.contains(item.sessionID) else {
+                throw CoreError.missingReference("训练后反馈对应的训练记录")
+            }
+        }
+        if let healthSnapshot { try healthSnapshot.validate() }
+        try CoreValidation.unique(adjustments.map(\.id), name: "调整建议 ID")
+        for adjustment in adjustments {
+            try adjustment.validate()
+            if let baseID = adjustment.basePlanVersionID, versions[baseID] == nil {
+                throw CoreError.missingReference("调整建议依据的计划版本")
+            }
+            if let appliedID = adjustment.appliedPlanVersionID, versions[appliedID] == nil {
+                throw CoreError.missingReference("调整建议生成的计划版本")
+            }
+            for id in adjustment.evidenceIDs {
+                // Evidence ids may reference health metrics, check-ins or sessions; an id with a
+                // known prefix must resolve, so a fabricated citation is rejected.
+                if id.hasPrefix("checkin:") {
+                    let raw = String(id.dropFirst("checkin:".count))
+                    guard let uuid = UUID(uuidString: raw), checkIns.contains(where: { $0.id == uuid }) else {
+                        throw CoreError.missingReference("调整建议引用的训练前记录")
+                    }
+                } else if id.hasPrefix("session:") {
+                    let raw = String(id.dropFirst("session:".count))
+                    guard let uuid = UUID(uuidString: raw), sessionIDs.contains(uuid) else {
+                        throw CoreError.missingReference("调整建议引用的训练记录")
+                    }
+                } else if id.hasPrefix("health:") {
+                    let raw = String(id.dropFirst("health:".count))
+                    guard let metric = HealthMetric(rawValue: raw),
+                          healthSnapshot?.snapshot(for: metric) != nil else {
+                        throw CoreError.missingReference("调整建议引用的健康数据")
+                    }
+                }
+            }
+        }
+        try CoreValidation.unique(reviews.map(\.id), name: "复盘 ID")
+        for review in reviews { try review.validate() }
+        if let latestReadiness { try latestReadiness.validate() }
+        if let interview {
+            try interview.validate()
+            if let appliedID = interview.appliedPlanVersionID, versions[appliedID] == nil {
+                throw CoreError.missingReference("访谈应用的训练计划")
+            }
+        }
     }
 
     private func validatePlanning(versions: [UUID: PlanVersion]) throws {
