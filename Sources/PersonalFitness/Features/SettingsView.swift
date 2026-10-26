@@ -1,0 +1,37 @@
+import SwiftUI
+import FitnessCore
+
+@MainActor
+struct SettingsView: View {
+    let store: TrainingStore
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        List {
+            Section("我的资料") {
+                NavigationLink { ProfileView(store: store) } label: { Label("个人档案与运动限制", systemImage: "person.crop.rectangle") }
+                NavigationLink { HealthDiagnosticsView() } label: { Label("Apple 健康基础读取", systemImage: "heart") }
+            }
+            Section("本地数据") {
+                NavigationLink { BackupView(store: store) } label: { Label("加密备份与恢复", systemImage: "externaldrive") }
+                LabeledContent("训练会话", value: "\(store.sessions.count)")
+                LabeledContent("计划版本", value: "\(store.planVersions.count)")
+            }
+            Section("功能实现状态") {
+                LabeledContent("手动计划与本地训练", value: "首个试用批次")
+                LabeledContent("健康历史/增量/来源去重", value: "未实现")
+                LabeledContent("身体状态评估", value: "未实现")
+                LabeledContent("规则自动计划", value: "未实现")
+                LabeledContent("AI 教练与服务配置", value: "未实现")
+                LabeledContent("动作动图与教学视频", value: "未接入")
+                LabeledContent("历史更正与完整趋势", value: "未实现")
+            }
+            Section("关于这个试用版") {
+                Text("仅供本人使用。数据本地保存，没有账户、广告、订阅或社交。当前没有远程模型请求，也不会自动外发健康资料。")
+                Text("未签名构建需要你自行签名安装。升级前保留可用备份，不通过卸载重装更新，避免清除本地沙盒。")
+            }.font(.footnote).foregroundStyle(.secondary)
+        }
+        .navigationTitle("设置").navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+    }
+}

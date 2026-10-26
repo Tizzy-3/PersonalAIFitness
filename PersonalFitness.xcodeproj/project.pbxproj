@@ -1,0 +1,632 @@
+// !$*UTF8*$!
+{
+	"archiveVersion" = 1;
+	"classes" = {
+	};
+	"objectVersion" = 56;
+	"objects" = {
+		"8D9692CE55029F252404034A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "FitnessTheme.swift";
+			"path" = "Sources/PersonalFitness/Design/FitnessTheme.swift";
+			"sourceTree" = "<group>";
+		};
+		"74CED60AB44B00D1B024E12B" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "8D9692CE55029F252404034A";
+		};
+		"F894DD279BC61A34C71F45C6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "BackupView.swift";
+			"path" = "Sources/PersonalFitness/Features/BackupView.swift";
+			"sourceTree" = "<group>";
+		};
+		"5EE3014CE45AA772EFCCE9A2" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "F894DD279BC61A34C71F45C6";
+		};
+		"3D69C43487EDD8ED284A70A0" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "ExerciseLibraryView.swift";
+			"path" = "Sources/PersonalFitness/Features/ExerciseLibraryView.swift";
+			"sourceTree" = "<group>";
+		};
+		"D24AA41773C88E940F98ACFE" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "3D69C43487EDD8ED284A70A0";
+		};
+		"3F85350990F74D8B94427D82" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "PlanEditorView.swift";
+			"path" = "Sources/PersonalFitness/Features/PlanEditorView.swift";
+			"sourceTree" = "<group>";
+		};
+		"B223E84FD6DAC5F164908229" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "3F85350990F74D8B94427D82";
+		};
+		"82A210C33A787A07C53F4617" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "PlansAndHistoryView.swift";
+			"path" = "Sources/PersonalFitness/Features/PlansAndHistoryView.swift";
+			"sourceTree" = "<group>";
+		};
+		"144A1AC18697959DA577A136" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "82A210C33A787A07C53F4617";
+		};
+		"EAB6A5EC592027FCB819AF12" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "ProfileView.swift";
+			"path" = "Sources/PersonalFitness/Features/ProfileView.swift";
+			"sourceTree" = "<group>";
+		};
+		"7F0DF483B2A500C54BDD3977" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "EAB6A5EC592027FCB819AF12";
+		};
+		"C1F9CE1F756CF34D51310E73" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "RootView.swift";
+			"path" = "Sources/PersonalFitness/Features/RootView.swift";
+			"sourceTree" = "<group>";
+		};
+		"AA492A0ACE171A736E428011" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C1F9CE1F756CF34D51310E73";
+		};
+		"4792DF118964A3D14871ED15" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "SettingsView.swift";
+			"path" = "Sources/PersonalFitness/Features/SettingsView.swift";
+			"sourceTree" = "<group>";
+		};
+		"6AF9C7B4AC3856ADF4B556FD" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4792DF118964A3D14871ED15";
+		};
+		"4FE6BD332487507887B4F218" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "WorkoutSetRow.swift";
+			"path" = "Sources/PersonalFitness/Features/WorkoutSetRow.swift";
+			"sourceTree" = "<group>";
+		};
+		"ECDBCDD405A032CCC986C484" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4FE6BD332487507887B4F218";
+		};
+		"26D67C58D4C8EFC0BA3EDA44" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "WorkoutView.swift";
+			"path" = "Sources/PersonalFitness/Features/WorkoutView.swift";
+			"sourceTree" = "<group>";
+		};
+		"F4A7EA801E7FE759DF8D0D6A" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "26D67C58D4C8EFC0BA3EDA44";
+		};
+		"245CCCA2A448C6D2AF412757" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "HealthDiagnosticsView.swift";
+			"path" = "Sources/PersonalFitness/Health/HealthDiagnosticsView.swift";
+			"sourceTree" = "<group>";
+		};
+		"80BD845F9F73C602FD6C3959" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "245CCCA2A448C6D2AF412757";
+		};
+		"74B39F9208AC7B733A9AD715" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "HealthReader.swift";
+			"path" = "Sources/PersonalFitness/Health/HealthReader.swift";
+			"sourceTree" = "<group>";
+		};
+		"52A7C2B4812E8FBB8BDC58C7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "74B39F9208AC7B733A9AD715";
+		};
+		"A319D127F9EDE8AD03734C2A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "PersonalFitnessApp.swift";
+			"path" = "Sources/PersonalFitness/PersonalFitnessApp.swift";
+			"sourceTree" = "<group>";
+		};
+		"370E80671EEC8BB0D97DB7C1" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "A319D127F9EDE8AD03734C2A";
+		};
+		"D7275E65505C76EA3BF90A0A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "BackupCryptor.swift";
+			"path" = "Sources/PersonalFitness/Storage/BackupCryptor.swift";
+			"sourceTree" = "<group>";
+		};
+		"347BD1C24E7E73FA639FBD01" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D7275E65505C76EA3BF90A0A";
+		};
+		"708F16D8C9139EF4AB78C536" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "BackupFile.swift";
+			"path" = "Sources/PersonalFitness/Storage/BackupFile.swift";
+			"sourceTree" = "<group>";
+		};
+		"AD95421909630568C22A5EBC" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "708F16D8C9139EF4AB78C536";
+		};
+		"2DD80D77EBFF4127337D239B" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "StorageSchema.swift";
+			"path" = "Sources/PersonalFitness/Storage/StorageSchema.swift";
+			"sourceTree" = "<group>";
+		};
+		"28E9C1094A76770212760B15" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2DD80D77EBFF4127337D239B";
+		};
+		"26EDFB3DE3A972300FE6DE1E" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "TrainingStore.swift";
+			"path" = "Sources/PersonalFitness/Storage/TrainingStore.swift";
+			"sourceTree" = "<group>";
+		};
+		"77CA78578B828F53C1C426E6" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "26EDFB3DE3A972300FE6DE1E";
+		};
+		"96E27C20C247E2BD2972D5A6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "BackupCryptorTests.swift";
+			"path" = "Tests/PersonalFitnessTests/BackupCryptorTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"E8900A0362FD1684FBE02400" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "96E27C20C247E2BD2972D5A6";
+		};
+		"743D4E78A904BA15891968B4" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "TrainingStoreTests.swift";
+			"path" = "Tests/PersonalFitnessTests/TrainingStoreTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"D1D59648FBA6D70B12793F20" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "743D4E78A904BA15891968B4";
+		};
+		"193BE1B88D9916F614DCFAD6" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"includeInIndex" = 0;
+			"path" = "PersonalFitness.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"A601CFCFB8319A4F7B53523A" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.cfbundle";
+			"includeInIndex" = 0;
+			"path" = "PersonalFitnessTests.xctest";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"3685E330EC5277A9DD5661C6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder.assetcatalog";
+			"path" = "Sources/PersonalFitness/Assets.xcassets";
+			"sourceTree" = "<group>";
+		};
+		"D8E0ADF371274575CA215419" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "3685E330EC5277A9DD5661C6";
+		};
+		"3041AE76937E007EAD4D4CC7" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"D8E0ADF371274575CA215419",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"48B8469379D330EEC016791C" = {
+			"isa" = "XCLocalSwiftPackageReference";
+			"relativePath" = "Packages/FitnessCore";
+		};
+		"7B7D4B1DDC71C5E94C935D4B" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "48B8469379D330EEC016791C";
+			"productName" = "FitnessCore";
+		};
+		"7482D503EE030BFD92E9BAB0" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "48B8469379D330EEC016791C";
+			"productName" = "FitnessCore";
+		};
+		"F3B767F363296116748C5322" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "7B7D4B1DDC71C5E94C935D4B";
+		};
+		"DB8BF58B205897CD1F523426" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"F3B767F363296116748C5322",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"53DB918EF246209A6E3676D2" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "7482D503EE030BFD92E9BAB0";
+		};
+		"A4857E9F6FF3D1EA05B24DE0" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"53DB918EF246209A6E3676D2",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"28E30B7D232F9B4B78778CA2" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"74CED60AB44B00D1B024E12B",
+				"5EE3014CE45AA772EFCCE9A2",
+				"D24AA41773C88E940F98ACFE",
+				"B223E84FD6DAC5F164908229",
+				"144A1AC18697959DA577A136",
+				"7F0DF483B2A500C54BDD3977",
+				"AA492A0ACE171A736E428011",
+				"6AF9C7B4AC3856ADF4B556FD",
+				"ECDBCDD405A032CCC986C484",
+				"F4A7EA801E7FE759DF8D0D6A",
+				"80BD845F9F73C602FD6C3959",
+				"52A7C2B4812E8FBB8BDC58C7",
+				"370E80671EEC8BB0D97DB7C1",
+				"347BD1C24E7E73FA639FBD01",
+				"AD95421909630568C22A5EBC",
+				"28E9C1094A76770212760B15",
+				"77CA78578B828F53C1C426E6",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"BC240C47C5208228858FE562" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = 2147483647;
+			"files" = (
+				"E8900A0362FD1684FBE02400",
+				"D1D59648FBA6D70B12793F20",
+			);
+			"runOnlyForDeploymentPostprocessing" = 0;
+		};
+		"CA58875195AA86D8BE963366" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"8D9692CE55029F252404034A",
+				"F894DD279BC61A34C71F45C6",
+				"3D69C43487EDD8ED284A70A0",
+				"3F85350990F74D8B94427D82",
+				"82A210C33A787A07C53F4617",
+				"EAB6A5EC592027FCB819AF12",
+				"C1F9CE1F756CF34D51310E73",
+				"4792DF118964A3D14871ED15",
+				"4FE6BD332487507887B4F218",
+				"26D67C58D4C8EFC0BA3EDA44",
+				"245CCCA2A448C6D2AF412757",
+				"74B39F9208AC7B733A9AD715",
+				"A319D127F9EDE8AD03734C2A",
+				"D7275E65505C76EA3BF90A0A",
+				"708F16D8C9139EF4AB78C536",
+				"2DD80D77EBFF4127337D239B",
+				"26EDFB3DE3A972300FE6DE1E",
+			);
+			"name" = "App Sources";
+			"sourceTree" = "<group>";
+		};
+		"9FA83B6DF646F5D116CEE254" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"96E27C20C247E2BD2972D5A6",
+				"743D4E78A904BA15891968B4",
+			);
+			"name" = "App Tests";
+			"sourceTree" = "<group>";
+		};
+		"3D624F1C266E948F4E312B21" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"3685E330EC5277A9DD5661C6",
+			);
+			"name" = "Resources";
+			"sourceTree" = "<group>";
+		};
+		"8A02CA5B2BBF0341D44ADCB4" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"193BE1B88D9916F614DCFAD6",
+				"A601CFCFB8319A4F7B53523A",
+			);
+			"name" = "Products";
+			"sourceTree" = "<group>";
+		};
+		"EBA53A8BAE2CC101BA1314A1" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"CA58875195AA86D8BE963366",
+				"9FA83B6DF646F5D116CEE254",
+				"3D624F1C266E948F4E312B21",
+				"8A02CA5B2BBF0341D44ADCB4",
+			);
+			"sourceTree" = "<group>";
+		};
+		"657EE81F72B04E344AD48704" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"CLANG_ENABLE_MODULES" = "YES";
+				"CLANG_ENABLE_OBJC_ARC" = "YES";
+				"SDKROOT" = "iphoneos";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+				"SWIFT_VERSION" = "6.0";
+				"SWIFT_STRICT_CONCURRENCY" = "complete";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "YES";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG $(inherited)";
+				"ENABLE_TESTABILITY" = "YES";
+				"GCC_OPTIMIZATION_LEVEL" = "0";
+				"ONLY_ACTIVE_ARCH" = "YES";
+			};
+			"name" = "Debug";
+		};
+		"AA45CF0082C822F46E1F835F" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"CLANG_ENABLE_MODULES" = "YES";
+				"CLANG_ENABLE_OBJC_ARC" = "YES";
+				"SDKROOT" = "iphoneos";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "27.0";
+				"SWIFT_VERSION" = "6.0";
+				"SWIFT_STRICT_CONCURRENCY" = "complete";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "YES";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+			};
+			"name" = "Release";
+		};
+		"26E95154E49325635B4B9F4D" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"657EE81F72B04E344AD48704",
+				"AA45CF0082C822F46E1F835F",
+			);
+			"defaultConfigurationIsVisible" = 0;
+			"defaultConfigurationName" = "Release";
+		};
+		"79E887E2CE90C5962FE423C9" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"PRODUCT_NAME" = "PersonalFitness";
+				"PRODUCT_MODULE_NAME" = "PersonalFitness";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"TARGETED_DEVICE_FAMILY" = "1";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";
+				"CODE_SIGN_ENTITLEMENTS" = "Sources/PersonalFitness/Resources/PersonalFitness.entitlements";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+				"SUPPORTS_MACCATALYST" = "NO";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"ENABLE_PREVIEWS" = "YES";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG $(inherited)";
+				"ENABLE_TESTABILITY" = "YES";
+				"GCC_OPTIMIZATION_LEVEL" = "0";
+				"ONLY_ACTIVE_ARCH" = "YES";
+			};
+			"name" = "Debug";
+		};
+		"A00081F140AF3EF4697FAB53" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"PRODUCT_NAME" = "PersonalFitness";
+				"PRODUCT_MODULE_NAME" = "PersonalFitness";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"TARGETED_DEVICE_FAMILY" = "1";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";
+				"CODE_SIGN_ENTITLEMENTS" = "Sources/PersonalFitness/Resources/PersonalFitness.entitlements";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+				"SUPPORTS_MACCATALYST" = "NO";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"ENABLE_PREVIEWS" = "YES";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+			};
+			"name" = "Release";
+		};
+		"69DCA8533310E583A0487305" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"79E887E2CE90C5962FE423C9",
+				"A00081F140AF3EF4697FAB53",
+			);
+			"defaultConfigurationIsVisible" = 0;
+			"defaultConfigurationName" = "Release";
+		};
+		"71265213AEA60F4DDDE8E586" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"PRODUCT_NAME" = "PersonalFitnessTests";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private.tests";
+				"TARGETED_DEVICE_FAMILY" = "1";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"TEST_HOST" = "$(BUILT_PRODUCTS_DIR)/PersonalFitness.app/PersonalFitness";
+				"BUNDLE_LOADER" = "$(TEST_HOST)";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG $(inherited)";
+				"ENABLE_TESTABILITY" = "YES";
+				"GCC_OPTIMIZATION_LEVEL" = "0";
+				"ONLY_ACTIVE_ARCH" = "YES";
+			};
+			"name" = "Debug";
+		};
+		"1CEEFC37665B122BEC45C550" = {
+			"isa" = "XCBuildConfiguration";
+			"buildSettings" = {
+				"PRODUCT_NAME" = "PersonalFitnessTests";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private.tests";
+				"TARGETED_DEVICE_FAMILY" = "1";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"TEST_HOST" = "$(BUILT_PRODUCTS_DIR)/PersonalFitness.app/PersonalFitness";
+				"BUNDLE_LOADER" = "$(TEST_HOST)";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+			};
+			"name" = "Release";
+		};
+		"6EFE0C4D9D591157A0836A05" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"71265213AEA60F4DDDE8E586",
+				"1CEEFC37665B122BEC45C550",
+			);
+			"defaultConfigurationIsVisible" = 0;
+			"defaultConfigurationName" = "Release";
+		};
+		"C5D7B4C61FBE14E9589C4721" = {
+			"isa" = "PBXContainerItemProxy";
+			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
+			"proxyType" = 1;
+			"remoteGlobalIDString" = "D0E2ABC3D80FE1067E8AD8ED";
+			"remoteInfo" = "PersonalFitness";
+		};
+		"AC009825B3569A29EA2F3004" = {
+			"isa" = "PBXTargetDependency";
+			"target" = "D0E2ABC3D80FE1067E8AD8ED";
+			"targetProxy" = "C5D7B4C61FBE14E9589C4721";
+		};
+		"D0E2ABC3D80FE1067E8AD8ED" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "69DCA8533310E583A0487305";
+			"buildPhases" = (
+				"28E30B7D232F9B4B78778CA2",
+				"DB8BF58B205897CD1F523426",
+				"3041AE76937E007EAD4D4CC7",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+			);
+			"name" = "PersonalFitness";
+			"packageProductDependencies" = (
+				"7B7D4B1DDC71C5E94C935D4B",
+			);
+			"productName" = "PersonalFitness";
+			"productReference" = "193BE1B88D9916F614DCFAD6";
+			"productType" = "com.apple.product-type.application";
+		};
+		"557169BFDA8AB370042E2669" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "6EFE0C4D9D591157A0836A05";
+			"buildPhases" = (
+				"BC240C47C5208228858FE562",
+				"A4857E9F6FF3D1EA05B24DE0",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+				"AC009825B3569A29EA2F3004",
+			);
+			"name" = "PersonalFitnessTests";
+			"packageProductDependencies" = (
+				"7482D503EE030BFD92E9BAB0",
+			);
+			"productName" = "PersonalFitnessTests";
+			"productReference" = "A601CFCFB8319A4F7B53523A";
+			"productType" = "com.apple.product-type.bundle.unit-test";
+		};
+		"98F54143AB4E86B28C3AFEE0" = {
+			"isa" = "PBXProject";
+			"attributes" = {
+				"BuildIndependentTargetsInParallel" = "YES";
+				"LastUpgradeCheck" = "2700";
+				"TargetAttributes" = {
+					"D0E2ABC3D80FE1067E8AD8ED" = {
+						"CreatedOnToolsVersion" = "27.0";
+						"SystemCapabilities" = {
+							"com.apple.HealthKit" = {
+								"enabled" = 1;
+							};
+						};
+					};
+					"557169BFDA8AB370042E2669" = {
+						"CreatedOnToolsVersion" = "27.0";
+						"TestTargetID" = "D0E2ABC3D80FE1067E8AD8ED";
+					};
+				};
+			};
+			"buildConfigurationList" = "26E95154E49325635B4B9F4D";
+			"compatibilityVersion" = "Xcode 14.0";
+			"developmentRegion" = "zh_CN";
+			"hasScannedForEncodings" = 0;
+			"knownRegions" = (
+				"en",
+				"zh-Hans",
+				"Base",
+			);
+			"mainGroup" = "EBA53A8BAE2CC101BA1314A1";
+			"packageReferences" = (
+				"48B8469379D330EEC016791C",
+			);
+			"productRefGroup" = "8A02CA5B2BBF0341D44ADCB4";
+			"projectDirPath" = "";
+			"projectRoot" = "";
+			"targets" = (
+				"D0E2ABC3D80FE1067E8AD8ED",
+				"557169BFDA8AB370042E2669",
+			);
+		};
+	};
+	"rootObject" = "98F54143AB4E86B28C3AFEE0";
+}

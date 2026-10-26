@@ -1,0 +1,115 @@
+name: Build Personal Fitness trial
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-fitness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trial:
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+      PF_OUTPUT: ${{ github.workspace }}/output
+      PF_DERIVED: ${{ github.workspace }}/build/DerivedData
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Verify fixed toolchain and project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PF_OUTPUT"
+          xcodebuild -version | tee "$PF_OUTPUT/toolchain.log"
+          xcodebuild -version | head -n 1 | grep -E '^Xcode 27\.0$'
+          xcrun --sdk iphoneos --show-sdk-version | tee -a "$PF_OUTPUT/toolchain.log"
+          python3 scripts/generate_project.py
+          plutil -lint PersonalFitness.xcodeproj/project.pbxproj Sources/PersonalFitness/Resources/Info.plist Sources/PersonalFitness/Resources/PersonalFitness.entitlements
+          python3 scripts/check_source.py | tee "$PF_OUTPUT/static-checks.log"
+
+      - name: Run independent core tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          swift test --package-path Packages/FitnessCore 2>&1 | tee "$PF_OUTPUT/core-tests.log"
+
+      - name: Test native persistence and backup on iOS Simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          device_id=$(python3 scripts/select_simulator.py)
+          echo "Simulator ID: $device_id" | tee "$PF_OUTPUT/simulator.log"
+          xcodebuild test \
+            -project PersonalFitness.xcodeproj -scheme PersonalFitness \
+            -configuration Debug -destination "platform=iOS Simulator,id=$device_id" \
+            -derivedDataPath "$PF_DERIVED" -resultBundlePath "$PF_OUTPUT/NativeTests.xcresult" \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM="" \
+            2>&1 | tee "$PF_OUTPUT/native-tests.log"
+
+      - name: Build unsigned iPhone app
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project PersonalFitness.xcodeproj -scheme PersonalFitness \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -derivedDataPath "$PF_DERIVED" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            2>&1 | tee "$PF_OUTPUT/iphone-build.log"
+
+      - name: Package successful unsigned build
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$PF_DERIVED/Build/Products/Release-iphoneos/PersonalFitness.app"
+          test -d "$app"
+          staging="$RUNNER_TEMP/PersonalFitnessTrial"
+          mkdir -p "$staging/Payload"
+          ditto "$app" "$staging/Payload/PersonalFitness.app"
+          (cd "$staging" && /usr/bin/zip -qry "$PF_OUTPUT/PersonalFitness-unsigned.ipa" Payload)
+          shasum -a 256 "$PF_OUTPUT/PersonalFitness-unsigned.ipa" > "$PF_OUTPUT/SHA256.txt"
+          printf '%s\n' \
+            'Personal Fitness 0.1 trial; native SwiftUI + SwiftData.' \
+            "Source commit: $GITHUB_SHA" \
+            "Workflow run: $GITHUB_RUN_ID / $GITHUB_RUN_ATTEMPT" \
+            'Minimum iOS: 27.0. Unsigned IPA: sign before installation.' \
+            'Default bundle ID: com.personalfitness.private; use a matching profile and preserve com.apple.developer.healthkit.' \
+            'No seeded personal plans, workouts or health data.' \
+            'Not implemented: AI, readiness engine, automatic planning, complete HealthKit import/sync/dedup, teaching videos.' \
+            'CI and Simulator success do not prove device signing or HealthKit access.' \
+            > "$PF_OUTPUT/BUILD-INFO.txt"
+          { echo '### Personal Fitness 0.1'; echo 'Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'HealthKit requires a compatible final signature/profile. Device behavior remains unverified.'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: PersonalFitness-unsigned-ipa
+          path: |
+            output/PersonalFitness-unsigned.ipa
+            output/SHA256.txt
+            output/BUILD-INFO.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: PersonalFitness-build-diagnostics
+          path: |
+            output/*.log
+            output/NativeTests.xcresult
+          if-no-files-found: warn
+          retention-days: 7
