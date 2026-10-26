@@ -310,10 +310,9 @@ final class CoachingLoopTests: XCTestCase {
 
     func testAcceptedLongTermAdjustmentMustRecordAVersion() {
         // A pending proposal needs no version yet; that is the normal resting state.
-        var proposal = AdjustmentProposal(kind: .progressive, reason: "原因",
+        var proposal = AdjustmentProposal(kind: .progressive, reason: "原因", summary: "说明",
                                           proposedItems: [PlannedExercise(
-                                            exercise: ExerciseCatalog.exercise(id: "builtin.bodyweight-squat")!)],
-                                          summary: "说明")
+                                            exercise: ExerciseCatalog.exercise(id: "builtin.bodyweight-squat")!)])
         XCTAssertEqual(proposal.decision, .pending)
         XCTAssertNoThrow(try proposal.validate())
         // Accepting a long-term change without recording the version it produced is a contradiction.
@@ -326,10 +325,9 @@ final class CoachingLoopTests: XCTestCase {
     func testTodayOnlyAdjustmentNeverClaimsALongTermVersion() {
         // A one-off change is applied as a snapshot; if it ever carried a new version, the long-term
         // plan would have been altered without the user's confirmation of that version.
-        var proposal = AdjustmentProposal(kind: .todayOnly, reason: "原因",
+        var proposal = AdjustmentProposal(kind: .todayOnly, reason: "原因", summary: "说明",
                                           todayItems: [PlannedExercise(
-                                            exercise: ExerciseCatalog.exercise(id: "builtin.bodyweight-squat")!)],
-                                          summary: "说明")
+                                            exercise: ExerciseCatalog.exercise(id: "builtin.bodyweight-squat")!)])
         proposal.decision = .accepted
         XCTAssertNoThrow(try proposal.validate())
         proposal.appliedPlanVersionID = UUID()
@@ -367,7 +365,7 @@ final class CoachingLoopTests: XCTestCase {
 
     func testReviewCountsOnlyFinishedSessionsWithResults() throws {
         let finished = try finishedSession(start: now.addingTimeInterval(-2 * day))
-        var ongoing = WorkoutSession(name: "未结束", startedAt: now.addingTimeInterval(-600))
+        let ongoing = WorkoutSession(name: "未结束", startedAt: now.addingTimeInterval(-600))
         try ongoing.validate()
         let summary = try ReviewEngine.summarize(period: .week, sessions: [finished, ongoing],
                                                  checkIns: [], plan: nil, plannedDaysPerWeek: 3, now: now)
