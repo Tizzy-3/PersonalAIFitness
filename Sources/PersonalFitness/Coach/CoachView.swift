@@ -43,9 +43,9 @@ struct CoachView: View {
             Section {
                 NavigationLink { PlannerView(store: store) } label: {
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("为我制定训练计划", systemImage: "calendar.badge.plus")
+                        Label("直接填写训练条件", systemImage: "calendar.badge.plus")
                             .font(.title3.weight(.semibold))
-                        Text("填写目标、训练日、时间与器械，让 AI 从可行方案中安排一周；先看每日动作，再由你确认生效。")
+                        Text("已明确条件时，可跳过访谈查看保守规则候选。希望教练深入了解你，请使用上方建档访谈。")
                             .font(.subheadline).foregroundStyle(.secondary)
                     }.padding(.vertical, 6)
                 }
@@ -206,7 +206,7 @@ private struct CoachConsentView: View {
                 LabeledContent("模型", value: prepared.configuration.model)
             }
             Section("本次数据范围") {
-                Text("你的问题、已保存档案摘要、当前手动计划或每周安排、最近最多10次训练及近28天程序统计，并附最多8个本地动作的通用提示。运动限制只发送存在标记，训练备注不发送；没有接入 HealthKit 摘要。")
+                Text("你的问题、已确认的档案摘要、当前安排、最近训练与程序统计，以及实际存在的每日反馈、身体状态和健康摘要。自由备注、伤病原文、未确认推断、HealthKit原始缓存和查询锚点不发送。实际字段和时间以下方JSON为准。")
                 Text("API Key 只作为请求认证发往上述服务器，不会出现在下面的数据、教练记录或备份中。服务可能留存你发送的资料。")
                     .font(.footnote).foregroundStyle(.secondary)
                 CoachStatisticsRows(context: prepared.context)

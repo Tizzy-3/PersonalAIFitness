@@ -25,6 +25,7 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
     public var movementKnowledge: [CoachMovementKnowledge]? = nil
     public var weeklyPlan: WeeklyPlanOption? = nil
     public var weeklyProgramID: UUID? = nil
+    public var followUp: CoachFollowUpContext? = nil
 
     public var evidenceIDs: [String] {
         var ids = ["profile", "statistics"]
@@ -32,7 +33,8 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
         ids.append(contentsOf: recentSessions.map { "session:\($0.id.uuidString)" })
         ids.append(contentsOf: (movementKnowledge ?? []).map { "exercise:\($0.exercise.id)" })
         if weeklyProgramID != nil { ids.append("weekly-plan") }
-        return ids
+        ids.append(contentsOf: followUp?.evidenceIDs ?? [])
+        return Array(Set(ids)).sorted()
     }
 
     public static func make(snapshot: AppSnapshot, at: Date = Date()) throws -> CoachContext {
@@ -64,6 +66,7 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
         if let program = snapshot.weeklyPrograms?.first(where: { $0.id == snapshot.activeWeeklyProgramID }) {
             result.weeklyProgramID = program.id; result.weeklyPlan = program.selectedOption
         }
+        result.followUp = try CoachFollowUpContext.make(snapshot: snapshot, at: at)
         return result
     }
 
@@ -74,12 +77,14 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
             && sessionRevisions == current.sessionRevisions && statistics == current.statistics
             && recentSessions == current.recentSessions && rulesVersion == current.rulesVersion
             && weeklyProgramID == current.weeklyProgramID && weeklyPlan == current.weeklyPlan
+            && followUp == current.followUp
     }
 
     public func validate() throws {
         try CoreValidation.date(createdAt, name: "上下文时间")
         try profile.validate()
         if let plan { try plan.validate() }
+        try followUp?.validate()
         guard (weeklyPlan == nil) == (weeklyProgramID == nil), weeklyProgramID == nil || plan == nil else {
             throw CoreError.invalidInput("教练上下文的手动计划与周安排关联不一致。")
         }
@@ -106,6 +111,19 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
         if id == "statistics" { return "近 28 天的程序统计" }
         if id == "plan" { return "当前计划 v\(plan?.version ?? 0)" }
         if id == "weekly-plan" { return "已确认的每周训练安排" }
+        if id == "coach-profile" { return "访谈中本人已明确回答或确认的结构化档案" }
+        if id == "readiness" { return "本次根据真实资料重新计算的六部分状态摘要" }
+        if let value = followUp?.todayCheckIn, id == "checkin:\(value.id.uuidString)" { return "今天的训练前状态记录" }
+        if let value = followUp?.recentFeedback.first(where: { id == "feedback:\($0.id.uuidString)" }) {
+            return "训练后的本人反馈 · \(value.createdAt.formatted(date: .abbreviated, time: .omitted))"
+        }
+        if let value = followUp?.healthMetrics.first(where: { id == "health:\($0.metric.rawValue)" }) {
+            return "Apple健康摘要：\(value.metric.title) · \(value.state.title)"
+        }
+        if let value = followUp?.savedReviews.first(where: { id == "review:\($0.id.uuidString)" }) {
+            return "已保存的\(value.period.title)程序复盘"
+        }
+        if id == "profile:restrictions", followUp?.confirmedProfile != nil { return "已确认运动限制的状态，原文未发送" }
         if let item = movementKnowledge?.first(where: { "exercise:\($0.exercise.id)" == id }) { return "本地动作资料：\(item.exercise.name)" }
         if let session = recentSessions.first(where: { "session:\($0.id.uuidString)" == id }) {
             return "训练记录：\(session.name) · \(session.startedAt.formatted(date: .abbreviated, time: .omitted))"
@@ -171,6 +189,9 @@ public struct CoachProposal: Codable, Equatable, Sendable {
 
     public func validatedItems(context: CoachContext) throws -> [PlannedExercise] {
         try CoreValidation.nonempty(reason, name: "建议原因", maxLength: 4_000)
+        if let safety = context.followUp?.readiness.safetyVerdict, safety == .stop || safety == .gatherData {
+            throw CoreError.invalidInput("最新跟进资料中的疼痛或运动限制需要先核对，本次只能解释状态，不能提出具体训练量变更。")
+        }
         guard let plan = context.plan, plan.id == targetPlanVersionID else {
             throw CoreError.invalidInput("建议不对应当前发送的计划版本。")
         }

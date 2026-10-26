@@ -36,7 +36,7 @@ struct PlanningDraftDetailView: View {
                         Button("放弃未保存回答，保留原草案", role: .destructive) { unsavedDraft = nil }
                     }
                 }
-                if draft.decision == .pending { requestActions(draft) }
+                if draft.decision == .pending, draft.personalization == nil { requestActions(draft) }
                 if let selection = draft.selection { modelSelection(selection, draft: draft) }
                 candidateSections(draft)
                 if draft.decision == .pending { confirmationSection(draft) }
@@ -104,7 +104,7 @@ struct PlanningDraftDetailView: View {
     }
 
     private func modelSelection(_ selection: AISelection, draft: PlanningDraft) -> some View {
-        Section("AI 推荐与解释") {
+        Section(draft.personalization == nil ? "AI 推荐与解释" : "AI 根据本人档案选择的动作") {
             Text(draft.options.first(where: { $0.id == selection.optionID })?.title ?? "未知候选").font(.headline)
             Text(selection.explanation).textSelection(.enabled)
             ForEach(Array(selection.limitations.enumerated()), id: \.offset) { _, text in Text(text).font(.footnote).foregroundStyle(.secondary) }
@@ -112,14 +112,14 @@ struct PlanningDraftDetailView: View {
             Text("服务：\(draft.providerHost ?? "未知") · 模型：\(draft.model ?? "未知")")
                 .font(.caption).foregroundStyle(.secondary)
             Text(draft.decision == .pending
-                 ? "解释是模型文本，可能有误；动作、剂量与时间以本地规则候选为准，目前尚未生效。"
+                 ? "解释是模型文本，可能有误；动作已通过白名单校验，组次与时间由本地规则校验，目前尚未生效。"
                  : "解释是当时保存的模型文本，可能有误。实际生效内容以你最终确认的方案和状态为准。")
                 .font(.footnote).foregroundStyle(.secondary)
         }
     }
 
     private func candidateSections(_ draft: PlanningDraft) -> some View {
-        Section("查看每个可行方案") {
+        Section(draft.personalization == nil ? "查看每个可行方案" : "查看为你组合的完整七天安排") {
             ForEach(draft.options) { option in
                 NavigationLink { WeeklyOptionView(option: option, store: store) } label: {
                     VStack(alignment: .leading, spacing: 5) {

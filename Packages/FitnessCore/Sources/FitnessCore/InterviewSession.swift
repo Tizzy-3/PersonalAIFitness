@@ -11,7 +11,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     public var phase: InterviewPhase
     public var profile: StructuredProfile
     public var turns: [InterviewTurn]
-    /// Topics the user said they do not want to answer. Never asked again.
+    /// Topics the user chose to skip. Only an explicit reopen action makes them eligible again.
     public var declinedTopics: Set<InterviewTopic>
     public var rulesVersion: String
     public var appliedPlanVersionID: UUID?
@@ -54,13 +54,17 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
 
     public var latestTurn: InterviewTurn? { turns.last }
 
-    /// Questions from the newest turn that the user has not answered yet.
+    /// Keeps unanswered questions reachable, including ones orphaned by an older app version.
     public var unansweredQuestions: [InterviewQuestion] {
-        guard let turn = latestTurn else { return [] }
-        return turn.questions.filter { question in
-            !turn.answers.contains { $0.questionID == question.id }
+        turns.flatMap { turn in
+            turn.questions.filter { question in
+                !turn.answers.contains { $0.questionID == question.id }
+            }
         }
     }
+
+    /// Having enough information to draft a plan does not mean the optional interview is finished.
+    public var canContinueInterview: Bool { unansweredQuestions.isEmpty && !openTopics.isEmpty }
 
     public var answeredTurnCount: Int { turns.filter(\.isAnswered).count }
 
@@ -72,6 +76,9 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     public mutating func appendTurn(_ turn: InterviewTurn, at date: Date = Date()) throws -> InterviewTurn {
         try CoreValidation.date(date, name: "访谈记录时间")
         try turn.validate()
+        guard unansweredQuestions.isEmpty else {
+            throw CoreError.invalidState("请先回答、明确标记未知或跳过当前问题，再继续访谈。")
+        }
         guard turns.count < InterviewRules.maximumTurns else {
             throw CoreError.invalidState("这次访谈记录已经很多，请先核对档案或开始一份新的访谈。")
         }
@@ -87,26 +94,31 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         }
         accepted.extractions = turn.extractions.filter { extraction in
             !declinedTopics.contains(extraction.topic)
+                && profile.provenance(of: extraction.topic) == .unknown
         }
         // Re-validate the trimmed turn: dropping questions may orphan an answer.
         try accepted.validate()
-        turns.append(accepted)
-        updatedAt = date
-        phase = derivedPhase
+        var draft = self
+        draft.turns.append(accepted)
+        draft.updatedAt = date
+        draft.phase = draft.derivedPhase
+        try draft.validate()
+        self = draft
         return accepted
     }
 
-    /// Records the user's answers to the newest turn and applies any resulting profile values as
+    /// Records the user's answers to open questions and applies any resulting profile values as
     /// `stated`. An unanswered question is left unanswered; it never becomes an implicit "no".
     ///
     /// All work happens on a copy that is committed only on success, so a rejected answer cannot
     /// leave a partially applied profile behind.
     public mutating func answer(_ answers: [InterviewAnswer], at date: Date = Date()) throws {
         try CoreValidation.date(date, name: "回答时间")
-        guard let index = turns.indices.last else { throw CoreError.invalidState("还没有可以回答的问题。") }
+        guard !turns.isEmpty else { throw CoreError.invalidState("还没有可以回答的问题。") }
         for answer in answers {
-            guard let question = turns[index].questions.first(where: { $0.id == answer.questionID }) else {
-                throw CoreError.invalidInput("这个问题不属于最新一轮访谈。")
+            guard let index = turns.firstIndex(where: { turn in turn.questions.contains { $0.id == answer.questionID } }),
+                  let question = turns[index].questions.first(where: { $0.id == answer.questionID }) else {
+                throw CoreError.invalidInput("这个问题不属于这份访谈。")
             }
             guard !turns[index].answers.contains(where: { $0.questionID == answer.questionID }) else {
                 throw CoreError.invalidInput("这个问题已经回答过了。")
@@ -116,7 +128,8 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         try CoreValidation.unique(answers.map(\.questionID), name: "回答的问题")
         var draft = self
         for answer in answers {
-            guard let question = draft.turns[index].questions.first(where: { $0.id == answer.questionID }) else { continue }
+            guard let index = draft.turns.firstIndex(where: { turn in turn.questions.contains { $0.id == answer.questionID } }),
+                  let question = draft.turns[index].questions.first(where: { $0.id == answer.questionID }) else { continue }
             switch answer.outcome {
             case .answered:
                 try draft.applyAnswer(answer, for: question, at: date)
@@ -156,6 +169,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         var draft = self
         try draft.apply(value, for: topic, provenance: .confirmed, at: date)
         draft.declinedTopics.remove(topic)
+        draft.appliedPlanVersionID = nil
         draft.updatedAt = date
         draft.phase = draft.derivedPhase
         try draft.validate()
@@ -168,10 +182,38 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         var draft = self
         try draft.clearTopic(topic)
         draft.declinedTopics.insert(topic)
+        draft.appliedPlanVersionID = nil
         draft.updatedAt = date
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
+    }
+
+    /// The user explicitly asks to correct or revisit this topic. This changes the interview only;
+    /// a previously confirmed training plan remains stored and effective until separately replaced.
+    public mutating func reopenTopic(_ topic: InterviewTopic, at date: Date = Date()) throws {
+        try CoreValidation.date(date, name: "重新询问时间")
+        var draft = self
+        try draft.clearTopic(topic)
+        draft.declinedTopics.remove(topic)
+        draft.appliedPlanVersionID = nil
+        draft.updatedAt = date
+        draft.phase = draft.derivedPhase
+        try draft.validate()
+        self = draft
+    }
+
+    /// Starts new dialogue without deleting the user's settled facts or overriding skip choices.
+    /// Provisional guesses are discarded so a new model cannot inherit them as confirmed facts.
+    public func restartedPreservingProfile(at date: Date = Date()) throws -> InterviewSession {
+        try CoreValidation.date(date, name: "重新访谈时间")
+        var restarted = InterviewSession(createdAt: date, profile: profile, declinedTopics: declinedTopics)
+        for topic in InterviewTopic.allCases where !profile.isUsable(topic) {
+            try restarted.clearTopic(topic)
+        }
+        restarted.phase = restarted.derivedPhase
+        try restarted.validate()
+        return restarted
     }
 
     public mutating func applyPlan(versionID: UUID, at date: Date = Date()) throws {
@@ -206,10 +248,10 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     private mutating func applyChoice(_ choice: String, topic: InterviewTopic, at date: Date) throws {
         switch topic {
         case .adultStatus:
-            guard choice == "yes" || choice == "是" else {
-                throw CoreError.invalidInput("本批自动计划只面向已明确确认年满 18 岁的健康成人。")
+            guard ["yes", "是", "no", "否"].contains(choice) else {
+                throw CoreError.invalidInput("无法识别的成年确认选项。")
             }
-            profile.adultStatus = .init(value: true, provenance: .stated, confirmedAt: date)
+            profile.adultStatus = .init(value: choice == "yes" || choice == "是", provenance: .stated, confirmedAt: date)
         case .primaryGoal:
             guard let goal = PlanningGoal(rawValue: choice) else { throw CoreError.invalidInput("无法识别的目标选项。") }
             profile.primaryGoal = .init(value: goal, provenance: .stated, confirmedAt: date)
@@ -266,14 +308,13 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
 
     private mutating func applyBoolean(_ flag: Bool, topic: InterviewTopic, at date: Date) throws {
         switch topic {
+        case .adultStatus:
+            profile.adultStatus = .init(value: flag, provenance: .stated, confirmedAt: date)
         case .restrictions:
             // Recording a restriction never silently becomes a plan-ready profile: saying "yes"
             // tells the interview to keep asking until the user explains it.
             profile.restrictions = .init(value: flag ? "本人表示存在运动限制，需进一步说明" : "无",
                                          provenance: .stated, confirmedAt: date)
-            if flag {
-                throw CoreError.invalidInput("你表示存在运动限制。请说明具体情况；在明确之前不会自动生成训练计划。")
-            }
         default:
             throw CoreError.invalidInput("这个主题不接受是否结果。")
         }
@@ -284,7 +325,11 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     /// Applies a typed extraction. `inferred` values keep no confirmation time, so nothing can use
     /// them before the user confirms.
     public mutating func applyExtraction(_ extraction: InterviewExtraction, at date: Date) throws {
+        try CoreValidation.date(date, name: "抽取时间")
         let value = try extraction.parse()
+        // A later model response may repeat a field or conflict with it. Neither can overwrite a
+        // settled fact or a guess already waiting for the user's decision. Reopening is explicit.
+        guard !declinedTopics.contains(extraction.topic), profile.provenance(of: extraction.topic) == .unknown else { return }
         var draft = self
         try draft.apply(value, for: extraction.topic, provenance: .inferred, at: date)
         draft.updatedAt = date

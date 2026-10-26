@@ -17,6 +17,8 @@ public struct ReviewSummary: Identifiable, Codable, Equatable, Sendable {
     public var windowEnd: Date
     public var finishedSessionCount: Int
     public var plannedSessionCount: Int
+    /// Completed scheduled dates, excluding unrelated/free sessions and duplicate make-up sessions.
+    public var completedPlannedSessionCount: Int?
     public var completedWorkingSets: Int
     public var totalTrainingSeconds: Double
     public var exerciseProgress: [ExerciseProgress]
@@ -32,7 +34,8 @@ public struct ReviewSummary: Identifiable, Codable, Equatable, Sendable {
                 plannedSessionCount: Int = 0, completedWorkingSets: Int = 0,
                 totalTrainingSeconds: Double = 0, exerciseProgress: [ExerciseProgress] = [],
                 checkInCount: Int = 0, answeredPainCount: Int = 0, reportedPainCount: Int = 0,
-                dataGaps: [String] = [], rulesVersion: String = ReviewEngine.rulesVersion) {
+                dataGaps: [String] = [], rulesVersion: String = ReviewEngine.rulesVersion,
+                completedPlannedSessionCount: Int? = nil) {
         self.id = id; self.createdAt = createdAt; self.period = period
         self.windowStart = windowStart; self.windowEnd = windowEnd
         self.finishedSessionCount = finishedSessionCount; self.plannedSessionCount = plannedSessionCount
@@ -40,13 +43,15 @@ public struct ReviewSummary: Identifiable, Codable, Equatable, Sendable {
         self.exerciseProgress = exerciseProgress; self.checkInCount = checkInCount
         self.answeredPainCount = answeredPainCount; self.reportedPainCount = reportedPainCount
         self.dataGaps = dataGaps; self.rulesVersion = rulesVersion
+        self.completedPlannedSessionCount = completedPlannedSessionCount
     }
 
     /// Completion rate is only meaningful when there was something planned.
     public var completionRateText: String {
         guard plannedSessionCount > 0 else { return "这段时间没有排期，无法计算完成率。" }
-        let rate = Double(finishedSessionCount) / Double(plannedSessionCount) * 100
-        return "计划 \(plannedSessionCount) 次，完成 \(finishedSessionCount) 次，约 \(Int(rate.rounded()))%。"
+        let completed = completedPlannedSessionCount ?? finishedSessionCount
+        let rate = Double(completed) / Double(plannedSessionCount) * 100
+        return "计划 \(plannedSessionCount) 次，完成 \(completed) 次，约 \(Int(rate.rounded()))%。"
     }
 
     public func validate() throws {
@@ -60,6 +65,10 @@ public struct ReviewSummary: Identifiable, Codable, Equatable, Sendable {
             throw CoreError.invalidInput("复盘统计数字无效。")
         }
         try CoreValidation.finite(totalTrainingSeconds, name: "训练总时长")
+        if let completedPlannedSessionCount,
+           completedPlannedSessionCount < 0 || completedPlannedSessionCount > plannedSessionCount {
+            throw CoreError.invalidInput("已完成排期次数超出计划范围。")
+        }
         guard exerciseProgress.count <= 200, dataGaps.count <= 20,
               dataGaps.allSatisfy({ $0.count <= 500 }),
               rulesVersion == ReviewEngine.rulesVersion else {
@@ -73,6 +82,8 @@ public struct ReviewSummary: Identifiable, Codable, Equatable, Sendable {
 /// Per-exercise progress. Only sessions that actually recorded a result are counted.
 public struct ExerciseProgress: Codable, Equatable, Sendable {
     public var exerciseID: String
+    /// Set only from the exercise stored in a real session; backup validation resolves its ID.
+    public var isCustom: Bool?
     public var sessionCount: Int
     public var completedSetCount: Int
     /// Best recorded load in the window, when the user actually entered one.
@@ -81,14 +92,17 @@ public struct ExerciseProgress: Codable, Equatable, Sendable {
     public var bestDurationSeconds: Double?
 
     public init(exerciseID: String, sessionCount: Int = 0, completedSetCount: Int = 0,
-                bestLoadKG: Double? = nil, bestReps: Int? = nil, bestDurationSeconds: Double? = nil) {
+                bestLoadKG: Double? = nil, bestReps: Int? = nil, bestDurationSeconds: Double? = nil,
+                isCustom: Bool? = nil) {
         self.exerciseID = exerciseID; self.sessionCount = sessionCount
         self.completedSetCount = completedSetCount; self.bestLoadKG = bestLoadKG
         self.bestReps = bestReps; self.bestDurationSeconds = bestDurationSeconds
+        self.isCustom = isCustom
     }
 
     public func validate() throws {
-        guard ExerciseCatalog.exercise(id: exerciseID) != nil else {
+        try CoreValidation.nonempty(exerciseID, name: "复盘动作 ID", maxLength: 200)
+        guard isCustom == true || ExerciseCatalog.exercise(id: exerciseID) != nil else {
             throw CoreError.missingReference("复盘动作 \(exerciseID)")
         }
         guard sessionCount >= 0, completedSetCount >= 0 else {
@@ -107,7 +121,9 @@ public enum ReviewEngine {
 
     public static func summarize(period: ReviewSummary.Period, sessions: [WorkoutSession],
                                  checkIns: [PreWorkoutCheckIn], plan: PlanVersion?,
-                                 plannedDaysPerWeek: Int, now: Date = Date()) throws -> ReviewSummary {
+                                 plannedDaysPerWeek: Int, now: Date = Date(),
+                                 weeklyProgram: WeeklyProgram? = nil,
+                                 calendar: Calendar = .current) throws -> ReviewSummary {
         let windowStart = now.addingTimeInterval(-Double(period.days) * 86_400)
         let inWindow = sessions.filter { $0.startedAt >= windowStart && $0.startedAt <= now }
         let finished = inWindow.filter { !$0.status.isOngoing }
@@ -122,7 +138,8 @@ public enum ReviewEngine {
                 let completed = movement.sets.filter { $0.kind == .working && $0.isCompleted && !$0.skipped }
                 guard !completed.isEmpty else { continue }
                 var entry = progress[movement.exercise.id]
-                    ?? ExerciseProgress(exerciseID: movement.exercise.id, sessionCount: 0, completedSetCount: 0)
+                    ?? ExerciseProgress(exerciseID: movement.exercise.id, sessionCount: 0, completedSetCount: 0,
+                                        isCustom: movement.exercise.isCustom ? true : nil)
                 entry.sessionCount += 1
                 entry.completedSetCount += completed.count
                 for set in completed {
@@ -134,13 +151,42 @@ public enum ReviewEngine {
                 progress[movement.exercise.id] = entry
             }
         }
-        let windowCheckIns = checkIns.filter { $0.createdAt >= windowStart && $0.createdAt <= now }
+        // Check-in edits remain in storage as evidence. A review counts the latest revision per day.
+        let revisions = checkIns.filter { $0.createdAt >= windowStart && $0.createdAt <= now }
+        let windowCheckIns = Dictionary(grouping: revisions, by: { calendar.startOfDay(for: $0.createdAt) })
+            .values.compactMap { $0.max { $0.createdAt < $1.createdAt } }
         let answeredPain = windowCheckIns.filter { $0.painReported != nil }
         let reportedPain = answeredPain.filter { $0.painReported == true }
         if !windowCheckIns.isEmpty, answeredPain.count < windowCheckIns.count {
             gaps.append("有 \(windowCheckIns.count - answeredPain.count) 次训练前记录没有回答疼痛，不能当作“没有疼痛”。")
         }
-        let planned = plan == nil ? 0 : Int((Double(plannedDaysPerWeek) * Double(period.days) / 7).rounded())
+        var planned = 0
+        var completedPlanned: Int?
+        if let program = weeklyProgram, let option = program.selectedOption {
+            let earliest = max(windowStart, program.confirmedAt)
+            var day = calendar.startOfDay(for: earliest)
+            var completedDates = Set<Date>()
+            while day <= now {
+                let weekday = ((calendar.component(.weekday, from: day) + 5) % 7) + 1
+                if option.days.contains(where: { $0.weekday == weekday && !$0.isRestDay }),
+                   let versionID = program.dayPlanVersionIDs[weekday] {
+                    planned += 1
+                    if finished.contains(where: { $0.sourcePlanVersionID == versionID && $0.startedAt >= earliest
+                        && calendar.isDate($0.startedAt, inSameDayAs: day) && $0.completedWorkingSets > 0 }) {
+                        completedDates.insert(day)
+                    }
+                }
+                guard let next = calendar.date(byAdding: .day, value: 1, to: day), next > day else { break }
+                day = next
+            }
+            completedPlanned = completedDates.count
+            gaps.append("排期次数按当前周计划确认后的星期安排计算；更早计划及历史切换时点尚未完整追踪。")
+        } else if plan != nil, (1...7).contains(plannedDaysPerWeek) {
+            planned = Int((Double(plannedDaysPerWeek) * Double(period.days) / 7).rounded())
+            gaps.append("手动计划只有每周频率，计划次数是频率估算，缺少逐日排期。")
+        } else {
+            gaps.append("手动计划没有明确排期或当前无周安排，未假定每周训练三次，完成率未知。")
+        }
         let summary = ReviewSummary(
             createdAt: now, period: period, windowStart: windowStart, windowEnd: now,
             finishedSessionCount: finished.count, plannedSessionCount: planned,
@@ -148,7 +194,8 @@ public enum ReviewEngine {
             totalTrainingSeconds: finished.reduce(0) { $0 + $1.elapsed(at: now) },
             exerciseProgress: progress.values.sorted { $0.exerciseID < $1.exerciseID },
             checkInCount: windowCheckIns.count, answeredPainCount: answeredPain.count,
-            reportedPainCount: reportedPain.count, dataGaps: gaps)
+            reportedPainCount: reportedPain.count, dataGaps: gaps,
+            completedPlannedSessionCount: completedPlanned)
         try summary.validate()
         return summary
     }

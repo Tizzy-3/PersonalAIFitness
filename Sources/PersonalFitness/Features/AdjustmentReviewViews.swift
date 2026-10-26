@@ -74,7 +74,7 @@ struct AdjustmentReviewView: View {
     }
 
     private var currentBaseItems: [PlannedExercise]? {
-        store.currentPlan?.items
+        store.scheduledPlan()?.items
     }
 
     private func itemRow(_ item: PlannedExercise) -> some View {
@@ -123,9 +123,12 @@ struct AdjustmentReviewView: View {
     private func accept(_ proposal: AdjustmentProposal) {
         do {
             let created = try store.acceptAdjustment(id: proposal.id)
-            status = created == nil
-                ? "已应用今天的调整；长期计划没有改动。"
-                : "已生成新版本并生效。"
+            if created != nil { status = "已生成新版本并生效。" }
+            else if proposal.kind == .todayOnly {
+                status = "已确认。今天下一次按此计划开训时使用调整后的组数，仅使用一次；长期计划没有改动。"
+            } else {
+                status = "已记录你的确认。请按建议查看今天的状态，长期计划没有改动。"
+            }
         } catch {
             issue = error.localizedDescription
         }
@@ -240,7 +243,7 @@ struct HealthStatusView: View {
                 }
                 ForEach(snapshot.metrics, id: \.metric) { metric in
                     Section(metric.metric.title) {
-                        LabeledContent("状态", value: metric.state.title)
+                        LabeledContent("状态", value: metric.effectiveState(at: Date()).title)
                         if let value = metric.latestValue {
                             LabeledContent("最新数值", value: ReadinessEngine.describe(value, metric: metric.metric))
                         }
@@ -274,7 +277,7 @@ struct HealthStatusView: View {
         reading = true
         defer { reading = false }
         let importer = HealthImporter()
-        let outcome = await importer.importAll(existingAnchors: store.healthAnchors())
+        let outcome = await importer.importAll(existingAnchors: store.healthAnchors(), existingSnapshot: store.healthSnapshot)
         do {
             try store.saveHealthSnapshot(outcome.snapshot)
             status = outcome.notes.isEmpty ? "读取完成。" : outcome.notes.joined(separator: "\n")

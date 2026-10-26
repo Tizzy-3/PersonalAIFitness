@@ -63,14 +63,14 @@ final class CoachingStoreTests: XCTestCase {
 
         let replaced = PreWorkoutCheckIn(createdAt: today.addingTimeInterval(600), energy: 3, painReported: false)
         try store.saveCheckIn(replaced)
-        // One record per day, updated in place rather than accumulating conflicting answers.
-        XCTAssertEqual(store.preWorkoutCheckIns.count, 1)
-        XCTAssertEqual(store.todaysCheckIn()?.energy, 3)
-        XCTAssertEqual(store.todaysCheckIn()?.painReported, false)
+        // Prior revisions remain as evidence; only the latest revision is the current answer.
+        XCTAssertEqual(store.preWorkoutCheckIns.count, 2)
+        XCTAssertEqual(store.todaysCheckIn(now: today.addingTimeInterval(601))?.energy, 3)
+        XCTAssertEqual(store.todaysCheckIn(now: today.addingTimeInterval(601))?.painReported, false)
 
         let tomorrow = PreWorkoutCheckIn(createdAt: today.addingTimeInterval(86_400), energy: 5)
         try store.saveCheckIn(tomorrow)
-        XCTAssertEqual(store.preWorkoutCheckIns.count, 2)
+        XCTAssertEqual(store.preWorkoutCheckIns.count, 3)
     }
 
     @MainActor

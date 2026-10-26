@@ -174,6 +174,7 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
     public var model: String?
     public var decision: CoachDecision
     public var appliedProgramID: UUID?
+    public var personalization: PersonalizationRecord? = nil
 
     public static func make(input: PlanningInput, snapshot: AppSnapshot, at: Date = Date()) throws -> PlanningDraft {
         try CoreValidation.date(at, name: "计划草案时间")
@@ -216,6 +217,7 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
     }
 
     public func matches(snapshot: AppSnapshot, at: Date = Date()) -> Bool {
+        if let personalization, snapshot.interview?.profile != personalization.profile { return false }
         let age = at.timeIntervalSince(createdAt)
         guard age >= -300, age <= 7 * 86_400, sourceProfile == snapshot.profile,
               sourceActivePlanVersionID == snapshot.activePlanVersionID,
@@ -240,6 +242,21 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
             throw CoreError.invalidInput("计划草案与保存的规则输入不一致，不能确认或恢复。")
         }
         if isProfileFitted { try options[0].validate(input: input) }
+        if let personalization {
+            try personalization.profile.validate()
+            var expected = try personalization.profile.planningInput()
+            expected.completedSessionsLast28Days = input.completedSessionsLast28Days
+            expected.daysSinceLastTraining = input.daysSinceLastTraining
+            guard personalization.promptVersion == "personalized-plan-1", isProfileFitted,
+                  expected == input, selection != nil else {
+                throw CoreError.invalidInput("个性化计划缺少有效的冻结档案与规则来源。")
+            }
+            try PersonalizedPlanReply(choices: personalization.choices, explanation: "校验冻结动作选择", limitations: []).validate(input: input)
+            let replay = try PlannerEngine.synthesize(input: input, choices: personalization.choices,
+                                                      preferredExerciseIDs: personalization.profile.preferredExerciseIDs.isUsable
+                                                      ? personalization.profile.preferredExerciseIDs.value ?? [] : [])
+            guard options == [replay] else { throw CoreError.invalidInput("个性化计划与保存的AI动作选择不一致。") }
+        }
         if let selection { try selection.validate(options: options) }
         guard (decision == .accepted) == (appliedProgramID != nil),
               (providerHost == nil) == (model == nil), providerHost.map({ !$0.isEmpty && $0.count <= 255 }) ?? true,

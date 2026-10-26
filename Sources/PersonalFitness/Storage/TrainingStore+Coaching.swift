@@ -10,10 +10,11 @@ import FitnessCore
 extension TrainingStore {
     // MARK: - Interview
 
-    /// Starts a fresh interview, or returns the existing unfinished one.
+    /// Entering the coach always resumes the saved relationship, including a confirmed plan.
+    /// An explicit restart uses the separate profile-preserving flow.
     @discardableResult
     func startInterview(at date: Date = Date()) throws -> InterviewSession {
-        if let existing = interview, existing.appliedPlanVersionID == nil { return existing }
+        if let existing = interview { return existing }
         let session = InterviewSession(createdAt: date)
         try validateInterviewCandidate(session)
         let data = try RecordCodec.encode(session)
@@ -52,28 +53,28 @@ extension TrainingStore {
 
     // MARK: - Daily feedback
 
-    /// Records today's pre-workout check-in. At most one per calendar day is kept, so the readiness
-    /// engine never has to choose between two conflicting answers for "today".
+    /// Keep prior revisions because saved recommendations cite them. The latest revision of a day
+    /// is current; editing cannot silently erase the evidence behind an older recommendation.
     @discardableResult
     func saveCheckIn(_ checkIn: PreWorkoutCheckIn, calendar: Calendar = .current) throws -> PreWorkoutCheckIn {
         try checkIn.validate()
         var updated = preWorkoutCheckIns
-        if let index = updated.firstIndex(where: { calendar.isDate($0.createdAt, inSameDayAs: checkIn.createdAt) }) {
-            updated[index] = checkIn
-        } else {
-            updated.insert(checkIn, at: 0)
-        }
+        if updated.contains(checkIn) { return checkIn }
+        var revision = checkIn
+        if updated.contains(where: { $0.id == revision.id }) { revision.id = UUID() }
+        updated.insert(revision, at: 0)
         var candidate = try snapshot()
         candidate.preWorkoutCheckIns = updated
         try candidate.validate()
         let data = try RecordCodec.encode(updated)
         try write { metadata.checkInsData = data; metadata.revision += 1 }
         preWorkoutCheckIns = updated.sorted { $0.createdAt > $1.createdAt }
-        return checkIn
+        return revision
     }
 
     func todaysCheckIn(calendar: Calendar = .current, now: Date = Date()) -> PreWorkoutCheckIn? {
-        preWorkoutCheckIns.first { calendar.isDate($0.createdAt, inSameDayAs: now) }
+        preWorkoutCheckIns.filter { $0.createdAt <= now && calendar.isDate($0.createdAt, inSameDayAs: now) }
+            .max { $0.createdAt < $1.createdAt }
     }
 
     @discardableResult
@@ -138,7 +139,7 @@ extension TrainingStore {
                                                     health: healthSnapshot,
                                                     sessions: sessions,
                                                     profile: interview?.profile ?? StructuredProfile(),
-                                                    now: now)
+                                                    sessionFeedback: sessionFeedbackRecords, now: now)
         let data = try RecordCodec.encode(assessment)
         var candidate = try snapshot()
         candidate.latestReadiness = assessment
@@ -150,19 +151,44 @@ extension TrainingStore {
 
     // MARK: - Adjustments
 
-    func adjustmentFingerprint(readiness: ReadinessAssessment? = nil) throws -> AdjustmentFingerprint {
-        AdjustmentEngine.fingerprint(planVersionID: currentPlan?.id, sessions: sessions,
-                                     checkIn: todaysCheckIn(), health: healthSnapshot,
+    func adjustmentFingerprint(readiness: ReadinessAssessment? = nil, now: Date = Date()) throws -> AdjustmentFingerprint {
+        let assessment = try readiness ?? currentReadiness(now: now)
+        var fingerprint = AdjustmentEngine.fingerprint(planVersionID: scheduledPlan(on: now)?.id, sessions: sessions,
+                                     checkIn: todaysCheckIn(now: now), health: healthSnapshot,
                                      profile: interview?.profile ?? StructuredProfile(),
-                                     readiness: readiness ?? latestReadiness)
+                                     readiness: assessment, sessionFeedback: sessionFeedbackRecords)
+        struct ProfileInputs: Encodable {
+            let structured: StructuredProfile
+            let manual: PersonalProfile
+        }
+        fingerprint.profileDigest = AdjustmentFingerprint.contentDigest(
+            ProfileInputs(structured: interview?.profile ?? StructuredProfile(), manual: profile))
+        return fingerprint
+    }
+
+    private func currentReadiness(now: Date) throws -> ReadinessAssessment {
+        try ReadinessEngine.assess(checkIn: todaysCheckIn(now: now), health: healthSnapshot,
+                                  sessions: sessions, profile: interview?.profile ?? StructuredProfile(),
+                                  sessionFeedback: sessionFeedbackRecords, now: now)
     }
 
     /// Proposes the conservative adjustment the rules allow right now and stores it as pending.
     @discardableResult
     func proposeAdjustment(readiness: ReadinessAssessment, at date: Date = Date()) throws -> AdjustmentProposal {
-        let fingerprint = try adjustmentFingerprint(readiness: readiness)
-        let proposal = try AdjustmentEngine.proposeForToday(readiness: readiness, basePlan: currentPlan,
-                                                           fingerprint: fingerprint, createdAt: date)
+        guard activeSession == nil else { throw StorageError.activeSessionExists }
+        guard latestReadiness == readiness, Calendar.current.isDate(readiness.createdAt, inSameDayAs: date),
+              readiness.createdAt <= date.addingTimeInterval(300) else {
+            throw CoreError.invalidState("请先用今天的最新记录重新评估状态，再生成调整建议。")
+        }
+        var fresh = try currentReadiness(now: date)
+        fresh.id = readiness.id; fresh.createdAt = readiness.createdAt
+        guard fresh == readiness else {
+            throw CoreError.invalidState("状态评估的依据已变化，请重新评估后再生成建议。")
+        }
+        let fingerprint = try adjustmentFingerprint(readiness: readiness, now: date)
+        let proposal = try AdjustmentEngine.proposeForToday(readiness: readiness, basePlan: scheduledPlan(on: date),
+                                                           fingerprint: fingerprint, createdAt: date,
+                                                           availableMinutes: todaysCheckIn(now: date)?.availableMinutes)
         var updated = adjustments
         updated.removeAll { $0.decision == .pending }
         updated.insert(proposal, at: 0)
@@ -184,8 +210,9 @@ extension TrainingStore {
             throw CoreError.notFound("待确认的调整建议")
         }
         let proposal = adjustments[index]
-        let current = try adjustmentFingerprint()
-        guard !AdjustmentEngine.isStale(proposal, currently: current) else {
+        guard activeSession == nil else { throw StorageError.activeSessionExists }
+        let current = try adjustmentFingerprint(now: date)
+        guard !AdjustmentEngine.isStale(proposal, currently: current, now: date) else {
             throw CoreError.invalidState("这段时间的记录已经变化，请重新生成建议后再确认。")
         }
         var created: PlanVersion?
@@ -193,18 +220,15 @@ extension TrainingStore {
             guard let base = currentPlan, base.id == proposal.basePlanVersionID else {
                 throw CoreError.invalidState("当前生效计划已经变化，请重新生成建议。")
             }
-            created = try confirmPlan(name: base.name, items: items, revising: base)
+            guard visiblePlans.contains(base) else {
+                throw CoreError.invalidState("周计划的长期调整需要完整周版本，目前不能只修改其中一天。")
+            }
+            created = try base.revised(name: base.name, items: items, at: date)
         }
         var updated = adjustments
         updated[index].decision = .accepted
         updated[index].appliedPlanVersionID = created?.id
-        var candidate = try snapshot()
-        candidate.adjustments = updated
-        try candidate.validate()
-        // `confirmPlan` already wrote its own transaction; this one records the decision.
-        let data = try RecordCodec.encode(updated)
-        try write { metadata.adjustmentsData = data; metadata.revision += 1 }
-        adjustments = updated.sorted { $0.createdAt > $1.createdAt }
+        try commitAdjustmentDecision(updated, newPlan: created)
         return created
     }
 
@@ -233,8 +257,8 @@ extension TrainingStore {
     func refreshReview(_ period: ReviewSummary.Period, now: Date = Date()) throws -> ReviewSummary {
         let summary = try ReviewEngine.summarize(period: period, sessions: sessions,
                                                  checkIns: preWorkoutCheckIns, plan: currentPlan,
-                                                 plannedDaysPerWeek: currentPlan == nil ? 0 : weeklyTrainingDays,
-                                                 now: now)
+                                                 plannedDaysPerWeek: 0,
+                                                 now: now, weeklyProgram: currentWeeklyProgram)
         var updated = reviewSummaries
         updated.removeAll { $0.period == period }
         updated.insert(summary, at: 0)
@@ -251,10 +275,4 @@ extension TrainingStore {
         reviewSummaries.first { $0.period == period }
     }
 
-    private var weeklyTrainingDays: Int {
-        if let program = currentWeeklyProgram, let option = program.selectedOption {
-            return option.days.filter { !$0.isRestDay }.count
-        }
-        return 3
-    }
 }

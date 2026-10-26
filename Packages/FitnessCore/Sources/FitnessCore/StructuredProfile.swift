@@ -212,7 +212,7 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
         // The deterministic engine already refuses a profile that records restrictions; surface the
         // same rule here so the caller gets one clear message instead of two different ones.
         let normalized = restrictionText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let noRestriction = Set(["", "无", "无已知限制", "无运动限制", "没有已知限制", "none"])
+        let noRestriction = Set(["无", "无已知限制", "无运动限制", "没有已知限制", "none"])
         guard noRestriction.contains(normalized) else {
             throw CoreError.invalidInput("档案里记有运动限制，不能自动生成计划。请按专业建议手动创建。")
         }

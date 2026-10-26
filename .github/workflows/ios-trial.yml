@@ -99,17 +99,17 @@ jobs:
           (cd "$staging" && /usr/bin/zip -qry "$PF_OUTPUT/PersonalFitness-unsigned.ipa" Payload)
           shasum -a 256 "$PF_OUTPUT/PersonalFitness-unsigned.ipa" > "$PF_OUTPUT/SHA256.txt"
           printf '%s\n' \
-            'Personal Fitness 0.4 trial; native SwiftUI + SwiftData.' \
+            'Personal Fitness 0.4.1 trial; native SwiftUI + SwiftData.' \
             "Source commit: $GITHUB_SHA" \
             "Workflow run: $GITHUB_RUN_ID / $GITHUB_RUN_ATTEMPT" \
             'Minimum iOS: 27.0. Unsigned IPA: sign before installation.' \
             'Default bundle ID: com.personalfitness.private; use a matching profile and preserve com.apple.developer.healthkit.' \
             'No seeded personal plans, workouts or health data.' \
-            'Includes: AI interview that builds a structured profile with per-field provenance and requires confirmation of every inference; rule-bounded plan synthesis with a second validation pass; pre-workout check-in and post-workout feedback; HealthKit importer with anchored incremental queries; six-part readiness assessment with no combined score; keep / today-only / progressive adjustments; weekly and monthly reviews from saved records.' \
-            'Not implemented: long-term periodization, history correction, full trend charts, teaching videos for every movement.' \
+            'Includes: resumable AI interview with protected confirmed facts; a real model movement-composition request within the local candidate pool; independently validated quantities and a confirmed weekly program; daily feedback and readiness evidence; UUID-based health additions/deletions; accepted one-off adjustments applied to one real session; deterministic reviews.' \
+            'Not implemented: automatic progressive/cycle proposal generation, personal physiological baselines, medical adaptation, history correction, full trend charts, teaching videos for every movement.' \
             'CI and Simulator success do not prove device signing or HealthKit access.' \
             > "$PF_OUTPUT/BUILD-INFO.txt"
-          { echo '### Personal Fitness 0.4'; echo 'Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'HealthKit requires a compatible final signature/profile. Device behavior remains unverified.'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '### Personal Fitness 0.4.1'; echo 'Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'HealthKit requires a compatible final signature/profile. Device behavior remains unverified.'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

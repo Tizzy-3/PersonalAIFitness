@@ -36,7 +36,7 @@ struct PlansAndHistoryView: View {
             }
             currentSection
             Section("制定与创建") {
-                NavigationLink { PlannerView(store: store) } label: {
+                NavigationLink { CoachInterviewView(store: store) } label: {
                     Label("AI 为我制定周计划", systemImage: "calendar.badge.plus")
                 }
                 Button("创建手动计划", systemImage: "plus") { editPlan(nil) }

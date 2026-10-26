@@ -202,14 +202,26 @@ final class TrainingStore {
     }
 
     @discardableResult
-    func startWorkout(plan: PlanVersion? = nil) throws -> WorkoutSession {
+    func startWorkout(plan: PlanVersion? = nil, at date: Date = Date()) throws -> WorkoutSession {
         guard activeSession == nil else { throw StorageError.activeSessionExists }
         var session: WorkoutSession
+        var consuming: Int?
         if let plan {
             guard planVersions.contains(plan), !deletedPlanIDs.contains(plan.planID) else { throw StorageError.stalePlan }
-            session = try WorkoutSession.start(plan: plan)
+            var executionPlan = plan
+            if scheduledPlan(on: date)?.id == plan.id {
+                let current = try adjustmentFingerprint(now: date)
+                consuming = adjustments.indices.first { index in
+                    let proposal = adjustments[index]
+                    return proposal.kind == .todayOnly && proposal.decision == .accepted
+                        && proposal.appliedSessionID == nil && proposal.basePlanVersionID == plan.id
+                        && !AdjustmentEngine.isStale(proposal, currently: current, now: date)
+                }
+                if let consuming, let items = adjustments[consuming].todayItems { executionPlan.items = items }
+            }
+            session = try WorkoutSession.start(plan: executionPlan, at: date)
         } else {
-            session = WorkoutSession(name: "自由训练")
+            session = WorkoutSession(name: "自由训练", startedAt: date)
         }
         if let id = session.sourcePlanVersionID,
            let program = weeklyPrograms.first(where: { $0.dayPlanVersionIDs.values.contains(id) }),
@@ -219,13 +231,55 @@ final class TrainingStore {
                 session.exercises[index].note = day.items[index].notes.joined(separator: "\n")
             }
         }
+        try validateExercises(session.exercises.map(\.exercise))
         try session.validate()
         let data = try RecordCodec.encode(session)
         let committed = try RecordCodec.decode(WorkoutSession.self, from: data)
         let record = FitnessSchemaV4.SessionRecord(id: committed.id, startedAt: committed.startedAt, status: committed.status.rawValue, revision: committed.revision, payload: data)
-        try write { context.insert(record) }
+        var updated = adjustments
+        if let consuming { updated[consuming].appliedSessionID = committed.id }
+        var candidate = try snapshot()
+        candidate.sessions.insert(committed, at: 0)
+        candidate.adjustments = updated
+        try candidate.validate()
+        let adjustmentData = try RecordCodec.encode(updated)
+        try write {
+            context.insert(record)
+            if consuming != nil { metadata.adjustmentsData = adjustmentData }
+            metadata.revision += 1
+        }
         sessions.insert(committed, at: 0)
+        if consuming != nil { adjustments = updated }
         return committed
+    }
+
+    /// A changed plan and its accepted decision either both commit, or neither is published.
+    func commitAdjustmentDecision(_ updated: [AdjustmentProposal], newPlan: PlanVersion?) throws {
+        var candidate = try snapshot()
+        candidate.adjustments = updated
+        if let newPlan {
+            candidate.planVersions.insert(newPlan, at: 0)
+            candidate.activePlanVersionID = newPlan.id
+            candidate.activeWeeklyProgramID = nil
+        }
+        try candidate.validate()
+        let decisionData = try RecordCodec.encode(updated)
+        let record: FitnessSchemaV4.PlanVersionRecord?
+        if let newPlan {
+            record = FitnessSchemaV4.PlanVersionRecord(id: newPlan.id, planID: newPlan.planID,
+                version: newPlan.version, confirmedAt: newPlan.confirmedAt, payload: try RecordCodec.encode(newPlan))
+        } else { record = nil }
+        try write {
+            if let record { context.insert(record) }
+            metadata.adjustmentsData = decisionData
+            if let newPlan { metadata.activePlanVersionID = newPlan.id; metadata.activeWeeklyProgramID = nil }
+            metadata.revision += 1
+        }
+        if let newPlan {
+            planVersions.insert(newPlan, at: 0)
+            activePlanVersionID = newPlan.id; activeWeeklyProgramID = nil
+        }
+        adjustments = updated.sorted { $0.createdAt > $1.createdAt }
     }
 
     func updateSession(id: UUID, _ mutation: (inout WorkoutSession) throws -> Void) throws {
@@ -576,13 +630,22 @@ final class TrainingStore {
         var updatedDrafts = planningDrafts
         updatedDrafts[index].decision = .accepted; updatedDrafts[index].appliedProgramID = committed.id
         var updatedPrograms = weeklyPrograms; updatedPrograms.insert(committed, at: 0)
+        var updatedInterview = interview
+        if let personalization = draft.personalization {
+            guard updatedInterview?.profile == personalization.profile, let firstDayID = plans.first?.id else {
+                throw CoreError.invalidState("访谈档案与这份草案已不一致，请重新制定。")
+            }
+            try updatedInterview?.applyPlan(versionID: firstDayID, at: now)
+        }
         var candidate = try snapshot()
         candidate.planVersions.insert(contentsOf: plans, at: 0)
         candidate.planningDrafts = updatedDrafts; candidate.weeklyPrograms = updatedPrograms
         candidate.activePlanVersionID = nil; candidate.activeWeeklyProgramID = committed.id
+        candidate.interview = updatedInterview
         try candidate.validate()
         let draftData = try RecordCodec.encode(updatedDrafts)
         let programData = try RecordCodec.encode(updatedPrograms)
+        let interviewData = try updatedInterview.map { try RecordCodec.encode($0) }
         let records = try plans.map { plan in
             FitnessSchemaV4.PlanVersionRecord(id: plan.id, planID: plan.planID, version: plan.version,
                                              confirmedAt: plan.confirmedAt, payload: try RecordCodec.encode(plan))
@@ -591,11 +654,13 @@ final class TrainingStore {
             for record in records { context.insert(record) }
             metadata.planningDraftsData = draftData; metadata.weeklyProgramsData = programData
             metadata.activePlanVersionID = nil; metadata.activeWeeklyProgramID = committed.id
+            if draft.personalization != nil { metadata.interviewData = interviewData }
             metadata.revision += 1
         }
         planVersions.insert(contentsOf: plans, at: 0)
         planningDrafts = updatedDrafts; weeklyPrograms = updatedPrograms
         activePlanVersionID = nil; activeWeeklyProgramID = committed.id
+        if draft.personalization != nil { interview = updatedInterview }
         return committed
     }
 

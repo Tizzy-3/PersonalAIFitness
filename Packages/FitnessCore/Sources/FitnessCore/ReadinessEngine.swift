@@ -87,7 +87,7 @@ public struct ReadinessAssessment: Identifiable, Codable, Equatable, Sendable {
               (0...5).contains(confidenceLevel),
               recoveryEvidence.allSatisfy({ $0.count <= 1_000 }),
               limitations.allSatisfy({ $0.count <= 1_000 }),
-              rulesVersion == ReadinessEngine.rulesVersion else {
+              ["readiness-1", ReadinessEngine.rulesVersion].contains(rulesVersion) else {
             throw CoreError.invalidInput("状态评估内容或规则版本无效。")
         }
         try CoreValidation.unique(evidence.map(\.id), name: "状态依据 ID")
@@ -104,7 +104,7 @@ public struct ReadinessAssessment: Identifiable, Codable, Equatable, Sendable {
 
 /// Builds a readiness assessment from real stored data only.
 public enum ReadinessEngine {
-    public static let rulesVersion = "readiness-1"
+    public static let rulesVersion = "readiness-2"
 
     /// Sleep below this many hours is treated as a recovery signal, not a diagnosis.
     static let shortSleepHours = 6.0
@@ -113,142 +113,162 @@ public enum ReadinessEngine {
     /// A metric needs at least this many samples before it is treated as a personal baseline.
     static let minimumBaselineSamples = 7
 
-    public static func assess(checkIn: PreWorkoutCheckIn?,
+    public static func assess(checkIn suppliedCheckIn: PreWorkoutCheckIn?,
                               health: HealthSnapshot?,
                               sessions: [WorkoutSession],
                               profile: StructuredProfile,
+                              sessionFeedback: [SessionFeedback] = [],
                               now: Date = Date()) throws -> ReadinessAssessment {
+        try profile.validate()
+        try health?.validate()
+        if let suppliedCheckIn { try suppliedCheckIn.validate() }
+        let checkIn = suppliedCheckIn.flatMap {
+            Calendar.current.isDate($0.createdAt, inSameDayAs: now) && $0.createdAt <= now.addingTimeInterval(300) ? $0 : nil
+        }
         var evidence: [ReadinessEvidence] = []
         var limitations: [String] = []
         var recovery: [String] = []
-
-        // 1) Safety first: pain blocks everything else, including good recovery numbers.
+        var recoveryConcern = false
         var safetyVerdict: ReadinessAssessment.Verdict = .normal
-        var safety = "你没有报告疼痛或急性不适。若有变化，以现场感觉为准并停止相关动作。"
+        var safety = "你今天明确报告没有疼痛。若情况变化，请停止可能加重症状的动作。"
+        let painUnknown = checkIn?.painReported == nil
         if let checkIn {
             evidence.append(ReadinessEvidence(id: "checkin:\(checkIn.id.uuidString)", kind: .checkIn,
-                                              label: "训练前自述",
-                                              value: checkInSummary(checkIn),
-                                              observedAt: checkIn.createdAt))
-            if checkIn.painReported == true {
-                safetyVerdict = .stop
-                safety = "你报告了疼痛" + (checkIn.painAreas.isEmpty ? "" : "（\(checkIn.painAreas.joined(separator: "、"))）")
-                    + "。安全优先：不要进行可能加重症状的训练，必要时寻求专业评估。"
-            } else if checkIn.painReported == nil {
-                safetyVerdict = .gatherData
-                safety = "本次训练前的疼痛情况没有回答，因此不能当作“没有疼痛”。以下结论按不完整信息给出。"
-            }
-        } else {
+                                              label: "训练前自述", value: checkInSummary(checkIn), observedAt: checkIn.createdAt))
+        }
+        if checkIn?.painReported == true {
+            safetyVerdict = .stop
+            safety = "你报告了疼痛" + ((checkIn?.painAreas.isEmpty ?? true) ? "" : "（\(checkIn!.painAreas.joined(separator: "、"))）")
+                + "。不要进行可能加重症状的训练，必要时寻求专业评估。"
+        } else if painUnknown {
             safetyVerdict = .gatherData
-            safety = "今天还没有做训练前记录，因此疼痛与精力状态未知，不作为“状态良好”处理。"
+            safety = checkIn == nil
+                ? "今天还没有有效的训练前记录，疼痛与精力状态未知。"
+                : "本次训练前的疼痛情况没有回答，不能当作没有疼痛。"
         }
-        if profile.provenance(of: .restrictions) == .unknown {
-            limitations.append("档案中的运动限制仍为未知；存在限制时应按专业建议安排。")
-        }
-
-        // 2) Recovery evidence from real HealthKit data, never invented.
-        if let health {
-            for metric in health.metrics where metric.state.isUsable {
-                evidence.append(ReadinessEvidence(id: "health:\(metric.metric.rawValue)", kind: .healthMetric,
-                                                  label: metric.metric.title,
-                                                  value: metric.latestValue.map { describe($0, metric: metric.metric) },
-                                                  observedAt: metric.latestSampleAt))
-            }
-            if let sleep = health.snapshot(for: .sleepAnalysis), sleep.state.isUsable,
-               let hours = sleep.latestValue, hours > 0 {
-                if hours < shortSleepHours {
-                    recovery.append("最近一次睡眠约 \(format(hours)) 小时，低于 \(format(shortSleepHours)) 小时的参考线。这只作为恢复信号，不是医学判断。")
-                    if safetyVerdict == .normal { safetyVerdict = .conservative }
-                } else {
-                    recovery.append("最近一次睡眠约 \(format(hours)) 小时。")
-                }
-            } else {
-                recovery.append("没有可用的睡眠数据，恢复情况未知。")
-            }
-            if let hrv = health.snapshot(for: .heartRateVariabilitySDNN) {
-                if hrv.state.isUsable, let value = hrv.latestValue {
-                    if hrv.sampleCountInWindow < minimumBaselineSamples {
-                        recovery.append("HRV（SDNN）最新 \(format(value))，样本只有 \(hrv.sampleCountInWindow) 条，还没形成个人基线，不用于判断恢复。")
-                    } else {
-                        recovery.append("HRV（SDNN）最新 \(format(value))。这是 SDNN，不能当作 RMSSD，也不单独下结论。")
-                    }
-                } else {
-                    recovery.append("没有可用的 HRV 数据。")
-                }
-            }
-            if let resting = health.snapshot(for: .restingHeartRate), resting.state.isUsable,
-               let value = resting.latestValue {
-                recovery.append("最新静息心率 \(format(value)) 次/分。只有与你的个人基线比较才有意义，本版不生成偏离结论。")
-            }
-            let stale = health.metrics.filter { $0.state == .stale }.map(\.metric.title)
-            if !stale.isEmpty { limitations.append("这些数据已过期：\(stale.joined(separator: "、"))。") }
-            if health.usableMetrics.isEmpty {
-                recovery.append("本次没有任何可用的健康数据。")
+        let restriction = profile.restrictions
+        if restriction.isUsable, let text = restriction.value {
+            let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let noRestriction = Set(["无", "无已知限制", "无运动限制", "没有已知限制", "none"])
+            evidence.append(ReadinessEvidence(id: "profile:restrictions", kind: .profile,
+                                              label: "本人确认的运动限制", value: String(text.prefix(180)),
+                                              observedAt: restriction.confirmedAt))
+            if normalized.isEmpty {
+                if safetyVerdict != .stop { safetyVerdict = .gatherData }
+                limitations.append("运动限制内容为空，不能当作明确没有限制。")
+            } else if !noRestriction.contains(normalized) {
+                safetyVerdict = .stop
+                safety = "档案中记有运动限制；本版没有医学限制适配能力，不根据其他良好数据自动放行。请按专业建议安排。"
             }
         } else {
-            recovery.append("尚未读取 Apple 健康数据，恢复证据缺失。")
-            limitations.append("没有健康数据时，任何恢复结论都不成立。")
+            limitations.append("档案中的运动限制仍未确认；不能把未知或AI推断当作没有限制。")
+            if safetyVerdict != .stop { safetyVerdict = .gatherData }
         }
 
-        // 3) Performance trend from the user's own finished sessions.
-        let finished = sessions.filter { !$0.status.isOngoing }.sorted { $0.startedAt > $1.startedAt }
+        // Historical values can still be displayed in Health, but only currently valid samples
+        // are evidence for today's recovery. Re-evaluate freshness even without another sync.
+        let currentMetrics = health?.metrics.filter { $0.isCurrent(at: now) } ?? []
+        for metric in currentMetrics {
+            evidence.append(ReadinessEvidence(id: "health:\(metric.metric.rawValue)", kind: .healthMetric,
+                                              label: metric.metric.title,
+                                              value: metric.latestValue.map { describe($0, metric: metric.metric) },
+                                              observedAt: metric.latestSampleAt))
+        }
+        if let sleep = currentMetrics.first(where: { $0.metric == .sleepAnalysis }), let hours = sleep.latestValue {
+            if hours < shortSleepHours {
+                recovery.append("最近一次睡眠约 \(format(hours)) 小时，低于 \(format(shortSleepHours)) 小时的产品参考线；这只是恢复信号，不是诊断。")
+                recoveryConcern = true
+            } else { recovery.append("最近一次睡眠约 \(format(hours)) 小时。") }
+        } else { recovery.append("没有当前可用的睡眠数据，不能据此判断今天恢复。") }
+        if let hrv = currentMetrics.first(where: { $0.metric == .heartRateVariabilitySDNN }), let value = hrv.latestValue {
+            let count = hrv.sampleCountInWindow
+            recovery.append(count < minimumBaselineSamples
+                ? "HRV（SDNN）最新 \(format(value)) ms，只有 \(count) 条样本，还没形成个人基线，不用于判断恢复。"
+                : "HRV（SDNN）最新 \(format(value)) ms。样本数量不等于已验证个人基线；不能当作RMSSD或单独下恢复结论。")
+        }
+        if let resting = currentMetrics.first(where: { $0.metric == .restingHeartRate }), let value = resting.latestValue {
+            recovery.append("最新静息心率 \(format(value)) 次/分；尚无有效个人基线偏离分析，不把它单独当作恢复结论。")
+        }
+        let stale = health?.metrics.filter { $0.effectiveState(at: now) == .stale }.map(\.metric.title) ?? []
+        if !stale.isEmpty { limitations.append("这些数据已过期，未用于今日恢复判断：\(stale.joined(separator: "、"))。") }
+        if currentMetrics.isEmpty { recovery.append("尚无当前可用的健康数据，恢复证据不足。") }
+        if let energy = checkIn?.energy, energy <= 2 {
+            recovery.append("你自述今天精力 \(energy)/5，偏低。")
+            recoveryConcern = true
+        }
+        if let level = checkIn?.sorenessLevel, level >= 4 {
+            recovery.append("你自述明显酸痛 \(level)/5；先避免加重不适的动作，不做加量决定。")
+            recoveryConcern = true
+        }
+        let timeLimited: Bool
+        if let available = checkIn?.availableMinutes, profile.minutesPerSession.isUsable,
+           let planned = profile.minutesPerSession.value, available < planned {
+            timeLimited = true
+            recovery.append("今天可用 \(available) 分钟，少于档案安排的 \(planned) 分钟；需要本人确认时间内的缩短方案。")
+        } else { timeLimited = false }
+
+        let finished = sessions.filter { !$0.status.isOngoing && $0.startedAt <= now }.sorted { $0.startedAt > $1.startedAt }
+        let sessionIDs = Set(finished.map(\.id))
+        let feedback = sessionFeedback.filter {
+            sessionIDs.contains($0.sessionID) && $0.createdAt <= now && $0.createdAt >= now.addingTimeInterval(-7 * 86_400)
+        }.sorted { $0.createdAt > $1.createdAt }
+        if let latestFeedback = feedback.first {
+            try latestFeedback.validate()
+            var parts: [String] = []
+            if latestFeedback.tooHard == true { parts.append("上次自述过难"); recoveryConcern = true }
+            if let exertion = latestFeedback.perceivedExertion, exertion >= 9 {
+                parts.append("上次主观用力 \(exertion)/10"); recoveryConcern = true
+            }
+            if latestFeedback.painReported == true {
+                parts.append("上次训练后报告疼痛，需确认是否缓解"); recoveryConcern = true
+            }
+            if !parts.isEmpty {
+                recovery.append(parts.joined(separator: "；") + "。")
+                evidence.append(ReadinessEvidence(id: "feedback:\(latestFeedback.id.uuidString)", kind: .sessionHistory,
+                                                  label: "真实训练后的本人反馈", value: parts.joined(separator: "；"),
+                                                  observedAt: latestFeedback.createdAt))
+            }
+        }
         let window = finished.filter { $0.startedAt >= now.addingTimeInterval(-28 * 86_400) }
         let completedSets = window.reduce(0) { $0 + $1.completedWorkingSets }
         if let latest = finished.first {
             evidence.append(ReadinessEvidence(id: "session:\(latest.id.uuidString)", kind: .sessionHistory,
-                                              label: "最近一次训练", value: latest.name, observedAt: latest.startedAt))
+                                              label: "最近一次训练", value: String(latest.name.prefix(180)), observedAt: latest.startedAt))
         }
-        let trend = finished.isEmpty
-            ? "还没有已完成的训练记录，无法给出表现趋势。"
-            : "近 28 天完成 \(window.count) 次训练、\(completedSets) 个正式组；最近一次是 "
-              + DateFormatter.localizedString(from: finished[0].startedAt, dateStyle: .medium, timeStyle: .short)
-              + "。本版不推断力量增长曲线。"
-
-        // 4) Confidence reflects how much is actually known.
+        let trend = finished.isEmpty ? "还没有已完成的训练记录，无法给出表现趋势。"
+            : "近28天记录 \(window.count) 次已结束训练、\(completedSets) 个完成正式组；尚不足以单凭次数推断力量增长。"
         var known = 0
         if checkIn?.energy != nil { known += 1 }
         if checkIn?.painReported != nil { known += 1 }
-        if !(health?.usableMetrics.isEmpty ?? true) { known += 1 }
+        if !currentMetrics.isEmpty { known += 1 }
         if !finished.isEmpty { known += 1 }
         if profile.isReadyForPlanning { known += 1 }
         let level = min(5, known)
-        let confidenceText = "已获得 \(level)/5 项独立信息（训练前自述、疼痛、健康数据、训练历史、档案）。"
-            + (level <= 2 ? "信息偏少，结论只作保守参考。" : "")
-
-        // 5) The suggestion. Missing data can only lead to a conservative recommendation.
-        var verdict: ReadinessAssessment.Verdict
-        var suggestion: String
+        let confidence = "已获得 \(level)/5 类信息（精力、疼痛、健康数据、训练历史、档案）；这是信息覆盖情况，不是恢复分数。"
+        let verdict: ReadinessAssessment.Verdict
+        let suggestion: String
         if safetyVerdict == .stop {
             verdict = .stop
-            suggestion = "今天不建议进行可能加重症状的训练。请优先休息并视情况寻求专业意见。"
-        } else if safetyVerdict == .gatherData && level <= 2 {
+            suggestion = "不要进行可能加重症状或违反运动限制的训练，请先按专业建议处理。"
+        } else if painUnknown {
             verdict = .gatherData
-            suggestion = "先补一次训练前记录（精力、酸痛、疼痛、可用时间），再决定强度；在此之前按保守方案或轻量活动。"
-        } else if safetyVerdict == .conservative || recovery.contains(where: { $0.contains("低于") }) {
+            suggestion = "先明确今天是否疼痛，再决定如何执行；健康数据和历史表现不能替代这项安全回答。"
+        } else if recoveryConcern || timeLimited {
             verdict = .conservative
-            suggestion = "可以按计划训练，但把强度降一档：减少组数或保持明显余力，出现异常立即停止。"
-        } else if level <= 2 {
+            suggestion = timeLimited
+                ? "今天时间不足或恢复证据偏弱，请先核对并确认缩短方案；不要直接照原训练量开训，任何改动只在确认后应用。"
+                : "今天保守推进，不做加量决定；先查看减少训练量的建议，出现不适立即停止相关动作。"
+        } else if safetyVerdict == .gatherData || level <= 2 {
             verdict = .gatherData
-            suggestion = "数据不足，先按保守方案训练并记录实际结果，不做加量决定。"
+            suggestion = "尚缺足够的安全或恢复信息；先补充记录，不做加量决定，不把当前状态表述成正常。"
         } else {
             verdict = .normal
-            suggestion = "按已确认的计划推进，记录实际组数与感受；需要改动时以记录为准。"
+            suggestion = "现有记录未提示需要改变已确认安排；按计划记录实际结果，若状态变化再评估。"
         }
-        if verdict == .normal, evidence.isEmpty {
-            verdict = .gatherData
-            suggestion = "没有足够依据判断状态，先按保守方案训练。"
-        }
-        if let checkIn, let energy = checkIn.energy, energy <= 2 {
-            recovery.append("你自述今天精力 \(energy)/5，偏低。")
-            if verdict == .normal { verdict = .conservative }
-        }
-
-        let assessment = ReadinessAssessment(
-            createdAt: now, safety: safety, safetyVerdict: safetyVerdict,
-            recoveryEvidence: recovery, performanceTrend: trend, confidence: confidenceText,
-            confidenceLevel: level, todaySuggestion: suggestion, verdict: verdict,
-            evidence: evidence,
-            limitations: limitations + ["这是个人使用参考，不是医学诊断，也不保证预测表现。"])
+        let assessment = ReadinessAssessment(createdAt: now, safety: safety, safetyVerdict: safetyVerdict,
+            recoveryEvidence: recovery, performanceTrend: trend, confidence: confidence, confidenceLevel: level,
+            todaySuggestion: suggestion, verdict: verdict, evidence: evidence,
+            limitations: limitations + ["规则阈值是保守产品策略，未验证为个人最佳处方；不构成医学诊断或表现预测。"])
         try assessment.validate()
         return assessment
     }
@@ -261,7 +281,7 @@ public enum ReadinessEngine {
         case .sleepAnalysis: return "\(format(value)) 小时"
         case .activeEnergy: return "\(Int(value.rounded())) 千卡"
         case .bodyMass: return String(format: "%.1f kg", value)
-        case .workoutDuration: return "\(Int((value / 60).rounded())) 分钟"
+        case .workoutDuration: return "\(Int(value.rounded())) 分钟"
         case .cardioFitness: return String(format: "%.1f mL/kg/min", value)
         }
     }

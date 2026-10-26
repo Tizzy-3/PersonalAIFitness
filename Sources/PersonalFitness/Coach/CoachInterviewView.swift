@@ -13,10 +13,20 @@ struct CoachInterviewView: View {
     @State private var draft: AnswerDraft = AnswerDraft()
     @State private var configuration: AIConfiguration?
     @State private var draftRoute: InterviewDraftRoute?
+    @State private var preparedPlan: PreparedPersonalizedPlan?
+    @State private var unsavedPlan: PlanningDraft?
 
     var body: some View {
         List {
             availabilitySection
+            if let unsavedPlan {
+                Section("计划尚未保存") {
+                    Text("AI已返回动作选择，但本地保存未完成。请重试保存，不需要重复请求模型。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Button("重试保存计划草案") { persistPlan(unsavedPlan) }
+                    Button("放弃未保存结果，按最新资料重新制定", role: .destructive) { self.unsavedPlan = nil }
+                }
+            }
             if let session {
                 progressSection(session)
                 conversationSection(session)
@@ -44,6 +54,10 @@ struct CoachInterviewView: View {
             }
         }
         .task { await prepare() }
+        .onChange(of: store.interview) { _, value in session = value }
+        .sheet(item: $preparedPlan) { prepared in
+            NavigationStack { PersonalizedPlanConsentView(prepared: prepared) { sendPlan(prepared) } }
+        }
         .onDisappear { request?.cancel() }
         .fitnessError($issue)
     }
@@ -77,7 +91,14 @@ struct CoachInterviewView: View {
             } label: {
                 Label(request == nil ? "继续访谈" : "正在询问…", systemImage: "bubble.left.and.bubble.right")
             }
-            .disabled(configuration == nil || request != nil || session.phase == .ready || session.phase == .planConfirmed)
+            .disabled(configuration == nil || request != nil || !session.canContinueInterview)
+            if !session.unansweredQuestions.isEmpty {
+                Text("请先处理下面未回答的问题；不清楚时可明确选择未知或跳过。")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if session.profile.isReadyForPlanning, session.canContinueInterview {
+                Text("已经可以制定保守首版计划，也可以继续补充实际能力、偏好和坚持困难，让教练更了解你。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -106,7 +127,7 @@ struct CoachInterviewView: View {
             ForEach(session.unansweredQuestions) { question in
                 QuestionAnswerRow(question: question, draft: $draft)
             }
-            Button("提交这些回答") { submitAnswers() }
+            Button("提交这些回答") { submitAnswers() }.disabled(request != nil)
         }
     }
 
@@ -135,12 +156,13 @@ struct CoachInterviewView: View {
             Button {
                 generatePlan(session)
             } label: { Label("生成第一版计划", systemImage: "calendar.badge.plus") }
+                .disabled(request != nil || configuration == nil || !session.unansweredQuestions.isEmpty || !session.pendingInferences.isEmpty || unsavedPlan != nil)
         } header: { Text("下一步") }
     }
 
     private func syncSection(_ session: InterviewSession) -> some View {
         Section {
-            Button("从头开始一份新访谈", role: .destructive) { restart() }
+            Button("保留已确认档案，重新访谈") { restart() }.disabled(request != nil)
         } footer: {
             Text("已确认的档案会保留在“档案”页，不会因为重新访谈而消失。")
         }
@@ -170,16 +192,21 @@ struct CoachInterviewView: View {
         }
         let starting = session ?? (try? store.startInterview())
         guard let starting else { return }
+        guard starting.canContinueInterview else { return }
         status = nil
         request = Task {
             defer { request = nil }
             do {
                 let api = InterviewAPI()
                 let turn = try await api.nextTurn(session: starting, configuration: configuration, key: key)
+                try Task.checkCancellation()
+                guard store.interview == starting else {
+                    throw CoreError.invalidState("访谈已在请求期间被修改，旧回答没有覆盖最新资料。请重新询问。")
+                }
                 var updated = starting
-                try updated.appendTurn(turn)
+                let accepted = try updated.appendTurn(turn)
                 // Extractions stay provisional until the user confirms them one by one.
-                for extraction in turn.extractions {
+                for extraction in accepted.extractions {
                     try updated.applyExtraction(extraction, at: Date())
                 }
                 try store.saveInterview(updated)
@@ -225,15 +252,10 @@ struct CoachInterviewView: View {
             guard store.activeSession == nil else {
                 throw CoreError.invalidState("请先结束或取消正在进行的训练，再生成新的生效计划。")
             }
-            let input = try session.profile.planningInput()
-            let option = try PlannerEngine.synthesize(input: input,
-                                                      preferredExerciseIDs: session.profile.preferredExerciseIDs.value ?? [])
-            let snapshot = try store.snapshot()
-            // The generated week becomes a normal draft, so the existing diff-and-confirm screen
-            // applies unchanged — including the second rule check inside PlanningDraft.
-            let draft = try PlanningDraft.make(input: input, snapshot: snapshot, option: option)
-            try store.savePlanningDraft(draft)
-            draftRoute = InterviewDraftRoute(id: draft.id)
+            guard let configuration else { throw CoachClientError.configuration("请先配置AI接口，再让教练制定计划。") }
+            let context = try PersonalizedPlanRequest.make(session: session, snapshot: store.snapshot())
+            preparedPlan = PreparedPersonalizedPlan(configuration: configuration, session: session, context: context,
+                                                    preview: try PersonalizedPlannerAPI.requestJSON(context))
         } catch {
             issue = error.localizedDescription
         }
@@ -241,13 +263,52 @@ struct CoachInterviewView: View {
 
     private func restart() {
         do {
-            try store.discardInterview()
-            session = try store.startInterview()
+            guard let current = store.interview else { return }
+            try store.saveInterview(current.restartedPreservingProfile())
+            session = store.interview
             draft = AnswerDraft()
-            status = "已开始一份新的访谈。"
+            status = "已保留本人确认的资料，清除旧对话及待确认推断，开始新的访谈。"
         } catch {
             issue = error.localizedDescription
         }
+    }
+
+    private func sendPlan(_ prepared: PreparedPersonalizedPlan) {
+        preparedPlan = nil
+        guard request == nil else { return }
+        request = Task {
+            defer { request = nil }
+            do {
+                guard let key = try AIKeychain.load(for: prepared.configuration) else {
+                    throw CoachClientError.configuration("当前服务没有本机密钥，请先在接口设置中填写。")
+                }
+                let reply = try await PersonalizedPlannerAPI().compose(prepared.context, configuration: prepared.configuration, key: key)
+                try Task.checkCancellation()
+                guard store.interview == prepared.session,
+                      prepared.context.baseline.matches(snapshot: try store.snapshot()) else {
+                    throw CoreError.invalidState("请求期间档案、训练记录或生效安排发生变化，请按最新资料重新制定。")
+                }
+                let result = try PlanningDraft.makePersonalized(profile: prepared.session.profile, reply: reply,
+                                                               snapshot: store.snapshot(),
+                                                               providerHost: prepared.configuration.validatedURL().host ?? "未知",
+                                                               model: prepared.configuration.model)
+                unsavedPlan = result
+                persistPlan(result)
+            } catch is CancellationError {
+                status = "本次请求已取消，原计划未变。"
+            } catch { issue = error.localizedDescription }
+        }
+    }
+
+    private func persistPlan(_ plan: PlanningDraft) {
+        do {
+            guard plan.matches(snapshot: try store.snapshot()) else {
+                throw CoreError.invalidState("这份草案的依据已变化，请重新制定，旧结果不会覆盖当前安排。")
+            }
+            try store.savePlanningDraft(plan)
+            unsavedPlan = nil
+            draftRoute = InterviewDraftRoute(id: plan.id)
+        } catch { issue = error.localizedDescription }
     }
 }
 

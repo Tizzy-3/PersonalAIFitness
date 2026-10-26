@@ -154,6 +154,7 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
         }
         if let healthSnapshot { try healthSnapshot.validate() }
         try CoreValidation.unique(adjustments.map(\.id), name: "调整建议 ID")
+        try CoreValidation.unique(adjustments.compactMap(\.appliedSessionID), name: "临时调整使用的训练 ID")
         for adjustment in adjustments {
             try adjustment.validate()
             if let baseID = adjustment.basePlanVersionID, versions[baseID] == nil {
@@ -161,6 +162,12 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
             }
             if let appliedID = adjustment.appliedPlanVersionID, versions[appliedID] == nil {
                 throw CoreError.missingReference("调整建议生成的计划版本")
+            }
+            if let appliedSessionID = adjustment.appliedSessionID {
+                guard let session = sessions.first(where: { $0.id == appliedSessionID }),
+                      session.sourcePlanVersionID == adjustment.basePlanVersionID else {
+                    throw CoreError.missingReference("临时调整实际应用的训练快照")
+                }
             }
             for id in adjustment.evidenceIDs {
                 // Evidence ids may reference health metrics, check-ins or sessions; an id with a
@@ -175,6 +182,11 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
                     guard let uuid = UUID(uuidString: raw), sessionIDs.contains(uuid) else {
                         throw CoreError.missingReference("调整建议引用的训练记录")
                     }
+                } else if id.hasPrefix("feedback:") {
+                    let raw = String(id.dropFirst("feedback:".count))
+                    guard let uuid = UUID(uuidString: raw), feedback.contains(where: { $0.id == uuid }) else {
+                        throw CoreError.missingReference("调整建议引用的训练后反馈")
+                    }
                 } else if id.hasPrefix("health:") {
                     let raw = String(id.dropFirst("health:".count))
                     guard let metric = HealthMetric(rawValue: raw),
@@ -185,7 +197,17 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
             }
         }
         try CoreValidation.unique(reviews.map(\.id), name: "复盘 ID")
-        for review in reviews { try review.validate() }
+        let customIDs = Set(customExercises.map(\.id))
+        for review in reviews {
+            try review.validate()
+            for progress in review.exerciseProgress {
+                if progress.isCustom == true {
+                    guard customIDs.contains(progress.exerciseID) else { throw CoreError.missingReference("复盘自定义动作") }
+                } else {
+                    guard ExerciseCatalog.exercise(id: progress.exerciseID) != nil else { throw CoreError.missingReference("复盘内置动作") }
+                }
+            }
+        }
         if let latestReadiness { try latestReadiness.validate() }
         if let interview {
             try interview.validate()
