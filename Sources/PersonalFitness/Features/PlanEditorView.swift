@@ -18,7 +18,7 @@ struct PlanEditorView: View {
         self.revising = revising
         self.template = template
         _name = State(initialValue: revising?.name ?? template.map { $0.name + "副本" } ?? "")
-        let copiedItems = template?.items.map { item in
+        let copiedItems: [PlannedExercise] = template?.items.map { item in
             var copy = item
             copy.id = UUID()
             return copy
