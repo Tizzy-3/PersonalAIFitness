@@ -285,7 +285,12 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     /// them before the user confirms.
     public mutating func applyExtraction(_ extraction: InterviewExtraction, at date: Date) throws {
         let value = try extraction.parse()
-        try apply(value, for: extraction.topic, provenance: .inferred, at: date)
+        var draft = self
+        try draft.apply(value, for: extraction.topic, provenance: .inferred, at: date)
+        draft.updatedAt = date
+        draft.phase = draft.derivedPhase
+        try draft.validate()
+        self = draft
     }
 
     private mutating func apply(_ value: InterviewValue, for topic: InterviewTopic,

@@ -126,7 +126,9 @@ extension PlannerEngine {
                                            : [.squat, .push, .pull, .hinge, .core]
         var selected: [String] = []
         for group in groups {
-            let id = try pick(group)
+            // A missing pattern is skipped rather than faked: not every equipment set can support
+            // every movement direction, and the caller checks the resulting coverage.
+            guard let id = try? pick(group) else { continue }
             if !selected.contains(id) { selected.append(id) }
         }
         guard selected.count >= 2 else {

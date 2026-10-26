@@ -286,12 +286,20 @@ final class CoachingLoopTests: XCTestCase {
     }
 
     func testAcceptedAdjustmentMustRecordAVersion() {
+        // A pending proposal needs no version yet; that is the normal resting state.
         var proposal = AdjustmentProposal(kind: .keep, reason: "原因", summary: "说明")
-        XCTAssertThrowsError(try proposal.validate())
+        XCTAssertEqual(proposal.decision, .pending)
+        XCTAssertNoThrow(try proposal.validate())
+        // Accepting without recording the version it produced is a contradiction.
         proposal.decision = .accepted
         XCTAssertThrowsError(try proposal.validate())
         proposal.appliedPlanVersionID = UUID()
         XCTAssertNoThrow(try proposal.validate())
+        // A rejected proposal keeps no version either.
+        var rejected = proposal
+        rejected.decision = .rejected
+        rejected.appliedPlanVersionID = nil
+        XCTAssertNoThrow(try rejected.validate())
     }
 
     // MARK: - Health snapshot
@@ -302,7 +310,10 @@ final class CoachingLoopTests: XCTestCase {
         ])
         let text = snapshot.userFacingSummary
         XCTAssertTrue(text.contains("暂无样本"))
-        XCTAssertFalse(text.contains("拒绝"))
+        // It must not claim the user denied read access…
+        XCTAssertFalse(text.contains("已被拒绝"))
+        XCTAssertFalse(text.contains("没有授权"))
+        // …and must say the system simply does not report per-type read permission.
         XCTAssertTrue(text.contains("系统不单独告知"))
     }
 
