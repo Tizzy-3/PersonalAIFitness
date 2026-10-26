@@ -87,7 +87,9 @@ final class InterviewClientTests: XCTestCase {
         XCTAssertTrue(json.contains("提高基础力量"))
         // The unconfirmed inference must not be presented as an answered fact.
         XCTAssertFalse(json.contains("30 分钟"))
-        // …but its topic is still listed as open, so the model knows to ask about it.
-        XCTAssertTrue(json.contains("minutes"))
+        // It is reported as a pending inference so the model neither re-asks nor treats it as settled.
+        XCTAssertTrue(json.contains("pendingInferences"))
+        XCTAssertTrue(json.contains("30 分钟"))
+        XCTAssertFalse(json.contains("\"answeredProfile\" : [\n    \"minutes\""))
     }
 }

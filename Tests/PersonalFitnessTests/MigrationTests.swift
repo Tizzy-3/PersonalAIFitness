@@ -47,11 +47,13 @@ final class MigrationTests: XCTestCase {
         }
 
         XCTAssertThrowsError(try TrainingStore(storageURL: url))
-        let schema = Schema(versionedSchema: FitnessSchemaV3.self)
+        // The store has already been carried forward to the current schema by the failed open above,
+        // so it must be inspected at the current version — never migrated backwards.
+        let schema = Schema(versionedSchema: FitnessSchemaV4.self)
         let configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
         let container = try ModelContainer(for: schema, migrationPlan: FitnessMigrationPlan.self, configurations: [configuration])
         let context = ModelContext(container)
-        let records = try context.fetch(FetchDescriptor<FitnessSchemaV3.MetadataRecord>())
+        let records = try context.fetch(FetchDescriptor<FitnessSchemaV4.MetadataRecord>())
         XCTAssertEqual(records.count, 1)
         XCTAssertEqual(records.first?.profileData, corrupt)
     }

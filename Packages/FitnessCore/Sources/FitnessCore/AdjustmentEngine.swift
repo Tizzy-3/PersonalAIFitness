@@ -117,9 +117,10 @@ public struct AdjustmentFingerprint: Codable, Equatable, Sendable {
     }
 
     public func validate() throws {
+        // The digest covers every interview topic, so it is bounded by the topic count, not a guess.
         guard sessionRevisions.count <= 20, sessionRevisions.values.allSatisfy({ $0 >= 0 }),
               sessionRevisions.keys.allSatisfy({ UUID(uuidString: $0) != nil }),
-              profileDigest.count <= 200 else {
+              profileDigest.count <= 2_000 else {
             throw CoreError.invalidInput("调整依据指纹无效。")
         }
         if let healthCapturedAt { try CoreValidation.date(healthCapturedAt, name: "健康数据时间") }

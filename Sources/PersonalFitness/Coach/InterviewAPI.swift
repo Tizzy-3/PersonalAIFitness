@@ -21,6 +21,7 @@ struct InterviewAPI: Sendable {
     7. 如果用户在某段自由文字里透露了档案信息，可以把它放进 extractions，但那只作为“待确认的推断”，绝不能当作已确认事实。
     8. 不得发明动作、公斤数、训练剂量、恢复分数、医学诊断或健康指标数值。
     9. 不得声称已经读取睡眠、HRV 或任何健康数据；你没有这些数据。
+    10. pendingInferences 是你之前推断、但用户还没确认的内容。不要把它当作事实，也不要再问一遍；如果需要，可以在 note 里提醒用户去核对。
 
     只返回一个 JSON 对象，恰好三个字段：
     {"questions":[{"topic":"<主题>","kind":"singleChoice|multiChoice|number|text|boolean","prompt":"<=200字","options":["..."],"unit":null,"minimum":null,"maximum":null}],
@@ -40,6 +41,9 @@ struct InterviewAPI: Sendable {
         let phase: String
         let openTopics: [String]
         let answeredProfile: [String: String]
+        /// Values the model itself inferred and the user has not confirmed or rejected yet. Sent so it
+        /// does not ask the same thing again, and so it knows these are still unverified.
+        let pendingInferences: [String: String]
         let declinedTopics: [String]
         let recentConversation: [ConversationItem]
         let candidateExercises: [Exercise]
@@ -67,10 +71,15 @@ struct InterviewAPI: Sendable {
                 }
             }
         }
+        let pending = InterviewTopic.allCases.compactMap { topic -> (String, String)? in
+            guard session.profile.provenance(of: topic) == .inferred else { return nil }
+            return (topic.rawValue, describe(topic, profile: session.profile))
+        }
         let request = Request(rulesVersion: InterviewRules.rulesVersion,
                               phase: session.phase.rawValue,
                               openTopics: session.openTopics.map(\.rawValue),
                               answeredProfile: Dictionary(uniqueKeysWithValues: answered),
+                              pendingInferences: Dictionary(uniqueKeysWithValues: pending),
                               declinedTopics: session.declinedTopics.map(\.rawValue).sorted(),
                               recentConversation: conversation,
                               candidateExercises: ExerciseCatalog.exercises)

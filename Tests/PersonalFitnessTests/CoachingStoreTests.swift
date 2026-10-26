@@ -84,7 +84,8 @@ final class CoachingStoreTests: XCTestCase {
     @MainActor
     func testSessionFeedbackUsesComputedTotalsAndRejectsOngoingSession() throws {
         let store = try TrainingStore(inMemory: true)
-        let session = try store.startWorkout()
+        let plan = try store.confirmPlan(name: "有动作的计划", items: [try item()])
+        let session = try store.startWorkout(plan: plan)
         let movementID = try XCTUnwrap(session.exercises.first?.id)
         // An ongoing session cannot be reviewed yet.
         XCTAssertThrowsError(try store.saveSessionFeedback(
