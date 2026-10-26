@@ -53,7 +53,7 @@ extension PlannerEngine {
             if !input.weekdays.contains(weekday) {
                 days.append(PlanningDay(weekday: weekday, title: "休息与日常活动", items: [],
                                         estimatedMinutesLower: 0, estimatedMinutesUpper: 0,
-                                        notes: ["没有训练处方；保持适合自己的普通日常活动。无强制补课。"])
+                                        notes: ["没有训练处方；保持适合自己的普通日常活动。无强制补课。"]))
                 continue
             }
             if let index = strength.firstIndex(of: weekday) {
