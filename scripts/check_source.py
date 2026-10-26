@@ -56,7 +56,9 @@ def main():
             errors.append('Unpinned workflow dependency: ' + action)
     if errors:
         raise SystemExit('\n'.join(errors))
-    methods = sum(len(re.findall(r'func test[A-Za-z0-9_]+\(', p.read_text(encoding='utf-8-sig'))) for p in swift)
+    # App methods such as testConnection are not XCTest methods.
+    test_sources = [p for p in swift if 'Tests' in p.relative_to(ROOT).parts]
+    methods = sum(len(re.findall(r'func test[A-Za-z0-9_]+\(', p.read_text(encoding='utf-8-sig'))) for p in test_sources)
     print('STRUCTURAL CHECKS PASSED')
     print('Swift files: %d; XCTest methods present: %d (NOT executed by this check)' % (len(swift), methods))
     print('Checked: source inclusion, capability/plist structure, assets, scheme XML, action pins, credential patterns.')

@@ -13,9 +13,6 @@ final class ExerciseMediaTests: XCTestCase {
             XCTAssertGreaterThan(size, 0)
             XCTAssertNotNil(ExerciseMediaAsset.poster(for: exercise.id), "Poster unavailable: \(exercise.id)")
             if let gif = media.previewGIFFileName {
-                XCTAssertNotNil(ExerciseAnimatedThumbnail.decode(gif), "GIF preview unavailable: \(exercise.id)")
-            }
-            if let gif = media.previewGIFFileName {
                 let animation = try XCTUnwrap(ExerciseAnimatedThumbnail.decode(gif), "GIF unavailable: \(exercise.id)")
                 XCTAssertGreaterThan(animation.images?.count ?? 0, 1)
                 XCTAssertLessThanOrEqual(animation.images?.count ?? 0, 80)

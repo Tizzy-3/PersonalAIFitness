@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          device_id=$(python3 scripts/select_simulator.py)
+          device_id=$(python3 scripts/select_simulator.py --boot)
           xcrun simctl install "$device_id" "$PF_DERIVED/Build/Products/Debug-iphonesimulator/PersonalFitness.app"
           for tab in 0 2 4; do
             xcrun simctl terminate "$device_id" com.personalfitness.private >/dev/null 2>&1 || true
