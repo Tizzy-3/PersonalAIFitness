@@ -291,6 +291,7 @@ final class TrainingStore {
     }
 
     func updateSession(id: UUID, _ mutation: (inout WorkoutSession) throws -> Void) throws {
+        guard !retiredForErasure else { throw StorageError.invalidStore("原数据容器已停止，不再读取或写入训练记录。") }
         guard let index = sessions.firstIndex(where: { $0.id == id }) else { throw StorageError.missingSession }
         let original = sessions[index]
         guard original.status.isOngoing else { throw StorageError.closedSession }
@@ -449,6 +450,7 @@ final class TrainingStore {
     }
 
     func restore(_ snapshot: AppSnapshot) throws {
+        guard !retiredForErasure else { throw StorageError.invalidStore("原库已进入清理状态，不能再执行恢复。") }
         guard activeSession == nil else { throw StorageError.restoreWhileTraining }
         try snapshot.validate()
         let snapshot = try SnapshotCodec.decode(SnapshotCodec.encode(snapshot))
@@ -730,6 +732,7 @@ final class TrainingStore {
     func retireForErasure() { retiredForErasure = true }
 
     private func retainPreRestoreSnapshot(_ snapshot: AppSnapshot) throws -> URL? {
+        guard !retiredForErasure else { throw StorageError.invalidStore("原库正在清理，不再生成其自动恢复副本。") }
         guard let recoveryDirectory else { return nil }
         try FileManager.default.createDirectory(at: recoveryDirectory, withIntermediateDirectories: true)
         let data = try SnapshotCodec.encode(snapshot)

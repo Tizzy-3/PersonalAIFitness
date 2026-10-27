@@ -16,9 +16,16 @@ struct PersonalFitnessApp: App {
     @State private var managingLegacy = false
     @State private var rootIdentity = UUID()
     @State private var erasureNotice = false
+    @State private var pendingRestart = false
 
     init() {
         do {
+            let cleaned = try LegacyStoreErasure.processPending(location: LegacyStoreErasure.defaultLocation())
+            if cleaned {
+                _erasureNotice = State(initialValue: true)
+                _separateStoreNotice = State(initialValue: false)
+                UserDefaults.standard.set(false, forKey: "fitness.separateStoreChosen")
+            }
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--capture-workout") {
                 let isolated = try TrainingStore(inMemory: true)
@@ -43,7 +50,10 @@ struct PersonalFitnessApp: App {
     var body: some Scene {
         WindowGroup {
           Group {
-            if let store {
+            if pendingRestart {
+                ContentUnavailableView("重新打开 App 完成清理", systemImage: "arrow.clockwise",
+                    description: Text("删除请求已确认，原库尚未物理删除。请从多任务界面关闭本 App，再重新打开。下次启动会先清理原库，再打开独立健身库。"))
+            } else if let store {
                 RootView(store: store).id(rootIdentity)
                     .safeAreaInset(edge: .top) {
                         if separateStoreNotice {
@@ -110,14 +120,17 @@ struct PersonalFitnessApp: App {
         }
     }
 
-    private func eraseLegacy(_ review: LegacyStoreErasure.Review) throws {
+    private func eraseLegacy(_ review: LegacyStoreErasure.Review) throws -> LegacyErasureResult {
         let previous = store
         let activeLegacy = previous?.storageURL?.resolvingSymlinksInPath().standardizedFileURL
             == review.location.legacyURL.resolvingSymlinksInPath().standardizedFileURL
         if activeLegacy {
+            try LegacyStoreErasure.scheduleForNextLaunch(review)
             previous?.retireForErasure()
             store = nil
             rootIdentity = UUID()
+            pendingRestart = true
+            return .restartRequired
         }
         do {
             try LegacyStoreErasure.execute(review, confirmed: true,
@@ -127,6 +140,7 @@ struct PersonalFitnessApp: App {
             separateStoreNotice = false
             if previous == nil || activeLegacy { store = try TrainingStore(storageURL: review.location.dedicatedURL) }
             erasureNotice = true
+            return .erased
         } catch {
             if activeLegacy || previous == nil {
                 startupError = error.localizedDescription

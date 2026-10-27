@@ -3,6 +3,19 @@ import SwiftData
 import FitnessCore
 @testable import PersonalFitness
 
+private enum LegacyCacheFixture: VersionedSchema {
+    static var versionIdentifier: Schema.Version { .init(1, 0, 0) }
+    static var models: [any PersistentModel.Type] { [CachedMessage.self, CachedSession.self] }
+    @Model final class CachedMessage {
+        var text: String
+        init(text: String) { self.text = text }
+    }
+    @Model final class CachedSession {
+        var name: String
+        init(name: String) { self.name = name }
+    }
+}
+
 final class LegacyStoreErasureTests: XCTestCase {
     @MainActor
     func testPhysicalErasurePreservesDedicatedPlansAndRemovesInternalLegacyRecoveryCopies() throws {
@@ -18,6 +31,7 @@ final class LegacyStoreErasureTests: XCTestCase {
         let manual = location.applicationSupport.appendingPathComponent("manual-export.pafbackup")
         try Data("manual-backup-outside-scope".utf8).write(to: manual)
         let review = try LegacyStoreErasure.prepare(location: location)
+        XCTAssertEqual(review.entities, ["CachedMessage", "CachedSession"])
         try LegacyStoreErasure.execute(review, confirmed: true)
         for suffix in ["", "-wal", "-shm", "-journal"] {
             XCTAssertFalse(FileManager.default.fileExists(atPath: location.legacyURL.path + suffix))
@@ -65,10 +79,15 @@ final class LegacyStoreErasureTests: XCTestCase {
     func testActiveLegacyContainerIsCoordinatedBeforePhysicalRemoval() throws {
         let location = try fixture()
         defer { try? FileManager.default.removeItem(at: location.applicationSupport) }
-        let live = try TrainingStore(storageURL: location.legacyURL)
-        let review = try LegacyStoreErasure.prepare(location: location)
-        XCTAssertThrowsError(try LegacyStoreErasure.execute(review, confirmed: true, liveURL: location.legacyURL))
-        try LegacyStoreErasure.execute(review, confirmed: true, liveContainer: live.container, liveURL: location.legacyURL)
+        try autoreleasepool {
+            let live = try TrainingStore(storageURL: location.legacyURL)
+            let review = try LegacyStoreErasure.prepare(location: location)
+            XCTAssertThrowsError(try LegacyStoreErasure.execute(review, confirmed: true, liveContainer: live.container, liveURL: location.legacyURL))
+            try LegacyStoreErasure.scheduleForNextLaunch(review)
+            live.retireForErasure()
+            XCTAssertTrue(FileManager.default.fileExists(atPath: location.legacyURL.path))
+        }
+        XCTAssertTrue(try LegacyStoreErasure.processPending(location: location))
         XCTAssertFalse(FileManager.default.fileExists(atPath: location.legacyURL.path))
         XCTAssertTrue(try TrainingStore(storageURL: location.dedicatedURL).sessions.isEmpty)
     }
@@ -77,12 +96,18 @@ final class LegacyStoreErasureTests: XCTestCase {
     func testRetiredStoreCannotRecreateDataFromDelayedWrites() throws {
         let location = try fixture()
         defer { try? FileManager.default.removeItem(at: location.applicationSupport) }
-        let live = try TrainingStore(storageURL: location.legacyURL)
-        let review = try LegacyStoreErasure.prepare(location: location)
-        live.retireForErasure()
-        try LegacyStoreErasure.execute(review, confirmed: true, liveContainer: live.container, liveURL: live.storageURL)
-        XCTAssertThrowsError(try live.confirmPlan(name: "过期网络回调不能保存", items: [PlannedExercise(exercise: ExerciseCatalog.exercises[0])]))
+        try autoreleasepool {
+            let live = try TrainingStore(storageURL: location.legacyURL)
+            let originalSnapshot = try live.snapshot()
+            let review = try LegacyStoreErasure.prepare(location: location)
+            try LegacyStoreErasure.scheduleForNextLaunch(review)
+            live.retireForErasure()
+            XCTAssertThrowsError(try live.confirmPlan(name: "过期网络回调不能保存", items: [PlannedExercise(exercise: ExerciseCatalog.exercises[0])]))
+            XCTAssertThrowsError(try live.restore(originalSnapshot))
+        }
+        XCTAssertTrue(try LegacyStoreErasure.processPending(location: location))
         XCTAssertFalse(FileManager.default.fileExists(atPath: location.legacyURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: location.applicationSupport.appendingPathComponent("Recovery").path))
     }
 
     @MainActor
@@ -98,8 +123,14 @@ final class LegacyStoreErasureTests: XCTestCase {
 
     @MainActor
     private func writeLegacy(_ location: LegacyStoreErasure.Location) throws {
-        let legacy = try TrainingStore(storageURL: location.legacyURL)
-        _ = try legacy.confirmPlan(name: "明确删除的旧库计划", items: [PlannedExercise(exercise: ExerciseCatalog.exercises[0])])
+      try autoreleasepool {
+        let schema = Schema(versionedSchema: LegacyCacheFixture.self)
+        let config = ModelConfiguration(schema: schema, url: location.legacyURL, cloudKitDatabase: .none)
+        let legacy = try ModelContainer(for: schema, configurations: [config])
+        legacy.mainContext.insert(LegacyCacheFixture.CachedMessage(text: "explicitly-disposable-cache-message"))
+        legacy.mainContext.insert(LegacyCacheFixture.CachedSession(name: "explicitly-disposable-cache-session"))
+        try legacy.mainContext.save()
+      }
     }
 
     private func fixture() throws -> LegacyStoreErasure.Location {

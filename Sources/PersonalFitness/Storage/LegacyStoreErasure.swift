@@ -33,6 +33,45 @@ enum LegacyStoreErasure {
         let message: String
         var errorDescription: String? { message }
     }
+    private struct Pending: Codable {
+        let path: String
+        let inode: UInt64?
+        let device: UInt64?
+    }
+    private static func pendingURL(_ location: Location) -> URL {
+        location.applicationSupport.appendingPathComponent("PersonalFitness/legacy-erasure-request.json")
+    }
+    static func scheduleForNextLaunch(_ review: Review) throws {
+        try checkLocation(review.location)
+        guard try entries(review.location) == review.files else { throw Failure(message: "原库已变化，请刷新后重新确认。") }
+        let base = review.location.legacyURL.resolvingSymlinksInPath().standardizedFileURL
+        let main = review.files.first { $0.url == base }
+        let url = pendingURL(review.location)
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let data = try JSONEncoder().encode(Pending(path: base.path, inode: main?.identity.inode, device: main?.identity.device))
+        try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+    /// Runs before the app creates any TrainingStore on a cold launch.
+    @discardableResult
+    static func processPending(location: Location) throws -> Bool {
+        let url = pendingURL(location)
+        guard FileManager.default.fileExists(atPath: url.path) else { return false }
+        let pending = try JSONDecoder().decode(Pending.self, from: Data(contentsOf: url))
+        let base = location.legacyURL.resolvingSymlinksInPath().standardizedFileURL
+        guard pending.path == base.path else { throw Failure(message: "原库位置已变化，请重新查看文件并确认删除。") }
+        try checkLocation(location)
+        if try entries(location).isEmpty {
+            try FileManager.default.removeItem(at: url)
+            return true
+        }
+        let review = try prepare(location: location)
+        let main = review.files.first { $0.url == base }
+        guard main?.identity.inode == pending.inode, main?.identity.device == pending.device else {
+            throw Failure(message: "原库文件身份已变化，本次启动未删除，请重新确认。")
+        }
+        try execute(review, confirmed: true)
+        return true
+    }
 
     static func defaultLocation() throws -> Location {
         let schema = Schema(versionedSchema: FitnessSchemaV4.self)
@@ -63,22 +102,19 @@ enum LegacyStoreErasure {
         let base = review.location.legacyURL.resolvingSymlinksInPath().standardizedFileURL
         let active = liveURL?.resolvingSymlinksInPath().standardizedFileURL
         if active == base {
-            guard let liveContainer,
-                  liveContainer.configurations.count == 1,
-                  liveContainer.configurations.first?.url.resolvingSymlinksInPath().standardizedFileURL == base else {
-                throw Failure(message: "原库仍在使用，必须由应用先停止该数据容器后再清理。")
-            }
-            // SwiftData coordinates its own live contexts before the physical cleanup below.
-            try liveContainer.erase()
+            throw Failure(message: "原库仍在使用。请确认下次启动清理，关闭并重新打开 App 后完成物理删除。")
         }
         if FileManager.default.fileExists(atPath: base.path) {
-            let coordinator = NSPersistentStoreCoordinator(managedObjectModel: NSManagedObjectModel())
-            do { try coordinator.destroyPersistentStore(at: base, ofType: NSSQLiteStoreType, options: nil) }
+            do {
+                try autoreleasepool {
+                    let coordinator = NSPersistentStoreCoordinator(managedObjectModel: NSManagedObjectModel())
+                    try coordinator.destroyPersistentStore(at: base, ofType: NSSQLiteStoreType, options: nil)
+                }
+            }
             catch { throw Failure(message: "原库销毁未完成：\(error.localizedDescription)。未报告成功，请保留当前错误。") }
         }
-        guard !FileManager.default.fileExists(atPath: base.path) else {
-            throw Failure(message: "销毁后原库仍存在或已被重新创建，已停止进一步清理；请刷新清单。")
-        }
+        // Core Data may leave the destroyed (truncated) SQLite inode. Remove only the exact
+        // reviewed identity, never an unrelated file recreated at that name.
         for file in review.files where FileManager.default.fileExists(atPath: file.url.path) {
             let attributes = try FileManager.default.attributesOfItem(atPath: file.url.path)
             guard (attributes[.systemFileNumber] as? NSNumber)?.uint64Value == file.identity.inode,
@@ -90,6 +126,8 @@ enum LegacyStoreErasure {
         }
         let remaining = try entries(review.location)
         guard remaining.isEmpty else { throw Failure(message: "清理后仍检测到原库文件，可能被其他组件重新创建；未报告删除成功。") }
+        let request = pendingURL(review.location)
+        if FileManager.default.fileExists(atPath: request.path) { try FileManager.default.removeItem(at: request) }
     }
 
     private static func checkLocation(_ location: Location) throws {

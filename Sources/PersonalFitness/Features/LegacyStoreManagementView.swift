@@ -1,7 +1,8 @@
 import SwiftUI
 
+enum LegacyErasureResult: Sendable { case erased, restartRequired }
 struct LegacyErasureAction: Sendable {
-    var perform: (@MainActor @Sendable (LegacyStoreErasure.Review) throws -> Void)?
+    var perform: (@MainActor @Sendable (LegacyStoreErasure.Review) throws -> LegacyErasureResult)?
 }
 private struct LegacyErasureActionKey: EnvironmentKey {
     static let defaultValue = LegacyErasureAction()
@@ -25,6 +26,7 @@ struct LegacyStoreManagementView: View {
     @State private var understood = false
     @State private var confirming = false
     @State private var completed = false
+    @State private var restartRequired = false
 
     var body: some View {
         List {
@@ -32,12 +34,14 @@ struct LegacyStoreManagementView: View {
                 HStack(spacing: 12) {
                     FitnessIconBadge(symbol: completed ? "checkmark.shield" : "externaldrive.badge.minus", color: completed ? FitnessTheme.teal : .red)
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(completed ? "原库已彻底删除" : "永久删除原数据库").font(.headline)
-                        Text(completed ? "已核验原库文件不存在。" : "删除文件本身，不是从列表隐藏。").font(.caption).foregroundStyle(FitnessTheme.muted)
+                        Text(restartRequired ? "重新打开 App 完成清理" : completed ? "原库已彻底删除" : "永久删除原数据库").font(.headline)
+                        Text(restartRequired ? "删除已确认；当前尚未物理删除。" : completed ? "已核验原库文件不存在。" : "删除文件本身，不是从列表隐藏。").font(.caption).foregroundStyle(FitnessTheme.muted)
                     }
                 }.padding(.vertical, 6)
             }
-            if !completed, let review {
+            if restartRequired {
+                Section { Text("请从多任务界面关闭本 App，再重新打开。下次启动会在打开数据容器之前清理原库，并验证文件不存在。") }
+            } else if !completed, let review {
                 Section("本次清理范围") {
                     LabeledContent("原库", value: review.location.legacyURL.lastPathComponent)
                     LabeledContent("文件数量", value: "\(review.files.count)")
@@ -96,7 +100,13 @@ struct LegacyStoreManagementView: View {
         guard let review, understood, phrase == "删除原库", let perform = erasure.perform else {
             issue = "删除条件尚未确认，未清理文件。"; return
         }
-        do { try perform(review); completed = true; self.review = nil }
+        do {
+            switch try perform(review) {
+            case .erased: completed = true
+            case .restartRequired: restartRequired = true
+            }
+            self.review = nil
+        }
         catch { issue = error.localizedDescription; refresh() }
     }
 }
