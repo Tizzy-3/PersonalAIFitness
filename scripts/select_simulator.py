@@ -5,7 +5,7 @@ import argparse
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--boot', action='store_true', help='Boot and wait for this exact selected simulator before UI capture.')
+parser.add_argument('--boot', action='store_true', help='Boot and wait for this exact selected simulator before tests or UI capture.')
 args = parser.parse_args()
 
 data = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '--json']))

@@ -599,6 +599,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "1E8646941255227C2FCABB27";
 		};
+		"97D48FF1D49B5FADF24CFEA2" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "HTTPRequestBodyFixture.swift";
+			"path" = "Tests/PersonalFitnessTests/HTTPRequestBodyFixture.swift";
+			"sourceTree" = "<group>";
+		};
+		"ABDB682496AFCAEB4A7E4594" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "97D48FF1D49B5FADF24CFEA2";
+		};
 		"B00E02665249C53DDC995CBB" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -899,6 +910,7 @@
 				"6D31AD4620AE30142F597D7F",
 				"3A86B64746C685740F4D7FD0",
 				"BE078E1C3A4916553F576277",
+				"ABDB682496AFCAEB4A7E4594",
 				"CF2DE9EF9C69F45396A28D4B",
 				"684ED55DA70D15CF5B761E5D",
 				"F39F22AFBF3E7E2610D8F269",
@@ -980,6 +992,7 @@
 				"4A09F25F2EB737D7C128AA3F",
 				"8D82CFFCDAE046BBD34BE595",
 				"1E8646941255227C2FCABB27",
+				"97D48FF1D49B5FADF24CFEA2",
 				"B00E02665249C53DDC995CBB",
 				"5D8D56372BB39F6FC3F9A820",
 				"FAAEAC79467603CB7D38BF12",

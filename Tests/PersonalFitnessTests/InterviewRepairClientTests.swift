@@ -10,7 +10,7 @@ private final class InterviewRepairFixture: @unchecked Sendable {
     func reset(_ replies: [String]) { lock.lock(); defer { lock.unlock() }; self.replies = replies; bodies = [] }
     func respond(_ request: URLRequest) throws -> Data {
         lock.lock(); defer { lock.unlock() }
-        bodies.append(request.httpBody ?? Data())
+        bodies.append(try HTTPRequestBodyFixture.read(request))
         guard !replies.isEmpty else { throw URLError(.resourceUnavailable) }
         return try JSONSerialization.data(withJSONObject: ["choices": [["message": ["content": replies.removeFirst()], "finish_reason": "stop"]]])
     }

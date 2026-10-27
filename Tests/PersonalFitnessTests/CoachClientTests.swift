@@ -50,7 +50,7 @@ final class CoachClientTests: XCTestCase {
     @MainActor
     func testJSONModeIsExplicitAndRetainsBoundedNonStreamingProtocol() async throws {
         let client = client { request in
-            let body = try XCTUnwrap(request.httpBody)
+            let body = try HTTPRequestBodyFixture.read(request)
             let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
             XCTAssertEqual((object["response_format"] as? [String: String])?["type"], "json_object")
             XCTAssertEqual(object["max_tokens"] as? Int, 4_096)
@@ -66,7 +66,7 @@ final class CoachClientTests: XCTestCase {
     @MainActor
     func testTextModeDoesNotImposeOptionalProviderParameters() async throws {
         let client = client { request in
-            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: HTTPRequestBodyFixture.read(request)) as? [String: Any])
             XCTAssertNil(object["response_format"])
             XCTAssertNil(object["max_tokens"])
             return CoachHTTPStub(status: 200, contentType: "application/json", data: Data(#"{"choices":[{"message":{"content":"answer"}}]}"#.utf8))

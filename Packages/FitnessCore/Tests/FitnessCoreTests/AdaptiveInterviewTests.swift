@@ -129,6 +129,8 @@ final class AdaptiveInterviewTests: XCTestCase {
         try session.reopenTopic(.capability, at: start.addingTimeInterval(1))
         XCTAssertEqual(session.closedQuestionKeys, [sleep.stableKey])
         XCTAssertEqual(session.dialogueEvidence.count, 2)
-        XCTAssertEqual(try session.appendTurn(.init(questions: [capability]), at: start.addingTimeInterval(2)).questions.count, 1)
+        var reopened = capability
+        reopened.id = UUID()
+        XCTAssertEqual(try session.appendTurn(.init(questions: [reopened]), at: start.addingTimeInterval(2)).questions.count, 1)
     }
 }

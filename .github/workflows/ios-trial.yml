@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          device_id=$(python3 scripts/select_simulator.py)
+          device_id=$(python3 scripts/select_simulator.py --boot)
           echo "Simulator ID: $device_id" | tee "$PF_OUTPUT/simulator.log"
           xcodebuild test \
             -project PersonalFitness.xcodeproj -scheme PersonalFitness \
