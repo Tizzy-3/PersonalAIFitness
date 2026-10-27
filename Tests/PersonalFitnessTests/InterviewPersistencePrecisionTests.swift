@@ -25,4 +25,16 @@ final class InterviewPersistencePrecisionTests: XCTestCase {
         let canonical = try RecordCodec.decode(InterviewSession.self, from: RecordCodec.encode(returned))
         XCTAssertEqual(returned, canonical)
     }
+
+    @MainActor
+    func testSavedCoachContextStillMatchesUnchangedDailyEvidence() throws {
+        let store = try TrainingStore(inMemory: true)
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: Date(), energy: 4, painReported: false))
+        let snapshot = try store.snapshot()
+        let context = try CoachContext.make(snapshot: snapshot)
+        let persisted = try RecordCodec.decode(CoachContext.self, from: RecordCodec.encode(context))
+        XCTAssertNotNil(persisted.followUp?.todayCheckIn)
+        XCTAssertEqual(persisted.followUp, context.followUp)
+        XCTAssertTrue(persisted.matches(snapshot: snapshot))
+    }
 }

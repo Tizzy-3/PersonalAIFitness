@@ -67,7 +67,14 @@ public struct CoachContext: Identifiable, Codable, Equatable, Sendable {
             result.weeklyProgramID = program.id; result.weeklyPlan = program.selectedOption
         }
         result.followUp = try CoachFollowUpContext.make(snapshot: snapshot, at: at)
-        return result
+        // Freeze the same date representation that saved coach turns use. Daily check-ins and
+        // imported samples can carry sub-millisecond precision; comparing their raw dates against
+        // a decoded coach turn would otherwise make an unchanged suggestion look stale.
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .millisecondsSince1970
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        return try decoder.decode(CoachContext.self, from: encoder.encode(result))
     }
 
     public func matches(snapshot: AppSnapshot) -> Bool {
