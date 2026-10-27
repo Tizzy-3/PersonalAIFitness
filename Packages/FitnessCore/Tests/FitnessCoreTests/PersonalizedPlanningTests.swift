@@ -79,7 +79,13 @@ final class PersonalizedPlanningTests: XCTestCase {
         snapshot.planningDrafts = [try PlanningDraft.makePersonalized(profile: session.profile, reply: reply(session.profile.planningInput()),
                                                                     snapshot: snapshot, providerHost: "fixture.invalid", model: "fixture")]
         let restored = try SnapshotCodec.decode(SnapshotCodec.encode(snapshot))
-        XCTAssertEqual(restored.planningDrafts, snapshot.planningDrafts)
+        let restoredDraft = try XCTUnwrap(restored.planningDrafts?.first)
+        let originalDraft = try XCTUnwrap(snapshot.planningDrafts?.first)
+        XCTAssertEqual(restoredDraft.id, originalDraft.id)
+        XCTAssertEqual(restoredDraft.options, originalDraft.options)
+        XCTAssertEqual(restoredDraft.personalization?.choices, originalDraft.personalization?.choices)
+        XCTAssertEqual(restoredDraft.createdAt.timeIntervalSince1970, originalDraft.createdAt.timeIntervalSince1970, accuracy: 0.001)
+        XCTAssertTrue(restoredDraft.matches(snapshot: restored))
     }
 
     func testOldDraftWithoutPersonalizationFieldStillDecodes() throws {

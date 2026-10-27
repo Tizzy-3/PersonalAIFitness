@@ -9,6 +9,7 @@ final class AdjustmentReliabilityTests: XCTestCase {
 
     private func assessment(at date: Date, verdict: ReadinessAssessment.Verdict = .conservative) -> ReadinessAssessment {
         ReadinessAssessment(createdAt: date, safety: "本人无疼痛", safetyVerdict: .normal,
+                            confidence: "测试夹具已明确给出安全信息，其他数据有限",
                             todaySuggestion: "根据实际反馈保守训练", verdict: verdict,
                             evidence: [ReadinessEvidence(id: "profile", kind: .profile, label: "档案")])
     }

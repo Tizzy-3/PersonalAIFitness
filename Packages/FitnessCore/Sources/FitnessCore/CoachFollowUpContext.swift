@@ -25,6 +25,8 @@ public struct CoachFollowUpContext: Codable, Equatable, Sendable {
     }
 
     public static func make(snapshot: AppSnapshot, at date: Date) throws -> CoachFollowUpContext? {
+        try CoreValidation.date(date, name: "教练跟进时间")
+        try CoreValidation.unique(snapshot.sessions.map(\.id), name: "跟进训练 ID")
         let profile = snapshot.interview?.profile
         let checkIn = (snapshot.preWorkoutCheckIns ?? []).filter {
             Calendar.current.isDate($0.createdAt, inSameDayAs: date) && $0.createdAt <= date
