@@ -224,9 +224,22 @@ final class PlannerEngineTests: XCTestCase {
 
     func testOnlyOneRemainingResistancePatternFailsInsteadOfPresentingCompleteWorkout() throws {
         var request = input(weekdays: [1], equipment: [.bodyweight])
+        // The fixture is about remaining movement patterns, not a frozen list of catalogue IDs.
+        // A newly reviewed core variant must not accidentally make this a two-pattern request.
+        request.excludedExerciseIDs = PlannerEngine.movements.filter { $0.pattern != .push }.map(\.id)
+        XCTAssertEqual(try PlannerEngine.candidatePool(input: request).keys.sorted(), ["push"])
+        XCTAssertThrowsError(try PlannerEngine.options(for: request))
+    }
+
+    func testNewCoreVariantRemainsAvailableWhenOtherCoreVariantsAreExcluded() throws {
+        var request = input(weekdays: [1], equipment: [.bodyweight])
         request.excludedExerciseIDs = ["builtin.bodyweight-squat", "builtin.glute-bridge", "builtin.dead-bug",
                                        "builtin.bird-dog", "builtin.plank"]
-        XCTAssertThrowsError(try PlannerEngine.options(for: request))
+        let pool = try PlannerEngine.candidatePool(input: request)
+        XCTAssertEqual(pool["core"], ["builtin.high-plank"])
+        for option in try PlannerEngine.options(for: request) {
+            XCTAssertTrue(option.days.flatMap(\.items).contains { $0.exerciseID == "builtin.high-plank" })
+        }
     }
 
     func testUncalibratedRowingOnlyCannotBecomeAutomaticCardio() throws {
