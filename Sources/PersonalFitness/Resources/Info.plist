@@ -11,7 +11,7 @@
   <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
   <key>LSRequiresIPhoneOS</key><true/>
-  <key>NSHealthShareUsageDescription</key><string>用于在你主动开启后查看步数、静息心率与体重，了解数据是否可读；本试用版不作恢复诊断，不向 AI 发送健康数据。</string>
+  <key>NSHealthShareUsageDescription</key><string>在你主动开启后读取睡眠、静息心率、HRV、步数、活动能量、体重、运动记录和心肺适能，供本地训练状态参考。健康摘要仅在你预览并确认发送后提供给所配置的 AI 服务；不作医疗诊断。</string>
   <key>UILaunchScreen</key><dict/>
   <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>
   <key>UIRequiredDeviceCapabilities</key><array><string>arm64</string></array>
