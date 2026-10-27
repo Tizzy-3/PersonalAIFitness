@@ -104,6 +104,13 @@ enum LegacyStoreErasure {
            attributes[.type] as? FileAttributeType == .typeSymbolicLink {
             throw Failure(message: "原库路径是符号链接，无法安全确认目标；已拒绝删除。")
         }
+        if let old = try? FileManager.default.attributesOfItem(atPath: canonical.path),
+           let kept = try? FileManager.default.attributesOfItem(atPath: dedicated.path),
+           let oldInode = old[.systemFileNumber] as? NSNumber, let keptInode = kept[.systemFileNumber] as? NSNumber,
+           oldInode == keptInode,
+           (old[.systemNumber] as? NSNumber) == (kept[.systemNumber] as? NSNumber) {
+            throw Failure(message: "原库与当前独立库指向同一文件，已拒绝删除。")
+        }
     }
 
     private static func entries(_ location: Location) throws -> [FileEntry] {

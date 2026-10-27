@@ -128,7 +128,7 @@ struct PersonalFitnessApp: App {
             UserDefaults.standard.set(Date(), forKey: "fitness.legacyStoreErasedAt")
             erasureNotice = true
         } catch {
-            if activeLegacy {
+            if activeLegacy || previous == nil {
                 startupError = error.localizedDescription
                 let (report, separate) = Self.makeDiagnostic(error)
                 diagnosticText = StartupDiagnostics.text(report)

@@ -86,6 +86,17 @@ final class LegacyStoreErasureTests: XCTestCase {
     }
 
     @MainActor
+    func testHardLinkToDedicatedStoreCannotBeErased() throws {
+        let location = try fixture()
+        defer { try? FileManager.default.removeItem(at: location.applicationSupport) }
+        let dedicated = try TrainingStore(storageURL: location.dedicatedURL)
+        XCTAssertTrue(dedicated.sessions.isEmpty)
+        try FileManager.default.linkItem(at: location.dedicatedURL, to: location.legacyURL)
+        XCTAssertThrowsError(try LegacyStoreErasure.prepare(location: location))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: location.dedicatedURL.path))
+    }
+
+    @MainActor
     private func writeLegacy(_ location: LegacyStoreErasure.Location) throws {
         let legacy = try TrainingStore(storageURL: location.legacyURL)
         _ = try legacy.confirmPlan(name: "明确删除的旧库计划", items: [PlannedExercise(exercise: ExerciseCatalog.exercises[0])])
