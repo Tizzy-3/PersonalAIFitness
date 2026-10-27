@@ -390,6 +390,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "708F16D8C9139EF4AB78C536";
 		};
+		"46C8535697ED4A0400720C2A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "StartupDiagnostics.swift";
+			"path" = "Sources/PersonalFitness/Storage/StartupDiagnostics.swift";
+			"sourceTree" = "<group>";
+		};
+		"4D6CC85DB4D4C1A5A845C35C" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "46C8535697ED4A0400720C2A";
+		};
 		"2DD80D77EBFF4127337D239B" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -522,6 +533,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "45238160EB809A6EE27C458F";
 		};
+		"EB0E4D166899B1938C3F891D" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "MigrationV4Tests.swift";
+			"path" = "Tests/PersonalFitnessTests/MigrationV4Tests.swift";
+			"sourceTree" = "<group>";
+		};
+		"E96B96D74B4B154F80188CF8" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "EB0E4D166899B1938C3F891D";
+		};
 		"E1BE9AD8614F46178FC2D6AC" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -565,6 +587,17 @@
 		"C67461D0AF716D26D3E9490E" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "A260EDB4B0AF18B6B9D13506";
+		};
+		"43376625D8BD4F08C5752BAC" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "StartupDiagnosticsTests.swift";
+			"path" = "Tests/PersonalFitnessTests/StartupDiagnosticsTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"A5AF12961742AEA084F423A8" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "43376625D8BD4F08C5752BAC";
 		};
 		"743D4E78A904BA15891968B4" = {
 			"isa" = "PBXFileReference";
@@ -697,6 +730,7 @@
 				"63071DE70369F2BABCD2D0D0",
 				"347BD1C24E7E73FA639FBD01",
 				"AD95421909630568C22A5EBC",
+				"4D6CC85DB4D4C1A5A845C35C",
 				"28E9C1094A76770212760B15",
 				"2E85EFDCD055C17DEA8EBC28",
 				"77CA78578B828F53C1C426E6",
@@ -716,10 +750,12 @@
 				"684ED55DA70D15CF5B761E5D",
 				"03E4C54818B35DB8EB6B7700",
 				"86266CF6B94A70F6E7587FA4",
+				"E96B96D74B4B154F80188CF8",
 				"9BC896BC98D66FBBC0675700",
 				"41FB0E073CC567DCB0D34868",
 				"8A70C8AE5ECD7584E8E5CF1D",
 				"C67461D0AF716D26D3E9490E",
+				"A5AF12961742AEA084F423A8",
 				"D1D59648FBA6D70B12793F20",
 			);
 			"runOnlyForDeploymentPostprocessing" = 0;
@@ -762,6 +798,7 @@
 				"0B28737F7D5A5F38C61046A9",
 				"D7275E65505C76EA3BF90A0A",
 				"708F16D8C9139EF4AB78C536",
+				"46C8535697ED4A0400720C2A",
 				"2DD80D77EBFF4127337D239B",
 				"CA7CA7BFD11CAF7B05684A31",
 				"26EDFB3DE3A972300FE6DE1E",
@@ -781,10 +818,12 @@
 				"5D8D56372BB39F6FC3F9A820",
 				"C56AC68247914FE8F70FE931",
 				"45238160EB809A6EE27C458F",
+				"EB0E4D166899B1938C3F891D",
 				"E1BE9AD8614F46178FC2D6AC",
 				"BFF448F4D0A4992FA8B3292D",
 				"0DC67310FE54EB65F77041B5",
 				"A260EDB4B0AF18B6B9D13506",
+				"43376625D8BD4F08C5752BAC",
 				"743D4E78A904BA15891968B4",
 			);
 			"name" = "App Tests";
@@ -867,8 +906,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.4.1";
-				"CURRENT_PROJECT_VERSION" = "8";
+				"MARKETING_VERSION" = "0.4.2";
+				"CURRENT_PROJECT_VERSION" = "27";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";
@@ -896,8 +935,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.4.1";
-				"CURRENT_PROJECT_VERSION" = "8";
+				"MARKETING_VERSION" = "0.4.2";
+				"CURRENT_PROJECT_VERSION" = "27";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";
