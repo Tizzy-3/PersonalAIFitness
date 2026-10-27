@@ -148,6 +148,22 @@ final class StoreLocationTests: XCTestCase {
     }
 
     @MainActor
+    func testFilesystemAliasIsNotMistakenForAnotherFitnessDatabase() throws {
+        let root = try directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let physical = root.appendingPathComponent("physical")
+        let alias = root.appendingPathComponent("alias")
+        try FileManager.default.createDirectory(at: physical, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: physical)
+        let legacy = physical.appendingPathComponent("default.store")
+        _ = try writeFitnessHistory(to: legacy)
+        let scan = StoreLocator.scan(roots: [("physical", physical), ("alias", alias)],
+            legacyURL: alias.appendingPathComponent("default.store"), dedicatedURL: physical.appendingPathComponent("PersonalFitness/Training.store"))
+        XCTAssertEqual(scan.fitnessCandidates.count, 1)
+        XCTAssertEqual(try StoreLocator.select(scan), legacy.resolvingSymlinksInPath())
+    }
+
+    @MainActor
     private func writeCache(to url: URL) throws {
         let schema = Schema(versionedSchema: CacheFixture.self)
         let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])

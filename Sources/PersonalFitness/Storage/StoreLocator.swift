@@ -5,8 +5,6 @@ import CoreData
 /// Discover metadata before opening a container. Never move, delete, replace, or merge stores.
 @MainActor
 enum StoreLocator {
-    static let fitnessEntities: Set<String> = ["MetadataRecord", "PlanVersionRecord", "SessionRecord"]
-
     struct CandidateInfo: Codable, Sendable {
         var location: String
         var entities: [String]
@@ -28,7 +26,10 @@ enum StoreLocator {
             !truncated && scanErrors.isEmpty && fitnessCandidates.isEmpty
                 && !candidates.contains { $0.url == dedicatedURL }
         }
-        var diagnosticURL: URL { candidates.first?.url ?? legacyURL }
+        var diagnosticURL: URL {
+            candidates.first { $0.url == legacyURL }?.url
+                ?? candidates.first { $0.url == dedicatedURL }?.url ?? candidates.first?.url ?? legacyURL
+        }
     }
 
     static func scanDefault() throws -> Scan {
@@ -46,6 +47,10 @@ enum StoreLocator {
     }
 
     static func scan(roots: [(String, URL)], legacyURL: URL, dedicatedURL: URL, maxEntries: Int = 4_000) -> Scan {
+        // /var and /private/var can name the same iOS container. Never count aliases as two stores.
+        let legacyURL = legacyURL.resolvingSymlinksInPath().standardizedFileURL
+        let dedicatedURL = dedicatedURL.resolvingSymlinksInPath().standardizedFileURL
+        let roots = roots.map { ($0.0, $0.1.resolvingSymlinksInPath().standardizedFileURL) }
         let manager = FileManager.default
         var urls: [String: (URL, String)] = [:]
         var truncated = maxEntries <= 0
@@ -69,11 +74,12 @@ enum StoreLocator {
                     let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                     if values.isSymbolicLink == true { enumerator.skipDescendants(); continue }
                     guard values.isRegularFile == true, ["store", "sqlite", "db"].contains(url.pathExtension.lowercased()) else { continue }
-                    let key = url.standardizedFileURL.path
+                    let resolved = url.resolvingSymlinksInPath().standardizedFileURL
+                    let key = resolved.path
                     if urls[key] == nil {
                         guard urls.count < 64 else { truncated = true; break }
                         let relative = String(url.path.dropFirst(root.path.count + 1))
-                        urls[key] = (url, name + "/" + relative)
+                        urls[key] = (resolved, name + "/" + relative)
                     }
                 } catch { failures.append(error) }
             }
