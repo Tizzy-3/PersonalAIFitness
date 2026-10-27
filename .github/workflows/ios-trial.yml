@@ -40,13 +40,6 @@ jobs:
           python3 scripts/check_source.py | tee "$PF_OUTPUT/static-checks.log"
           python3 scripts/check_media.py | tee "$PF_OUTPUT/media-checks.log"
 
-      - name: Verify historical compiled stores across process boundaries
-        shell: bash
-        run: |
-          set -euo pipefail
-          device_id=$(python3 scripts/select_simulator.py --boot)
-          python3 -u scripts/test_historical_stores.py --device "$device_id" 2>&1 | tee "$PF_OUTPUT/upgrade-store.log"
-
       - name: Run independent core tests
         shell: bash
         run: |
@@ -66,6 +59,13 @@ jobs:
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM="" \
             2>&1 | tee "$PF_OUTPUT/native-tests.log"
+
+      - name: Verify historical compiled stores across process boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          device_id=$(python3 scripts/select_simulator.py --boot)
+          python3 -u scripts/test_historical_stores.py --device "$device_id" 2>&1 | tee "$PF_OUTPUT/upgrade-store.log"
 
       - name: Capture actual native screens without sample user data
         shell: bash

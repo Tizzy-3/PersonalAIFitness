@@ -63,7 +63,7 @@ struct PersonalFitnessApp: App {
                     VStack(alignment: .leading, spacing: 24) {
                         Label("本地数据暂时无法打开", systemImage: "externaldrive.badge.exclamationmark")
                             .font(.title2.bold())
-                        Text("没有清空或重建你的数据库。请保留 App，将诊断信息交给开发者后再处理恢复。")
+                        Text("当前数据暂时无法打开。请记录错误，可在下方导出诊断或管理原数据库。")
                         Text(startupError ?? "未知错误").foregroundStyle(.secondary).textSelection(.enabled)
                         Text("诊断仅含版本、错误代码、模型标识和文件状态，不包含训练、档案、健康明细或 API 密钥。")
                             .font(.footnote).foregroundStyle(.secondary)
@@ -122,10 +122,10 @@ struct PersonalFitnessApp: App {
         do {
             try LegacyStoreErasure.execute(review, confirmed: true,
                 liveContainer: activeLegacy ? previous?.container : nil, liveURL: previous?.storageURL)
-            if previous == nil || activeLegacy { store = try TrainingStore(storageURL: review.location.dedicatedURL) }
-            separateStoreNotice = false
             UserDefaults.standard.set(false, forKey: "fitness.separateStoreChosen")
             UserDefaults.standard.set(Date(), forKey: "fitness.legacyStoreErasedAt")
+            separateStoreNotice = false
+            if previous == nil || activeLegacy { store = try TrainingStore(storageURL: review.location.dedicatedURL) }
             erasureNotice = true
         } catch {
             if activeLegacy || previous == nil {
