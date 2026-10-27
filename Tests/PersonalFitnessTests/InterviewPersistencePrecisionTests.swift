@@ -19,7 +19,7 @@ final class InterviewPersistencePrecisionTests: XCTestCase {
     func testUpdateReturnsTheCanonicalSavedSessionRatherThanItsInputCopy() throws {
         let store = try TrainingStore(inMemory: true)
         let returned = try store.updateInterview { value in
-            try value.setValue(.number(30), for: .minutes, at: Date())
+            try value.setValue(.minutes(30), for: .minutes, at: Date())
         }
         XCTAssertEqual(returned, store.interview)
         let canonical = try RecordCodec.decode(InterviewSession.self, from: RecordCodec.encode(returned))
