@@ -17,6 +17,7 @@ struct RootView: View {
     @State private var planEditor: PlanEditorRoute?
     @State private var settings = false
     @State private var capturePlanner = false
+    @State private var captureInterview = false
 
     init(store: TrainingStore) {
         self.store = store
@@ -24,6 +25,7 @@ struct RootView: View {
         // CI captures actual empty-state screens, without adding fabricated user data.
         let arguments = ProcessInfo.processInfo.arguments
         _capturePlanner = State(initialValue: arguments.contains("--capture-planner"))
+        _captureInterview = State(initialValue: arguments.contains("--capture-interview"))
         _settings = State(initialValue: arguments.contains("--capture-settings"))
         if arguments.contains("--capture-workout"), let active = store.activeSession {
             _workout = State(initialValue: WorkoutRoute(id: active.id))
@@ -32,6 +34,7 @@ struct RootView: View {
            let tab = Int(arguments[index + 1]), (0...4).contains(tab) {
             _selectedTab = State(initialValue: tab)
         }
+        if arguments.contains("--capture-history") { _selectedTab = State(initialValue: 3) }
         #endif
     }
 
@@ -50,8 +53,8 @@ struct RootView: View {
             .tabItem { Label("训练", systemImage: "dumbbell") }.tag(1)
             NavigationStack { ExerciseLibraryView(store: store) }
                 .tabItem { Label("动作库", systemImage: "books.vertical") }.tag(2)
-            NavigationStack { TrainingInsightsView(store: store) }
-                .tabItem { Label("趋势", systemImage: "chart.bar") }.tag(3)
+            NavigationStack { TrainingHistoryCalendarView(store: store, openWorkout: { workout = WorkoutRoute(id: $0) }) }
+                .tabItem { Label("历史", systemImage: "clock.arrow.circlepath") }.tag(3)
             NavigationStack { CoachView(store: store) }
                 .tabItem { Label("教练", systemImage: "bubble.left.and.text.bubble.right") }.tag(4)
         }
@@ -59,6 +62,7 @@ struct RootView: View {
         .sheet(item: $planEditor) { route in NavigationStack { PlanEditorView(store: store, revising: route.plan) } }
         .sheet(isPresented: $settings) { NavigationStack { SettingsView(store: store) } }
         .sheet(isPresented: $capturePlanner) { NavigationStack { PlannerView(store: store) } }
+        .sheet(isPresented: $captureInterview) { NavigationStack { CoachInterviewView(store: store) } }
         .fullScreenCover(item: $workout) { route in
             NavigationStack { WorkoutView(store: store, sessionID: route.id) }
         }

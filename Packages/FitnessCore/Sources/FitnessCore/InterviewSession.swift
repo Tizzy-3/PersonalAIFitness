@@ -15,16 +15,25 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     public var declinedTopics: Set<InterviewTopic>
     public var rulesVersion: String
     public var appliedPlanVersionID: UUID?
+    /// Optional encoded additions preserve compatibility with pre-adaptive backups.
+    public var narratives: [InterviewNarrative]?
+    public var archivedTurns: [InterviewTurn]?
+    public var pausedAt: Date?
+    public var reopenedTopicOffsets: [String: Int]?
 
     public init(id: UUID = UUID(), createdAt: Date = Date(), updatedAt: Date? = nil,
                 phase: InterviewPhase = .inProgress, profile: StructuredProfile = StructuredProfile(),
                 turns: [InterviewTurn] = [], declinedTopics: Set<InterviewTopic> = [],
                 rulesVersion: String = InterviewRules.rulesVersion,
-                appliedPlanVersionID: UUID? = nil) {
+                appliedPlanVersionID: UUID? = nil, narratives: [InterviewNarrative]? = nil,
+                archivedTurns: [InterviewTurn]? = nil, pausedAt: Date? = nil,
+                reopenedTopicOffsets: [String: Int]? = nil) {
         self.id = id; self.createdAt = createdAt; self.updatedAt = updatedAt ?? createdAt
         self.phase = phase; self.profile = profile; self.turns = turns
         self.declinedTopics = declinedTopics; self.rulesVersion = rulesVersion
         self.appliedPlanVersionID = appliedPlanVersionID
+        self.narratives = narratives; self.archivedTurns = archivedTurns; self.pausedAt = pausedAt
+        self.reopenedTopicOffsets = reopenedTopicOffsets
     }
 
     // MARK: - Queries
@@ -64,7 +73,58 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     }
 
     /// Having enough information to draft a plan does not mean the optional interview is finished.
-    public var canContinueInterview: Bool { unansweredQuestions.isEmpty && !openTopics.isEmpty }
+    public var canContinueInterview: Bool {
+        pausedAt == nil && unansweredQuestions.isEmpty && turns.count < InterviewRules.maximumTurns
+    }
+
+    public var allTurns: [InterviewTurn] { (archivedTurns ?? []) + turns }
+    public var dialogueEvidence: [InterviewDialogueEvidence] {
+        allTurns.flatMap { turn in
+            turn.questions.compactMap { question -> InterviewDialogueEvidence? in
+                guard let answer = turn.answers.first(where: { $0.questionID == question.id }) else { return nil }
+                return InterviewDialogueEvidence(topic: question.topic, detailKey: question.detailKey,
+                                                 prompt: question.prompt, answer: answer)
+            }
+        }
+    }
+    /// New safety detail or a new free narrative must be reviewed against the settled restriction
+    /// field before planning. It never silently overwrites that field or assumes absence of pain.
+    public var needsSafetyReview: Bool {
+        guard let reviewedAt = profile.restrictions.confirmedAt, profile.restrictions.isUsable else { return false }
+        return (narratives ?? []).contains { $0.recordedAt > reviewedAt }
+            || dialogueEvidence.contains { $0.topic == .restrictions && $0.detailKey != nil
+                && $0.answer.outcome == .answered && $0.answer.answeredAt > reviewedAt }
+    }
+
+    public mutating func addNarrative(_ text: String, at date: Date = Date()) throws {
+        var draft = self
+        let entry = InterviewNarrative(text: text.trimmingCharacters(in: .whitespacesAndNewlines), recordedAt: date)
+        try entry.validate()
+        var entries = draft.narratives ?? []
+        guard entries.count < InterviewRules.maximumNarratives else { throw CoreError.invalidState("补充叙述已达本次保存上限，原记录仍保留。") }
+        entries.append(entry); draft.narratives = entries
+        draft.updatedAt = date; draft.rulesVersion = InterviewRules.rulesVersion
+        try draft.validate(); self = draft
+    }
+    public mutating func pause(at date: Date = Date()) throws {
+        var draft = self; draft.pausedAt = date; draft.updatedAt = date
+        try draft.validate(); self = draft
+    }
+    public mutating func resume(at date: Date = Date()) throws {
+        var draft = self; draft.pausedAt = nil; draft.updatedAt = date
+        try draft.validate(); self = draft
+    }
+    public mutating func skipUnansweredForReview(at date: Date = Date()) throws {
+        let answers = unansweredQuestions.map { InterviewAnswer(questionID: $0.id, outcome: .skipped, answeredAt: date) }
+        if !answers.isEmpty { try answer(answers, at: date) }
+    }
+
+    private func alreadyDiscussed(_ question: InterviewQuestion) -> Bool {
+        let offset = reopenedTopicOffsets?[question.topic.rawValue] ?? 0
+        return allTurns.dropFirst(offset).contains { turn in
+            turn.questions.contains { $0.stableKey == question.stableKey }
+        }
+    }
 
     public var answeredTurnCount: Int { turns.filter(\.isAnswered).count }
 
@@ -76,18 +136,21 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     public mutating func appendTurn(_ turn: InterviewTurn, at date: Date = Date()) throws -> InterviewTurn {
         try CoreValidation.date(date, name: "访谈记录时间")
         try turn.validate()
+        guard pausedAt == nil else { throw CoreError.invalidState("访谈已暂停，请先恢复。") }
         guard unansweredQuestions.isEmpty else {
             throw CoreError.invalidState("请先回答、明确标记未知或跳过当前问题，再继续访谈。")
         }
         guard turns.count < InterviewRules.maximumTurns else {
             throw CoreError.invalidState("这次访谈记录已经很多，请先核对档案或开始一份新的访谈。")
         }
+        let oldIDs = Set(allTurns.flatMap { $0.questions.map(\.id) })
+        guard oldIDs.isDisjoint(with: turn.questions.map(\.id)) else { throw CoreError.duplicateIdentifier("访谈问题ID") }
         var accepted = turn
         accepted.createdAt = date
         accepted.questions = turn.questions.filter { question in
-            !declinedTopics.contains(question.topic)
-                && !profile.isUsable(question.topic)
-                && profile.provenance(of: question.topic) != .inferred
+            !declinedTopics.contains(question.topic) && !alreadyDiscussed(question)
+                && (question.isFollowUp || (!profile.isUsable(question.topic)
+                    && profile.provenance(of: question.topic) != .inferred))
         }
         accepted.answers = turn.answers.filter { answer in
             accepted.questions.contains { $0.id == answer.questionID }
@@ -101,6 +164,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         var draft = self
         draft.turns.append(accepted)
         draft.updatedAt = date
+        draft.rulesVersion = InterviewRules.rulesVersion
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
@@ -130,17 +194,24 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         for answer in answers {
             guard let index = draft.turns.firstIndex(where: { turn in turn.questions.contains { $0.id == answer.questionID } }),
                   let question = draft.turns[index].questions.first(where: { $0.id == answer.questionID }) else { continue }
+            if question.isFollowUp {
+                // Deep detail is saved verbatim in the turn, never assigned to the settled field.
+                draft.turns[index].answers.append(answer)
+                continue
+            }
             switch answer.outcome {
             case .answered:
                 try draft.applyAnswer(answer, for: question, at: date)
             case .unknown:
                 try draft.clearTopic(question.topic)
+                draft.declinedTopics.insert(question.topic)
             case .skipped:
                 draft.declinedTopics.insert(question.topic)
             }
             draft.turns[index].answers.append(answer)
         }
         draft.updatedAt = date
+        draft.rulesVersion = InterviewRules.rulesVersion
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
@@ -157,6 +228,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         if accept { try draft.setProvenance(.confirmed, for: topic, at: date) }
         else { try draft.clearTopic(topic) }
         draft.updatedAt = date
+        draft.rulesVersion = InterviewRules.rulesVersion
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
@@ -171,6 +243,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         draft.declinedTopics.remove(topic)
         draft.appliedPlanVersionID = nil
         draft.updatedAt = date
+        draft.rulesVersion = InterviewRules.rulesVersion
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
@@ -184,6 +257,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         draft.declinedTopics.insert(topic)
         draft.appliedPlanVersionID = nil
         draft.updatedAt = date
+        draft.rulesVersion = InterviewRules.rulesVersion
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
@@ -196,8 +270,12 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         var draft = self
         try draft.clearTopic(topic)
         draft.declinedTopics.remove(topic)
+        var offsets = draft.reopenedTopicOffsets ?? [:]
+        offsets[topic.rawValue] = draft.allTurns.count
+        draft.reopenedTopicOffsets = offsets
         draft.appliedPlanVersionID = nil
         draft.updatedAt = date
+        draft.rulesVersion = InterviewRules.rulesVersion
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
@@ -207,7 +285,12 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     /// Provisional guesses are discarded so a new model cannot inherit them as confirmed facts.
     public func restartedPreservingProfile(at date: Date = Date()) throws -> InterviewSession {
         try CoreValidation.date(date, name: "重新访谈时间")
-        var restarted = InterviewSession(createdAt: date, profile: profile, declinedTopics: declinedTopics)
+        guard allTurns.count <= InterviewRules.maximumArchivedTurns else {
+            throw CoreError.invalidState("访谈归档已达上限，原对话全部保留。请先核对档案。")
+        }
+        var restarted = InterviewSession(createdAt: date, profile: profile, declinedTopics: declinedTopics,
+                                         narratives: narratives, archivedTurns: allTurns,
+                                         reopenedTopicOffsets: reopenedTopicOffsets)
         for topic in InterviewTopic.allCases where !profile.isUsable(topic) {
             try restarted.clearTopic(topic)
         }
@@ -238,7 +321,10 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
             try applyNumber(number, topic: question.topic, at: date)
         case .text:
             guard let text = answer.text else { throw CoreError.invalidInput("缺少文字结果。") }
-            try apply(.text(text), for: question.topic, provenance: .stated, at: date)
+            // Natural words for goal/equipment/schedule are evidence, not enum raw values.
+            if [.capability, .venue, .restrictions, .sleep, .dailyActivity, .adherence].contains(question.topic) {
+                try apply(.text(text), for: question.topic, provenance: .stated, at: date)
+            }
         case .boolean:
             guard let flag = answer.boolean else { throw CoreError.invalidInput("缺少是否结果。") }
             try applyBoolean(flag, topic: question.topic, at: date)
@@ -253,15 +339,14 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
             }
             profile.adultStatus = .init(value: choice == "yes" || choice == "是", provenance: .stated, confirmedAt: date)
         case .primaryGoal:
-            guard let goal = PlanningGoal(rawValue: choice) else { throw CoreError.invalidInput("无法识别的目标选项。") }
+            guard let goal = PlanningGoal(rawValue: choice) else { return }
             profile.primaryGoal = .init(value: goal, provenance: .stated, confirmedAt: date)
         case .experience:
-            guard let value = PlanningExperience(rawValue: choice) else { throw CoreError.invalidInput("无法识别的经验选项。") }
+            guard let value = PlanningExperience(rawValue: choice) else { return }
             profile.experience = .init(value: value, provenance: .stated, confirmedAt: date)
         case .restrictions:
             profile.restrictions = .init(value: choice, provenance: .stated, confirmedAt: date)
-        default:
-            throw CoreError.invalidInput("这个主题不接受单选结果。")
+        default: return
         }
     }
 
@@ -269,35 +354,41 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         switch topic {
         case .schedule:
             let days = choices.compactMap { Int($0) }.filter { (1...7).contains($0) }
-            guard days.count == choices.count, !days.isEmpty else { throw CoreError.invalidInput("可训练日选项无效。") }
+            guard days.count == choices.count, !days.isEmpty else { return }
             profile.weekdays = .init(value: Array(Set(days)).sorted(), provenance: .stated, confirmedAt: date)
         case .equipment:
             let gear = choices.compactMap { PlanningEquipment(rawValue: $0) }
-            guard gear.count == choices.count, !gear.isEmpty else { throw CoreError.invalidInput("器械选项无效。") }
+            guard gear.count == choices.count, !gear.isEmpty else { return }
             profile.equipment = .init(value: Array(Set(gear)).sorted { $0.rawValue < $1.rawValue },
                                       provenance: .stated, confirmedAt: date)
         case .secondaryGoals:
             let goals = choices.compactMap { PlanningGoal(rawValue: $0) }
-            guard goals.count == choices.count else { throw CoreError.invalidInput("次要目标选项无效。") }
+            guard goals.count == choices.count else { return }
             profile.secondaryGoals = .init(value: goals, provenance: .stated, confirmedAt: date)
         case .preferences, .exclusions:
-            for id in choices where ExerciseCatalog.exercise(id: id) == nil {
-                throw CoreError.missingReference("动作 \(id)")
-            }
+            guard choices.allSatisfy({ ExerciseCatalog.exercise(id: $0) != nil }) else { return }
             if topic == .preferences {
                 profile.preferredExerciseIDs = .init(value: choices, provenance: .stated, confirmedAt: date)
             } else {
                 profile.excludedExerciseIDs = .init(value: choices, provenance: .stated, confirmedAt: date)
             }
-        default:
-            throw CoreError.invalidInput("这个主题不接受多选结果。")
+        default: return
         }
     }
 
     private mutating func applyNumber(_ number: Double, topic: InterviewTopic, at date: Date) throws {
         switch topic {
+        case .age:
+            guard number.isFinite, number == number.rounded(), (1...120).contains(number) else { throw CoreError.invalidInput("年龄需为1至120岁的整数。") }
+            profile.ageYears = .init(value: Int(number), provenance: .stated, confirmedAt: date)
+        case .height:
+            guard number.isFinite, (50...250).contains(number) else { throw CoreError.invalidInput("身高需在50至250厘米之间。") }
+            profile.heightCM = .init(value: number, provenance: .stated, confirmedAt: date)
+        case .weight:
+            guard number.isFinite, (15...400).contains(number) else { throw CoreError.invalidInput("体重需在15至400公斤之间。") }
+            profile.weightKG = .init(value: number, provenance: .stated, confirmedAt: date)
         case .minutes:
-            guard number == number.rounded(), (15...120).contains(Int(number)) else {
+            guard number.isFinite, number == number.rounded(), (15...120).contains(number) else {
                 throw CoreError.invalidInput("单次时间需为 15 至 120 分钟的整数。")
             }
             profile.minutesPerSession = .init(value: Int(number), provenance: .stated, confirmedAt: date)
@@ -333,6 +424,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         var draft = self
         try draft.apply(value, for: extraction.topic, provenance: .inferred, at: date)
         draft.updatedAt = date
+        draft.rulesVersion = InterviewRules.rulesVersion
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
@@ -342,6 +434,12 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
                                 provenance: ProfileProvenance, at date: Date) throws {
         let confirmedAt: Date? = provenance == .inferred ? nil : date
         switch (topic, value) {
+        case (.age, .age(let value)):
+            profile.ageYears = .init(value: value, provenance: provenance, confirmedAt: confirmedAt)
+        case (.height, .height(let value)):
+            profile.heightCM = .init(value: value, provenance: provenance, confirmedAt: confirmedAt)
+        case (.weight, .weight(let value)):
+            profile.weightKG = .init(value: value, provenance: provenance, confirmedAt: confirmedAt)
         case (.adultStatus, .boolean(let flag)):
             profile.adultStatus = .init(value: flag, provenance: provenance, confirmedAt: confirmedAt)
         case (.primaryGoal, .goal(let goal)):
@@ -394,6 +492,9 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
                                  confirmedAt: field.value == nil ? nil : confirmedAt, note: field.note)
         }
         switch topic {
+        case .age: rewrite(&profile.ageYears)
+        case .height: rewrite(&profile.heightCM)
+        case .weight: rewrite(&profile.weightKG)
         case .adultStatus: rewrite(&profile.adultStatus)
         case .primaryGoal: rewrite(&profile.primaryGoal)
         case .secondaryGoals: rewrite(&profile.secondaryGoals)
@@ -416,6 +517,9 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
 
     private mutating func clearTopic(_ topic: InterviewTopic) throws {
         switch topic {
+        case .age: profile.ageYears = .unknown
+        case .height: profile.heightCM = .unknown
+        case .weight: profile.weightKG = .unknown
         case .adultStatus: profile.adultStatus = .unknown
         case .primaryGoal: profile.primaryGoal = .unknown
         case .secondaryGoals: profile.secondaryGoals = .unknown
@@ -440,13 +544,23 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         try CoreValidation.date(createdAt, name: "访谈开始时间")
         try CoreValidation.date(updatedAt, name: "访谈更新时间")
         guard updatedAt >= createdAt, turns.count <= InterviewRules.maximumTurns,
-              rulesVersion == InterviewRules.rulesVersion else {
+              InterviewRules.compatibleRulesVersions.contains(rulesVersion) else {
             throw CoreError.invalidInput("访谈记录时间、数量或规则版本无效。")
         }
         try profile.validate()
-        try CoreValidation.unique(turns.map(\.id), name: "访谈轮次 ID")
+        if let pausedAt { try CoreValidation.date(pausedAt, name: "暂停时间") }
+        guard (archivedTurns ?? []).count <= InterviewRules.maximumArchivedTurns,
+              (narratives ?? []).count <= InterviewRules.maximumNarratives else { throw CoreError.invalidInput("访谈归档或叙述数量超出上限。") }
+        for entry in narratives ?? [] { try entry.validate() }
+        try CoreValidation.unique((narratives ?? []).map(\.id), name: "本人叙述ID")
+        if let offsets = reopenedTopicOffsets {
+            guard offsets.allSatisfy({ InterviewTopic(rawValue: $0.key) != nil && (0...allTurns.count).contains($0.value) }) else {
+                throw CoreError.invalidInput("重新询问的边界无效。")
+            }
+        }
+        try CoreValidation.unique(allTurns.map(\.id), name: "访谈轮次 ID")
         var seenQuestionIDs = Set<UUID>()
-        for turn in turns {
+        for turn in allTurns {
             try turn.validate()
             for question in turn.questions {
                 guard seenQuestionIDs.insert(question.id).inserted else {

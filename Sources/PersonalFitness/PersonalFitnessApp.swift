@@ -34,6 +34,8 @@ struct PersonalFitnessApp: App {
                     _ = try isolated.startWorkout(plan: plan)
                 }
                 _store = State(initialValue: isolated)
+            } else if ProcessInfo.processInfo.arguments.contains("--capture-history") {
+                _store = State(initialValue: try HistoryValidationData.makeStore())
             } else { _store = State(initialValue: try TrainingStore()) }
             #else
             _store = State(initialValue: try TrainingStore())

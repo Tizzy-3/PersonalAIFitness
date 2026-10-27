@@ -20,7 +20,6 @@ struct PlansAndHistoryView: View {
     let editPlan: (PlanVersion?) -> Void
     @State private var issue: String?
     @State private var deleting: PlanLibraryDeletion?
-    @State private var panel = 0
 
     private var showingDeletion: Binding<Bool> {
         Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })
@@ -28,12 +27,6 @@ struct PlansAndHistoryView: View {
 
     var body: some View {
         List {
-            Section {
-                Picker("训练内容", selection: $panel) {
-                    Text("我的计划").tag(0)
-                    Text("训练历史").tag(1)
-                }.pickerStyle(.segmented)
-            }.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)).listRowBackground(Color.clear)
             if let active = store.activeSession {
                 Section("进行中") {
                     Button { openWorkout(active.id) } label: {
@@ -42,7 +35,6 @@ struct PlansAndHistoryView: View {
                     }
                 }
             }
-            if panel == 0 {
             currentSection
             Section("制定与创建") {
                 NavigationLink { CoachInterviewView(store: store) } label: {
@@ -123,9 +115,12 @@ struct PlansAndHistoryView: View {
                     }
                 } footer: { Text("不能单独删除一个历史版本，以免破坏训练来源和版本链。") }
             }
-            } else {
-                historySection
+            Section {
+                NavigationLink { TrainingHistoryCalendarView(store: store, openWorkout: openWorkout) } label: {
+                    Label("查看月历训练历史", systemImage: "calendar")
+                }
             }
+
         }
         .navigationTitle("训练")
         .scrollContentBackground(.hidden).background(FitnessTheme.canvas)
@@ -160,33 +155,6 @@ struct PlansAndHistoryView: View {
                 }.buttonStyle(.borderless)
             } else {
                 TrainingLibraryEmptyState(symbol: "calendar", title: "今天的安排，从这里开始", detail: "选择一份已有计划，或建立适合你的训练安排。")
-            }
-        }
-    }
-
-    private var historySection: some View {
-        Section("训练历史") {
-            let history = store.sessions.filter { !$0.status.isOngoing }.sorted { $0.startedAt > $1.startedAt }
-            if history.isEmpty {
-                TrainingLibraryEmptyState(symbol: "clock.arrow.circlepath", title: "每一次训练，都会留下记录", detail: "完成或提前结束训练后，在这里回看。")
-            }
-            ForEach(history) { session in
-                NavigationLink { SessionDetailView(session: session) } label: {
-                    HStack(alignment: .center, spacing: 12) {
-                        if let exercise = session.exercises.first?.exercise { ExerciseTile(exercise: exercise, size: 58) }
-                        else { TrainingLibraryGlyph(symbol: "dumbbell", color: FitnessTheme.accent) }
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text(session.name).font(.headline)
-                            Text(session.startedAt, format: .dateTime.month().day().hour().minute())
-                                .font(.caption).foregroundStyle(.secondary)
-                            Text("\(session.completedWorkingSets) 组 · \(UIInput.duration(session.elapsed()))")
-                                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 0)
-                        Text(session.status.title).font(.caption2.weight(.medium))
-                            .foregroundStyle(session.status == .completed ? FitnessTheme.teal : FitnessTheme.orange)
-                    }.padding(.vertical, 5)
-                }
             }
         }
     }
@@ -438,6 +406,15 @@ struct SessionDetailView: View {
                 LabeledContent("开始时间") { Text(session.startedAt, format: .dateTime.month().day().hour().minute()) }
                 LabeledContent("会话时长", value: UIInput.duration(session.elapsed()))
                 LabeledContent("完成正式组", value: String(session.completedWorkingSets))
+                let metrics = TrainingHistoryMetrics(session: session, at: Date())
+                if metrics.totalLoadRepetitionsKG > 0 {
+                    LabeledContent("总重口径训练量", value: "\(UIInput.number(metrics.totalLoadRepetitionsKG)) kg·次")
+                }
+                if metrics.perHandLoadRepetitionsKG > 0 {
+                    LabeledContent("每只口径训练量", value: "\(UIInput.number(metrics.perHandLoadRepetitionsKG)) kg·次")
+                    Text("按记录的每只重量×次数累计，不自动翻倍，也不与总重量口径相加。")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 if session.sourcePlanVersionID != nil { Text("记录保留开训时的计划快照，后续计划修改不会覆盖本次训练。").font(.caption).foregroundStyle(.secondary) }
             }
             ForEach(session.exercises) { item in
@@ -481,103 +458,6 @@ struct SessionDetailView: View {
     }
 }
 
-@MainActor
-struct TrainingInsightsView: View {
-    let store: TrainingStore
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    private var recorded: [WorkoutSession] {
-        store.sessions.filter { !$0.status.isOngoing && $0.exercises.contains(where: { $0.sets.contains(where: \.isCompleted) }) }
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack {
-                    Text("每次训练，都算数").font(.title3.weight(.semibold))
-                    Spacer()
-                    Image(systemName: "chart.bar.xaxis").foregroundStyle(FitnessTheme.accent)
-                }
-                Text("只统计已保存、至少完成一组的训练。")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                TrainingMetricCard(title: "记录的训练", value: String(recorded.count), unit: "次",
-                                   symbol: "figure.strengthtraining.traditional", color: FitnessTheme.accent)
-                LazyVGrid(columns: dynamicTypeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    TrainingMetricCard(title: "完成正式组", value: String(recorded.reduce(0) { $0 + $1.completedWorkingSets }), unit: "组",
-                                       symbol: "checkmark.circle", color: FitnessTheme.teal)
-                    TrainingMetricCard(title: "会话总时长", value: UIInput.duration(recorded.reduce(0) { $0 + $1.elapsed() }), unit: "",
-                                       symbol: "clock", color: FitnessTheme.orange)
-                }
-                if recorded.isEmpty {
-                    TrainingLibraryEmptyState(symbol: "chart.bar", title: "进步，从真实记录开始", detail: "完成一组并保存训练后，这里会展示你的训练分布。")
-                        .padding(18).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
-                } else {
-                    activityCard
-                }
-                NavigationLink { ReviewView(store: store) } label: {
-                    HStack(spacing: 12) {
-                        TrainingLibraryGlyph(symbol: "calendar.badge.clock", color: FitnessTheme.violet)
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("周 / 月复盘").font(.headline).foregroundStyle(FitnessTheme.ink)
-                            Text("查看训练执行与数据缺口").font(.caption).foregroundStyle(.secondary)
-                        }
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
-                    }.padding(16).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
-                }.buttonStyle(.plain)
-                DisclosureGroup("统计口径与功能范围") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("会话时长包含组间休息，排除显式暂停。热身组和未完成组不计入完成正式组；按训练开始日期归入本地自然日。")
-                        Text("完整完成率、单动作力量与有氧趋势、身体状态分析仍未全部实现。没有真实记录时，不生成进步曲线或恢复总分。")
-                    }.font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
-                }.font(.subheadline).padding(16).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
-            }.padding(16)
-        }.background(FitnessTheme.canvas).navigationTitle("趋势")
-    }
-
-    private var recentDays: [(date: Date, count: Int)] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return (0..<7).compactMap { index in
-            guard let day = calendar.date(byAdding: .day, value: index - 6, to: today),
-                  let end = calendar.date(byAdding: .day, value: 1, to: day) else { return nil }
-            return (day, recorded.filter { $0.startedAt >= day && $0.startedAt < end }.count)
-        }
-    }
-
-    private var activityCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Text("最近 7 天").font(.headline)
-                Spacer()
-                Text("\(recentDays.reduce(0) { $0 + $1.count }) 次训练").font(.caption).foregroundStyle(.secondary)
-            }
-            HStack(alignment: .bottom, spacing: 10) {
-                ForEach(Array(recentDays.enumerated()), id: \.offset) { _, day in
-                    VStack(spacing: 8) {
-                        Text(String(day.count)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                        VStack {
-                            Spacer(minLength: 0)
-                            RoundedRectangle(cornerRadius: 5)
-                                .fill(day.count > 0 ? FitnessTheme.accent : FitnessTheme.canvas)
-                                .frame(height: activityHeight(for: day.count))
-                        }.frame(height: 88)
-                        Text(day.date, format: .dateTime.weekday(.narrow)).font(.caption).foregroundStyle(.secondary)
-                    }.frame(maxWidth: .infinity).accessibilityElement(children: .ignore)
-                        .accessibilityLabel(day.date.formatted(.dateTime.month().day()))
-                        .accessibilityValue("\(day.count)次训练")
-                }
-            }
-        }.padding(18).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
-    }
-
-    private func activityHeight(for count: Int) -> CGFloat {
-        guard count > 0 else { return 3 }
-        let maximum = max(1, recentDays.map { $0.count }.max() ?? 1)
-        return max(8, 88 * CGFloat(count) / CGFloat(maximum))
-    }
-}
-
 private struct TrainingLibraryGlyph: View {
     let symbol: String
     let color: Color
@@ -616,24 +496,5 @@ private struct TrainingLibraryEmptyState: View {
                 Text(detail).font(.caption).foregroundStyle(.secondary)
             }
         }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10)
-    }
-}
-
-private struct TrainingMetricCard: View {
-    let title: String
-    let value: String
-    let unit: String
-    let symbol: String
-    let color: Color
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label(title, systemImage: symbol).font(.caption.weight(.medium)).foregroundStyle(color)
-            HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text(value).font(.title.weight(.bold).monospacedDigit()).foregroundStyle(FitnessTheme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                if !unit.isEmpty { Text(unit).font(.caption).foregroundStyle(.secondary) }
-            }
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(18)
-            .background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
     }
 }

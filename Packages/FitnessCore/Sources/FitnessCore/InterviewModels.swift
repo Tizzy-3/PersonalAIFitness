@@ -6,9 +6,13 @@ public enum InterviewTopic: String, Codable, Equatable, CaseIterable, Sendable {
     case adultStatus, primaryGoal, secondaryGoals, experience, capability, schedule, minutes
     case equipment, equipmentLoads, venue, preferences, exclusions, restrictions
     case sleep, dailyActivity, adherence
+    case age, height, weight
 
     public var title: String {
         switch self {
+        case .age: return "年龄"
+        case .height: return "身高"
+        case .weight: return "体重"
         case .adultStatus: return "是否已年满18岁"
         case .primaryGoal: return "主要目标"
         case .secondaryGoals: return "次要目标"
@@ -64,17 +68,29 @@ public struct InterviewQuestion: Identifiable, Codable, Equatable, Sendable {
     public var maximum: Double?
     public var allowUnknown: Bool
     public var allowSkip: Bool
+    /// A stable topic-scoped key for one specific follow-up, not a new profile field.
+    public var detailKey: String?
 
     public init(id: UUID = UUID(), topic: InterviewTopic, kind: InterviewQuestionKind,
                 prompt: String, options: [String] = [], unit: String? = nil,
                 minimum: Double? = nil, maximum: Double? = nil,
-                allowUnknown: Bool = true, allowSkip: Bool = true) {
+                allowUnknown: Bool = true, allowSkip: Bool = true, detailKey: String? = nil) {
         self.id = id; self.topic = topic; self.kind = kind; self.prompt = prompt
         self.options = options; self.unit = unit; self.minimum = minimum; self.maximum = maximum
-        self.allowUnknown = allowUnknown; self.allowSkip = allowSkip
+        self.allowUnknown = allowUnknown; self.allowSkip = allowSkip; self.detailKey = detailKey
     }
 
+    public var isFollowUp: Bool { detailKey != nil }
+    public var stableKey: String { detailKey ?? topic.rawValue + ".base" }
+
     public func validate() throws {
+        if let detailKey {
+            guard detailKey.hasPrefix(topic.rawValue + "."), (3...80).contains(detailKey.count),
+                  detailKey != topic.rawValue + ".base",
+                  detailKey.unicodeScalars.allSatisfy({ CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-").contains($0) }) else {
+                throw CoreError.invalidInput("深入问题必须使用合法、稳定且属于本主题的detailKey。")
+            }
+        }
         try CoreValidation.nonempty(prompt, name: "问题内容", maxLength: 500)
         switch kind {
         case .singleChoice, .multiChoice:
@@ -194,13 +210,17 @@ public struct InterviewTurn: Identifiable, Codable, Equatable, Sendable {
     /// What the assistant said alongside the questions. Not a source of facts.
     public var note: String
     public var provider: InterviewProvider?
+    public var formatRepairUsed: Bool?
+    public var jsonModeFallbackUsed: Bool?
 
     public init(id: UUID = UUID(), createdAt: Date = Date(), questions: [InterviewQuestion] = [],
                 answers: [InterviewAnswer] = [], extractions: [InterviewExtraction] = [],
-                note: String = "", provider: InterviewProvider? = nil) {
+                note: String = "", provider: InterviewProvider? = nil,
+                formatRepairUsed: Bool? = nil, jsonModeFallbackUsed: Bool? = nil) {
         self.id = id; self.createdAt = createdAt; self.questions = questions
         self.answers = answers; self.extractions = extractions; self.note = note
         self.provider = provider
+        self.formatRepairUsed = formatRepairUsed; self.jsonModeFallbackUsed = jsonModeFallbackUsed
     }
 
     public var isAnswered: Bool {
@@ -213,6 +233,7 @@ public struct InterviewTurn: Identifiable, Codable, Equatable, Sendable {
             throw CoreError.invalidInput("一轮最多只能问 \(InterviewRules.maximumQuestionsPerTurn) 个问题。")
         }
         try CoreValidation.unique(questions.map(\.id), name: "问题 ID")
+        try CoreValidation.unique(questions.map(\.stableKey), name: "同一轮具体问题")
         for question in questions { try question.validate() }
         try CoreValidation.unique(answers.map(\.questionID), name: "同一问题的回答")
         for answer in answers {
@@ -251,6 +272,15 @@ public struct InterviewExtraction: Codable, Equatable, Sendable {
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw CoreError.invalidInput("抽取内容为空。") }
         switch topic {
+        case .age:
+            guard let value = Int(trimmed), (1...120).contains(value) else { throw CoreError.invalidInput("年龄需为1至120岁的整数。") }
+            return .age(value)
+        case .height:
+            guard let value = Double(trimmed), value.isFinite, (50...250).contains(value) else { throw CoreError.invalidInput("身高需在50至250厘米之间。") }
+            return .height(value)
+        case .weight:
+            guard let value = Double(trimmed), value.isFinite, (15...400).contains(value) else { throw CoreError.invalidInput("体重需在15至400公斤之间。") }
+            return .weight(value)
         case .primaryGoal:
             guard let goal = PlanningGoal(rawValue: trimmed) else {
                 throw CoreError.invalidInput("无法识别的训练目标。")
@@ -328,6 +358,7 @@ public struct InterviewExtraction: Codable, Equatable, Sendable {
 
 /// A parsed extraction, typed by topic. Only these shapes can ever be written into a profile.
 public enum InterviewValue: Equatable, Sendable {
+    case age(Int), height(Double), weight(Double)
     case goal(PlanningGoal)
     case goals([PlanningGoal])
     case experience(PlanningExperience)
@@ -353,7 +384,10 @@ public struct InterviewProvider: Codable, Equatable, Sendable {
 }
 
 public enum InterviewRules {
-    public static let rulesVersion = "interview-1"
+    public static let rulesVersion = "interview-2"
+    public static let compatibleRulesVersions = ["interview-1", "interview-2"]
+    public static let maximumArchivedTurns = 2_000
+    public static let maximumNarratives = 32
     public static let maximumQuestionsPerTurn = 3
     public static let maximumTurns = 200
 }

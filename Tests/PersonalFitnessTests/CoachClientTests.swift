@@ -48,6 +48,59 @@ final class CoachClientTests: XCTestCase {
     private let configuration = AIConfiguration(endpoint: "https://model.example.invalid/v1/chat/completions", model: "fixture-model")
 
     @MainActor
+    func testJSONModeIsExplicitAndRetainsBoundedNonStreamingProtocol() async throws {
+        let client = client { request in
+            let body = try XCTUnwrap(request.httpBody)
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+            XCTAssertEqual((object["response_format"] as? [String: String])?["type"], "json_object")
+            XCTAssertEqual(object["max_tokens"] as? Int, 4_096)
+            XCTAssertEqual(object["stream"] as? Bool, false)
+            return CoachHTTPStub(status: 200, contentType: "application/json", data: Data(#"{"choices":[{"message":{"content":"{}"},"finish_reason":"stop"}]}"#.utf8))
+        }
+        let result = try await client.completeDetailed(configuration: configuration, key: "fixture-token",
+                messages: [.init(role: "system", content: "Return JSON")], outputFormat: .jsonObject)
+        XCTAssertEqual(result.content, "{}")
+        XCTAssertEqual(result.finishReason, "stop")
+    }
+
+    @MainActor
+    func testTextModeDoesNotImposeOptionalProviderParameters() async throws {
+        let client = client { request in
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+            XCTAssertNil(object["response_format"])
+            XCTAssertNil(object["max_tokens"])
+            return CoachHTTPStub(status: 200, contentType: "application/json", data: Data(#"{"choices":[{"message":{"content":"answer"}}]}"#.utf8))
+        }
+        let result = try await client.complete(configuration: configuration, key: "fixture-token", messages: [])
+        XCTAssertEqual(result, "answer")
+    }
+
+    @MainActor
+    func testOnlyExplicitUnsupportedFormatAllowsCompatibilityFallback() async {
+        let client = client { _ in
+            CoachHTTPStub(status: 400, contentType: "application/json",
+                data: Data(#"{"error":{"param":"response_format","code":"unsupported_parameter","message":"sensitive raw provider detail"}}"#.utf8))
+        }
+        do { _ = try await client.complete(configuration: configuration, key: "fixture-token", messages: [], outputFormat: .jsonObject); XCTFail("Expected explicit format error") }
+        catch { XCTAssertEqual(error as? CoachClientError, .jsonModeUnsupported); XCTAssertFalse(error.localizedDescription.contains("sensitive")) }
+        XCTAssertFalse(CoachHTTPClient.isUnsupportedJSONMode(Data(#"{"error":{"param":"model","code":"unsupported_parameter"}}"#.utf8)))
+        XCTAssertFalse(CoachHTTPClient.isUnsupportedJSONMode(Data(#"{"error":{"param":"response_format","code":"invalid_api_key"}}"#.utf8)))
+    }
+
+    func testTextContentPartsAreCombinedWithoutLeakingReasoning() throws {
+        let data = Data(#"{"choices":[{"message":{"content":[{"type":"text","text":"{\"questions\":"},{"type":"text","text":"[]}"}],"reasoning_content":"private reasoning"},"finish_reason":"stop"}]}"#.utf8)
+        XCTAssertEqual(try CoachHTTPClient.decodeEnvelope(data), #"{"questions":[]}"#)
+        XCTAssertThrowsError(try CoachHTTPClient.decodeEnvelope(Data(#"{"choices":[{"message":{"reasoning_content":"private reasoning","content":null},"finish_reason":"stop"}]}"#.utf8)))
+    }
+
+    func testTruncationAndToolCallsAreNeverAcceptedAsCompletedText() {
+        XCTAssertThrowsError(try CoachHTTPClient.decodeEnvelope(Data(#"{"choices":[{"message":{"content":"{\"questions\":[]}"},"finish_reason":"length"}]}"#.utf8))) {
+            XCTAssertEqual($0 as? CoachClientError, .outputTruncated)
+        }
+        XCTAssertThrowsError(try CoachHTTPClient.decodeEnvelope(Data(#"{"choices":[{"message":{"content":"{}","tool_calls":[{"id":"tool"}]},"finish_reason":"tool_calls"}]}"#.utf8)))
+    }
+
+    @MainActor
     private func client(_ handler: @escaping @Sendable (URLRequest) throws -> CoachHTTPStub) -> CoachHTTPClient {
         CoachStubURLProtocol.state.set(handler)
         let configuration = URLSessionConfiguration.ephemeral

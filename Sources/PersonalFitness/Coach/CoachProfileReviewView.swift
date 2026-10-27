@@ -32,6 +32,20 @@ struct CoachProfileReviewView: View {
                     }.font(.footnote)
                     if let status { Label(status, systemImage: "checkmark.circle").font(.footnote).foregroundStyle(FitnessTheme.teal) }
                 }
+                if let session = store.interview {
+                    CoachPanel {
+                        if session.needsSafetyReview { Label("新补充的情况需要重新核对运动限制", systemImage: "exclamationmark.shield").font(.footnote).foregroundStyle(FitnessTheme.orange) }
+                        DisclosureGroup("本人叙述与深入问答") {
+                            ForEach(session.narratives ?? []) { entry in Text(entry.text).font(.footnote).textSelection(.enabled).padding(.vertical, 6) }
+                            ForEach(Array(session.dialogueEvidence.enumerated()), id: \.offset) { _, item in
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(item.prompt).font(.subheadline.weight(.medium))
+                                    Text(InterviewAPI.describe(item.answer)).font(.footnote).foregroundStyle(.secondary).textSelection(.enabled)
+                                }.padding(.vertical, 7)
+                            }
+                        }.font(.subheadline)
+                    }
+                }
                 ForEach(InterviewTopic.allCases, id: \.self) { topic in
                     CoachPanel { row(topic) }
                 }
@@ -75,6 +89,13 @@ struct CoachProfileReviewView: View {
             }
             Text(InterviewAPI.describe(topic, profile: profile))
                 .font(.footnote).foregroundStyle(.secondary)
+            if topic == .restrictions {
+                Text("用自然语言描述也可以。制定成人计划前，请本人明确确认当前状态；这不会由AI从句子猜成没有限制。")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button("本人确认：目前无已知运动限制且无疼痛或异常不适") { confirmNoRestrictions() }
+                    .buttonStyle(.bordered).controlSize(.large)
+                Button("有或不确定，重新说明") { reopening = topic }.frame(minHeight: 44)
+            }
             if provenance == .inferred {
                 HStack {
                     Button("确认") { confirm(topic, accept: true) }
@@ -99,6 +120,15 @@ struct CoachProfileReviewView: View {
         case .inferred: return FitnessTheme.orange
         case .unknown: return .secondary
         }
+    }
+
+    private func confirmNoRestrictions() {
+        guard var session = store.interview else { return }
+        do {
+            try session.setValue(.text("无"), for: .restrictions)
+            try store.saveInterview(session)
+            status = "已记录本人对当前运动限制和不适的明确确认。"
+        } catch { issue = error.localizedDescription }
     }
 
     private func confirm(_ topic: InterviewTopic, accept: Bool) {

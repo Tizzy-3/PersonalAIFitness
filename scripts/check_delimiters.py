@@ -19,6 +19,23 @@ def strip_code(text):
     line = 1
     while i < n:
         ch = text[i]
+        # Swift extended-delimiter strings: backslashes/quotes inside #"..."# are literal
+        # unless followed by the matching number of hashes. Do not lex JSON as Swift code.
+        if ch == '#':
+            start = i
+            while i < n and text[i] == '#':
+                i += 1
+            hashes = text[start:i]
+            if i < n and text[i] == '"':
+                quote = '"""' if text.startswith('"""', i) else '"'
+                i += len(quote)
+                end = text.find(quote + hashes, i)
+                if end < 0:
+                    raise ValueError('Unterminated extended string at line %d' % line)
+                line += text[i:end].count('\n')
+                i = end + len(quote) + len(hashes)
+                continue
+            i = start
         # Line comment
         if text.startswith('//', i):
             while i < n and text[i] != '\n':

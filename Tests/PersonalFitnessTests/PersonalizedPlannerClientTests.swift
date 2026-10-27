@@ -52,6 +52,24 @@ final class PersonalizedPlannerClientTests: XCTestCase {
         return try PersonalizedPlanRequest.make(session: session, snapshot: snapshot)
     }
 
+    func testPersonalizedPlanReceivesOwnNarrativeAndDeepAnswersAfterRestart() throws {
+        var value = interview()
+        let date = value.createdAt.addingTimeInterval(1)
+        try value.addNarrative("NARRATIVE-SPECIFIC-HIKING-GOAL", at: date)
+        let question = InterviewQuestion(topic: .capability, kind: .text, prompt: "具体能力？", detailKey: "capability.hiking_limit")
+        try value.appendTurn(.init(questions: [question]), at: date)
+        try value.answer([.init(questionID: question.id, text: "DEEP-ANSWER-RECORDED", answeredAt: date)], at: date)
+        value = try value.restartedPreservingProfile(at: date.addingTimeInterval(1))
+        XCTAssertThrowsError(try PersonalizedPlanRequest.make(session: value, snapshot: .init(interview: value)))
+        try value.setValue(.text("无"), for: .restrictions, at: date.addingTimeInterval(2))
+        let request = try PersonalizedPlanRequest.make(session: value, snapshot: .init(interview: value))
+        let text = try PersonalizedPlannerAPI.requestJSON(request)
+        XCTAssertTrue(text.contains("NARRATIVE-SPECIFIC-HIKING-GOAL"))
+        XCTAssertTrue(text.contains("DEEP-ANSWER-RECORDED"))
+        XCTAssertEqual(request.profile.capabilityNote.value, "CONFIRMED-CAPABILITY")
+        XCTAssertFalse(request.confirmedFacts.values.contains("DEEP-ANSWER-RECORDED"))
+    }
+
     func testPayloadUsesConfirmedInterviewAndRealMovementPoolInsteadOfWholeWeeklyOptions() throws {
         let prepared = try request()
         let preview = try PersonalizedPlannerAPI.requestJSON(prepared)

@@ -50,6 +50,9 @@ struct ExerciseLibraryCard: View {
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
             if exercise.isCustom {
                 Text("自定义").font(.caption2.weight(.medium)).foregroundStyle(FitnessTheme.teal)
+            } else if let media, media.kind != .video {
+                Label("静态图示\((media.stillImages?.count ?? 1) > 1 ? " · 多图" : "")", systemImage: "photo")
+                    .font(.caption2).foregroundStyle(FitnessTheme.teal)
             }
         }
         .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -57,7 +60,7 @@ struct ExerciseLibraryCard: View {
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .combine)
         .accessibilityValue(favorite ? "已收藏" : "未收藏")
-        .accessibilityHint(hasVideo ? "打开动作资料和离线示范短片" : "打开动作资料；尚无可播放的示范短片")
+        .accessibilityHint(hasVideo ? "打开动作资料和离线示范短片" : media == nil ? "打开动作资料；尚无示范素材" : "打开静态动作图示；不是视频或动图")
     }
 }
 

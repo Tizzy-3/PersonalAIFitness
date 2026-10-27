@@ -3,7 +3,7 @@ import Foundation
 /// Small versioned calibration templates. AI may select an option, never create these quantities.
 public enum PlannerEngine {
     public static let rulesVersion = "starter-week-1"
-    public static let catalogVersion = "2026.10.26.2"
+    public static let catalogVersion = ExerciseCatalog.version
     public static let timingVersion = "starter-time-1"
 
     enum Pattern: String { case squat, hinge, push, pull, core, cardio }
@@ -34,7 +34,12 @@ public enum PlannerEngine {
         Movement(id: "builtin.walking", pattern: .cardio, requirements: [[.walkingSpace], [.runningSpace]]),
         Movement(id: "builtin.stationary-cycling", pattern: .cardio, requirements: [[.stationaryBike]]),
         Movement(id: "builtin.elliptical", pattern: .cardio, requirements: [[.elliptical]]),
-        Movement(id: "builtin.rowing-ergometer", pattern: .cardio, requirements: [[.rowingErgometer]])
+        Movement(id: "builtin.rowing-ergometer", pattern: .cardio, requirements: [[.rowingErgometer]]),
+        Movement(id: "builtin.dumbbell-floor-press", pattern: .push, requirements: [[.dumbbells, .bodyweight]]),
+        Movement(id: "builtin.dumbbell-front-squat", pattern: .squat, requirements: [[.dumbbells]]),
+        Movement(id: "builtin.step-up", pattern: .squat, requirements: [[.stableSupport]]),
+        Movement(id: "builtin.high-plank", pattern: .core, requirements: [[.bodyweight]]),
+        Movement(id: "builtin.pallof-press", pattern: .core, requirements: [[.cableMachine]])
     ]
 
     public static func options(for input: PlanningInput) throws -> [WeeklyPlanOption] {
@@ -235,7 +240,7 @@ public enum PlannerEngine {
     }
 
     static func candidates(pattern: Pattern, input: PlanningInput, simple: Bool) -> [Movement] {
-        let ranks: [String]
+        var ranks: [String]
         switch pattern {
         case .squat: ranks = simple ? ["bodyweight-squat", "box-squat", "goblet-squat", "leg-press"] : ["leg-press", "goblet-squat", "bodyweight-squat", "box-squat"]
         case .hinge: ranks = simple || input.experience != .regular ? ["glute-bridge", "dumbbell-rdl"] : ["dumbbell-rdl", "glute-bridge"]
@@ -245,6 +250,12 @@ public enum PlannerEngine {
         case .pull: ranks = simple ? ["band-pull-apart", "dumbbell-row", "seated-cable-row", "lat-pulldown"] : ["lat-pulldown", "seated-cable-row", "dumbbell-row", "band-pull-apart"]
         case .core: ranks = simple ? ["bird-dog", "dead-bug", "plank"] : ["dead-bug", "bird-dog", "plank"]
         case .cardio: ranks = simple ? ["walking", "stationary-cycling", "elliptical", "rowing-ergometer"] : ["stationary-cycling", "elliptical", "walking", "rowing-ergometer"]
+        }
+        switch pattern {
+        case .squat: ranks += ["step-up", "dumbbell-front-squat"]
+        case .push: ranks += ["dumbbell-floor-press"]
+        case .core: ranks += ["high-plank", "pallof-press"]
+        default: break
         }
         return ranks.compactMap { slug in movements.first { $0.id == "builtin.\(slug)" && $0.pattern == pattern } }
             .filter { !input.excludedExerciseIDs.contains($0.id) && isAvailable(exerciseID: $0.id, equipment: input.equipment)

@@ -315,6 +315,21 @@ struct ExerciseDetailView: View {
                     LabeledContent("持续时间", value: set.durationSeconds.map { UIInput.duration($0) } ?? "未记录")
                 } else { Text("还没有该动作的已完成记录。").foregroundStyle(.secondary) }
             }
+            if let source = ExerciseDetails.contentSource(for: exercise.id) {
+                Section {
+                    DisclosureGroup("动作资料来源与原文") {
+                        Text("中文提示为一般动作要点重写，不是完整逐字译文或个人训练处方。")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        Text(source.title).font(.subheadline.weight(.semibold)).textSelection(.enabled)
+                        Text("作者：\(source.author) · \(source.licenseName)").font(.caption).textSelection(.enabled)
+                        Text(source.originalDescription.isEmpty ? "上游未提供完整文字说明。" : source.originalDescription)
+                            .font(.footnote).textSelection(.enabled)
+                        if let url = URL(string: source.url) { Link("查看上游动作记录", destination: url) }
+                        if let license = URL(string: source.licenseURL) { Link("文字资料许可", destination: license) }
+                        Text(source.url).font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
+                    }
+                }
+            }
         }.navigationTitle(exercise.name).navigationBarTitleDisplayMode(.inline)
         .listStyle(.insetGrouped).scrollContentBackground(.hidden).background(FitnessTheme.canvas)
         .tint(FitnessTheme.accent)

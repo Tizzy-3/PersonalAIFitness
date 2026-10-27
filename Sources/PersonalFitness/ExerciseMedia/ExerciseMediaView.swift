@@ -33,7 +33,24 @@ struct ExerciseDemonstrationView: View {
     private var media: ExerciseMediaDescriptor? { ExerciseDetails.details(for: exerciseID)?.media }
 
     var body: some View {
-        if let media, let fileURL = ExerciseMediaAsset.url(for: media.fileName) {
+        if let media, let frames = media.stillImages, !frames.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(Array(frames.enumerated()), id: \.offset) { _, frame in
+                    VStack(alignment: .leading, spacing: 7) {
+                        if let url = ExerciseMediaAsset.url(for: frame.fileName), let image = UIImage(contentsOfFile: url.path) {
+                            Image(uiImage: image).resizable().scaledToFit().frame(maxWidth: .infinity).frame(maxHeight: 270)
+                                .background(Color.white).clipShape(RoundedRectangle(cornerRadius: 12))
+                        } else {
+                            Label("该张静态图文件暂不可用", systemImage: "photo.badge.exclamationmark")
+                                .frame(minHeight: 80).foregroundStyle(.secondary)
+                        }
+                        Text(frame.caption).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    }
+                }
+                Label("\(frames.count) 张静态动作图示 · 不是动图或完整教学", systemImage: "photo.on.rectangle")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        } else if let media, let fileURL = ExerciseMediaAsset.url(for: media.fileName) {
             VStack(alignment: .leading, spacing: 9) {
                 ZStack(alignment: .bottomTrailing) {
                     Group {

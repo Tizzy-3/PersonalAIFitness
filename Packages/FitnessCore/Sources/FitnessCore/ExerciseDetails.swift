@@ -1,7 +1,25 @@
 import Foundation
 
+public struct ExerciseStillFrame: Codable, Equatable, Sendable {
+    public let fileName: String
+    public let sourceURL: String
+    public let author: String
+    public let licenseName: String
+    public let licenseURL: String
+    public let caption: String
+}
+
+public struct ExerciseContentSource: Codable, Equatable, Sendable {
+    public let title: String
+    public let url: String
+    public let author: String
+    public let licenseName: String
+    public let licenseURL: String
+    public let originalDescription: String
+}
+
 public struct ExerciseMediaDescriptor: Codable, Equatable, Sendable {
-    public enum Kind: String, Codable, Sendable { case image, video }
+    public enum Kind: String, Codable, Sendable { case image, video, stillSequence }
     public let kind: Kind
     public let fileName: String
     public let posterFileName: String
@@ -12,6 +30,16 @@ public struct ExerciseMediaDescriptor: Codable, Equatable, Sendable {
     public let licenseURL: String
     public let changes: String
     public let durationSeconds: Double?
+    public let stillImages: [ExerciseStillFrame]?
+
+    public init(kind: Kind, fileName: String, posterFileName: String, previewGIFFileName: String?, sourceURL: String,
+                author: String, licenseName: String, licenseURL: String, changes: String, durationSeconds: Double?,
+                stillImages: [ExerciseStillFrame]? = nil) {
+        self.kind = kind; self.fileName = fileName; self.posterFileName = posterFileName
+        self.previewGIFFileName = previewGIFFileName; self.sourceURL = sourceURL; self.author = author
+        self.licenseName = licenseName; self.licenseURL = licenseURL; self.changes = changes
+        self.durationSeconds = durationSeconds; self.stillImages = stillImages
+    }
 }
 
 public struct ExerciseDetail: Codable, Equatable, Sendable {
@@ -29,6 +57,7 @@ public struct ExerciseDetail: Codable, Equatable, Sendable {
 /// Licensed media is attributed individually and is never labelled full instruction.
 public enum ExerciseDetails {
     public static func details(for id: String) -> ExerciseDetail? { entries[id] }
+    public static func contentSource(for id: String) -> ExerciseContentSource? { ExpandedExerciseCatalog.sources[id] }
 
     public static func matches(_ exercise: Exercise, query: String) -> Bool {
         let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
@@ -38,7 +67,19 @@ public enum ExerciseDetails {
         return words.allSatisfy { searchable.localizedCaseInsensitiveContains($0) }
     }
 
-    public static let entries: [String: ExerciseDetail] = [
+    public static let entries: [String: ExerciseDetail] = {
+        var result = baseEntries.merging(ExpandedExerciseCatalog.details) { original, _ in original }
+        for (id, media) in ExpandedExerciseCatalog.legacyMedia {
+            guard let value = result[id], value.media == nil else { continue }
+            result[id] = ExerciseDetail(aliases: value.aliases, secondaryMuscles: value.secondaryMuscles,
+                movementPattern: value.movementPattern, difficulty: value.difficulty,
+                commonMistakes: value.commonMistakes, alternativeIDs: value.alternativeIDs,
+                progressionIDs: value.progressionIDs, media: media)
+        }
+        return result
+    }()
+
+    private static let baseEntries: [String: ExerciseDetail] = [
         "builtin.dumbbell-bench-press": ExerciseDetail(aliases: ["平板哑铃卧推", "哑铃推胸"], secondaryMuscles: ["肱三头肌", "肩前束"], movementPattern: "水平推", difficulty: "基础", commonMistakes: ["下放失控、弹起借力。", "过度耸肩或手腕明显后折。"], alternativeIDs: ["builtin.barbell-bench-press", "builtin.push-up"], progressionIDs: [], media: ExerciseMediaDescriptor(kind: .video, fileName: "dumbbell-bench-press.mp4", posterFileName: "dumbbell-bench-press-poster.jpg", previewGIFFileName: "dumbbell-bench-press.gif", sourceURL: "https://wger.de/media/exercise-video/75/080c799b-8afd-4130-8d72-9cef0cd79f54.MOV", author: "Goulart", licenseName: "CC-BY-SA 4", licenseURL: "https://creativecommons.org/licenses/by-sa/4.0/deed.en", changes: "Re-encoded to 480px H.264 MP4 without audio; poster extracted from the source. The derivative is licensed under the same CC BY-SA 4.0. A centered continuous segment up to 6 seconds is converted to a 160px/6fps looping GIF preview; poster extracted from the midpoint.", durationSeconds: 14.16)),
         "builtin.incline-dumbbell-press": ExerciseDetail(aliases: ["上斜哑铃推胸"], secondaryMuscles: ["肩前束", "肱三头肌"], movementPattern: "斜向推", difficulty: "基础", commonMistakes: ["凳角度过大却强行当作胸部动作。", "腰部过度反弓、下放过深。"], alternativeIDs: ["builtin.dumbbell-bench-press", "builtin.incline-barbell-press"], progressionIDs: [], media: ExerciseMediaDescriptor(kind: .video, fileName: "incline-dumbbell-press.mp4", posterFileName: "incline-dumbbell-press-poster.jpg", previewGIFFileName: "incline-dumbbell-press.gif", sourceURL: "https://wger.de/media/exercise-video/537/b9c937e9-daeb-42a9-be8e-7a77e368478c.MOV", author: "Goulart", licenseName: "CC-BY-SA 4", licenseURL: "https://creativecommons.org/licenses/by-sa/4.0/deed.en", changes: "Re-encoded to 480px H.264 MP4 without audio; poster extracted from the source. The derivative is licensed under the same CC BY-SA 4.0. A centered continuous segment up to 6 seconds is converted to a 160px/6fps looping GIF preview; poster extracted from the midpoint.", durationSeconds: 27.49)),
         "builtin.dumbbell-shoulder-press": ExerciseDetail(aliases: ["哑铃推肩", "坐姿哑铃推举"], secondaryMuscles: ["肱三头肌", "核心"], movementPattern: "垂直推", difficulty: "基础", commonMistakes: ["肋骨外翻、明显后仰。", "耸肩或突然失控下落。"], alternativeIDs: ["builtin.machine-shoulder-press", "builtin.incline-push-up"], progressionIDs: [], media: ExerciseMediaDescriptor(kind: .video, fileName: "dumbbell-shoulder-press.mp4", posterFileName: "dumbbell-shoulder-press-poster.jpg", previewGIFFileName: "dumbbell-shoulder-press.gif", sourceURL: "https://wger.de/media/exercise-video/567/64f33c19-1d96-4b7c-af17-6c6a4941c614.MOV", author: "Goulart", licenseName: "CC-BY-SA 4", licenseURL: "https://creativecommons.org/licenses/by-sa/4.0/deed.en", changes: "Re-encoded to 480px H.264 MP4 without audio; poster extracted from the source. The derivative is licensed under the same CC BY-SA 4.0. A centered continuous segment up to 6 seconds is converted to a 160px/6fps looping GIF preview; poster extracted from the midpoint.", durationSeconds: 23.13)),

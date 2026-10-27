@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import FitnessCore
 
 /// The interview screen: AI asks, the user answers, then the user reviews and confirms every inferred
@@ -15,11 +16,16 @@ struct CoachInterviewView: View {
     @State private var draftRoute: InterviewDraftRoute?
     @State private var preparedPlan: PreparedPersonalizedPlan?
     @State private var unsavedPlan: PlanningDraft?
+    @State private var ownWords = ""
+    @State private var formatDiagnostic: String?
+    @State private var reviewingEarly = false
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 18) {
                 availabilitySection
+                selfDescriptionSection
+                if let formatDiagnostic { diagnosticSection(formatDiagnostic) }
                 if let unsavedPlan {
                     CoachPanel {
                         Label("计划尚未保存", systemImage: "exclamationmark.circle")
@@ -64,7 +70,74 @@ struct CoachInterviewView: View {
             NavigationStack { PersonalizedPlanConsentView(prepared: prepared) { sendPlan(prepared) } }
         }
         .onDisappear { request?.cancel() }
+        .confirmationDialog("先跳过本轮未回答问题并核对计划？", isPresented: $reviewingEarly, titleVisibility: .visible) {
+            Button("跳过本轮，先核对") { skipForReview() }
+            Button("继续回答", role: .cancel) { }
+        } message: { Text("这些问题会明确记录为跳过，不猜测答案。关键安全资料或待确认推断仍须本人核对，计划不会自动生效。") }
         .fitnessError($issue)
+    }
+
+    private var selfDescriptionSection: some View {
+        CoachPanel {
+            Text((session?.narratives ?? []).isEmpty ? "先用自己的话介绍一下" : "还有想让教练知道的吗？").font(.headline)
+            Text("可以聊你想达到什么变化、现在能做什么、在哪练、时间和身体顾虑。愿意说多少都可以，教练会按你的回答具体追问。")
+                .font(.footnote).foregroundStyle(.secondary)
+            TextField("比如具体目标、过去训练经历、器械与日程……", text: $ownWords, axis: .vertical)
+                .lineLimit(3...8).padding(12).background(FitnessTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
+                .disabled(request != nil)
+            HStack {
+                Text("\(ownWords.count) / 6000").font(.caption2).foregroundStyle(.secondary)
+                Spacer()
+                Button("保存我的补充") { saveOwnWords() }
+                    .disabled(request != nil || ownWords.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || ownWords.count > 6000)
+                    .frame(minHeight: 44)
+            }
+            if !(session?.narratives ?? []).isEmpty {
+                DisclosureGroup("已保存的本人叙述（\((session?.narratives ?? []).count)）") {
+                    ForEach(session?.narratives ?? []) { entry in
+                        Text(entry.text).font(.footnote).textSelection(.enabled).padding(.vertical, 6)
+                    }
+                }.font(.footnote)
+            }
+        }
+    }
+
+    private func diagnosticSection(_ value: String) -> some View {
+        CoachPanel {
+            Label("访谈格式未通过校验", systemImage: "exclamationmark.circle").font(.headline).foregroundStyle(FitnessTheme.orange)
+            Text("已保留你的资料。本轮最多进行一次格式纠正，不会无限重试，也不会采用格式不合法的内容。")
+                .font(.footnote).foregroundStyle(.secondary)
+            DisclosureGroup("查看脱敏格式诊断") { Text(value).font(.caption.monospaced()).textSelection(.enabled) }
+            Button("复制格式诊断") { UIPasteboard.general.string = value }.frame(minHeight: 44)
+            Button("重新询问") { Task { await askNext() } }.disabled(request != nil || configuration == nil || session?.canContinueInterview != true)
+        }
+    }
+
+    private func saveOwnWords() {
+        do {
+            var current = try session ?? store.startInterview()
+            try current.addNarrative(ownWords)
+            try store.saveInterview(current)
+            session = store.interview; ownWords = ""
+            status = "你的原话已保存。点继续访谈，教练会结合这些情况追问；不会直接猜成已确认档案。"
+        } catch { issue = error.localizedDescription }
+    }
+
+    private func setPaused(_ paused: Bool) {
+        guard var current = session else { return }
+        do {
+            if paused { try current.pause() } else { try current.resume() }
+            try store.saveInterview(current); session = store.interview
+        } catch { issue = error.localizedDescription }
+    }
+
+    private func skipForReview() {
+        guard var current = session else { return }
+        do {
+            try current.skipUnansweredForReview(); try store.saveInterview(current)
+            session = store.interview; draft = AnswerDraft()
+            status = "本轮剩余问题已明确记为跳过。可先核对档案；基础条件齐备且无待确认项后，可制定保守首版计划。"
+        } catch { issue = error.localizedDescription }
     }
 
     // MARK: - Sections
@@ -86,7 +159,7 @@ struct CoachInterviewView: View {
                     .font(.footnote).foregroundStyle(.secondary)
             } else {
                 DisclosureGroup("这次访谈会发送哪些内容") {
-                    Text("你的回答会发送给已配置的服务。健康数据不会在访谈中发送；推断的资料会先请你核对。")
+                    Text("你的回答会发送给已配置的服务。保存的本人叙述和完整访谈会一起发送（可能含你输入的身体/限制说明）。不会自动发送Apple健康原始样本。推断的结构化值会先请你核对。")
                         .font(.footnote).foregroundStyle(.secondary).padding(.top, 6)
                 }.font(.footnote)
             }
@@ -100,13 +173,14 @@ struct CoachInterviewView: View {
                 Spacer(minLength: 8)
                 CoachStatusPill(text: session.phase.title, color: FitnessTheme.violet)
             }
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("\(session.profile.answeredTopics.count)").font(.title.weight(.semibold).monospacedDigit())
-                Text("/ \(InterviewTopic.allCases.count) 项资料已确认").font(.caption).foregroundStyle(.secondary)
+            Text("已确认 \(session.profile.answeredTopics.count) 项资料 · 已聊 \(session.allTurns.count) 轮")
+                .font(.subheadline).foregroundStyle(.secondary)
+            Text(session.profile.isReadyForPlanning ? "基础条件已具备，仍可继续聊具体目标、能力和生活细节。" : "先了解你，再逐步核对安排训练必需的关键条件。")
+                .font(.footnote).foregroundStyle(.secondary)
+            if session.pausedAt != nil {
+                Label("已暂停，回答和补充都已保留", systemImage: "pause.circle").font(.footnote).foregroundStyle(FitnessTheme.orange)
+                Button("恢复访谈") { setPaused(false) }.frame(minHeight: 44)
             }
-            ProgressView(value: Double(session.profile.answeredTopics.count), total: Double(InterviewTopic.allCases.count))
-                .tint(FitnessTheme.violet)
-                .accessibilityLabel("已确认的档案资料")
             if !session.pendingInferences.isEmpty {
                 Label("\(session.pendingInferences.count) 项推断等待你核对", systemImage: "person.crop.circle.badge.questionmark")
                     .font(.footnote).foregroundStyle(FitnessTheme.orange)
@@ -223,6 +297,13 @@ struct CoachInterviewView: View {
 
     private func syncSection(_ session: InterviewSession) -> some View {
         CoachPanel {
+            if request == nil, session.pausedAt == nil {
+                Button("暂停，稍后继续") { setPaused(true) }.frame(minHeight: 44)
+            }
+            NavigationLink { CoachProfileReviewView(store: store) } label: { Label("先核对已聊到的资料", systemImage: "person.crop.rectangle") }.frame(minHeight: 44)
+            if !session.unansweredQuestions.isEmpty {
+                Button("跳过本轮剩余问题，先核对计划") { reviewingEarly = true }.disabled(request != nil).frame(minHeight: 44)
+            }
             DisclosureGroup("访谈管理") {
                 Button("保留已确认档案，重新访谈") { restart() }.disabled(request != nil).frame(minHeight: 44)
                 Text("已确认资料留在档案里，不会因为重新访谈而消失。")
@@ -257,6 +338,7 @@ struct CoachInterviewView: View {
         guard let starting else { return }
         guard starting.canContinueInterview else { return }
         status = nil
+        formatDiagnostic = nil
         request = Task {
             defer { request = nil }
             do {
@@ -275,10 +357,16 @@ struct CoachInterviewView: View {
                 try store.saveInterview(updated)
                 session = store.interview
                 draft = AnswerDraft()
+                if turn.formatRepairUsed == true { status = "本轮回复格式已自动纠正一次并通过校验。你的原话保留，尚未改变计划。" }
+                else if turn.jsonModeFallbackUsed == true { status = "服务不支持JSON模式，已使用兼容模式并完成结构校验。" }
                 if turn.questions.isEmpty, !updated.profile.isReadyForPlanning {
                     status = "教练这次没有提出新问题。可以再点“继续访谈”，或先在档案页手动补充。"
                 }
             } catch {
+                if let error = error as? InterviewProtocolError { formatDiagnostic = error.diagnostic }
+                else if let clientError = error as? CoachClientError, clientError == .outputTruncated {
+                    formatDiagnostic = "interview-json-v2\nstage=response-envelope\nfinish_reason=length\ncategory=output_truncated\n原文未保存；已有资料未改变。"
+                }
                 issue = error.localizedDescription
             }
         }
@@ -330,7 +418,7 @@ struct CoachInterviewView: View {
             try store.saveInterview(current.restartedPreservingProfile())
             session = store.interview
             draft = AnswerDraft()
-            status = "已保留本人确认的资料，清除旧对话及待确认推断，开始新的访谈。"
+            status = "已保留本人确认资料、本人叙述和旧对话归档，仅清除未确认推断，开始新的访谈阶段。"
         } catch {
             issue = error.localizedDescription
         }

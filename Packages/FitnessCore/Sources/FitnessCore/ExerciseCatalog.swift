@@ -2,8 +2,9 @@ import Foundation
 
 /// Stable movement identities. General instructions are not individual clearance or prescriptions.
 public enum ExerciseCatalog {
-    public static let version = "2026.10.26.2"
-    public static let exercises: [Exercise] = [
+    public static let version = "2026.10.27.3"
+    public static let exercises: [Exercise] = baseExercises + ExpandedExerciseCatalog.exercises
+    private static let baseExercises: [Exercise] = [
         Exercise(id: "builtin.dumbbell-bench-press", name: "哑铃卧推", englishName: "Dumbbell Bench Press", kind: .strength, metric: .repetitions, equipment: "哑铃、平板训练凳", muscle: "胸部", loadConvention: .perHand, instructions: ["双脚踩稳、肩胛贴稳凳面，将哑铃置于胸部两侧。", "前臂大致竖直，在无痛范围内控制下放。", "向上推起并呼气，不用哑铃相撞结束动作。"]),
         Exercise(id: "builtin.incline-dumbbell-press", name: "上斜哑铃卧推", englishName: "Incline Dumbbell Press", kind: .strength, metric: .repetitions, equipment: "哑铃、可调训练凳", muscle: "胸部", loadConvention: .perHand, instructions: ["设置舒适的上斜凳角度，双脚稳定支撑。", "将哑铃置于上胸两侧，保持手腕与前臂对齐。", "控制推起与下放，幅度以肩部无不适为限。"]),
         Exercise(id: "builtin.dumbbell-shoulder-press", name: "哑铃肩上推举", englishName: "Dumbbell Shoulder Press", kind: .strength, metric: .repetitions, equipment: "哑铃", muscle: "肩部", loadConvention: .perHand, instructions: ["坐姿或站姿先稳定躯干，将哑铃置于肩旁。", "保持前臂受力稳定，向上推至舒适位置。", "缓慢回落，不用腰部后仰换取幅度。"]),
@@ -72,5 +73,6 @@ public enum ExerciseCatalog {
         Exercise(id: "builtin.rowing-ergometer", name: "划船机", englishName: "Rowing Ergometer", kind: .cardio, metric: .cardio, equipment: "划船机", muscle: "全身", loadConvention: .bodyweight, instructions: ["调整脚带，先用低阻力熟悉动作。", "蹬腿、髋部展开再拉手；回程按手臂、髋、屈膝顺序。", "保持节奏稳定，逐步放慢结束。"]),
     ]
 
-    public static func exercise(id: String) -> Exercise? { exercises.first { $0.id == id } }
+    private static let byID = Dictionary(uniqueKeysWithValues: exercises.map { ($0.id, $0) })
+    public static func exercise(id: String) -> Exercise? { byID[id] }
 }

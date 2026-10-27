@@ -22,7 +22,8 @@ final class ExerciseLibraryTests: XCTestCase {
     func testCatalogHasUniqueValidMovementsAndResolvableAlternatives() throws {
         let ids = Set(ExerciseCatalog.exercises.map(\.id))
         XCTAssertEqual(ids.count, ExerciseCatalog.exercises.count)
-        XCTAssertGreaterThanOrEqual(ids.count, 50)
+        XCTAssertGreaterThanOrEqual(ids.count, 200)
+        XCTAssertEqual(Set(ExerciseCatalog.exercises.map(\.name)).count, ExerciseCatalog.exercises.count)
         XCTAssertEqual(ids, Set(ExerciseDetails.entries.keys))
         for exercise in ExerciseCatalog.exercises {
             try exercise.validate()

@@ -1,0 +1,4036 @@
+[
+  {
+    "id": "builtin.decline-barbell-press",
+    "name": "下斜杠铃卧推",
+    "englishName": "Decline Bench Press Barbell",
+    "sourceID": 185,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃、训练凳",
+    "muscle": "胸部",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.decline-dumbbell-press",
+    "name": "下斜哑铃卧推",
+    "englishName": "Decline Bench Press Dumbbell",
+    "sourceID": 186,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "训练凳、哑铃",
+    "muscle": "胸部",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.smith-incline-press",
+    "name": "史密斯上斜卧推",
+    "englishName": "Incline Bench Press - MP",
+    "sourceID": 539,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "胸部",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "肱三头肌"
+    ],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-floor-press",
+    "name": "哑铃地板卧推",
+    "englishName": "Dumbbell Floor Press",
+    "sourceID": 1084,
+    "family": "floor-press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "胸部",
+    "instructions": [
+      "坐稳后持哑铃躺到平整地面，屈膝，双脚支撑。",
+      "肘部受控接近地面，避免猛撞地板或向外过度打开。",
+      "稳定向上推起，再缓慢回到起点。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "肱二头肌",
+      "肱三头肌"
+    ],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "手肘撞地或反弹。",
+      "起落哑铃时失去控制。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-close-grip-press",
+    "name": "哑铃窄距卧推",
+    "englishName": "Dumbbell close grip bench press",
+    "sourceID": 1228,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "胸部",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.smith-close-grip-press",
+    "name": "史密斯窄距卧推",
+    "englishName": "Smith Machine Close-grip Bench Press",
+    "sourceID": 598,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "肱三头肌",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [
+      "胸部"
+    ],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.reverse-grip-bench-press",
+    "name": "反握杠铃卧推",
+    "englishName": "Reverse Grip Bench Press",
+    "sourceID": 498,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃、训练凳",
+    "muscle": "胸部",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [
+      "肩前束"
+    ],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.pin-bench-press",
+    "name": "保护杆杠铃卧推",
+    "englishName": "Pin Bench Press BB",
+    "sourceID": 1436,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "胸部",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.incline-cable-fly",
+    "name": "上斜绳索飞鸟",
+    "englishName": "Fly With Cable",
+    "sourceID": 237,
+    "family": "fly",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "胸部",
+    "instructions": [
+      "调整器械或凳位，保持肩背与足底稳定。",
+      "肘部保持适度弯曲，将上臂沿弧线带到身前。",
+      "控制回到肩部舒适范围，不强行向后拉伸。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平内收",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "肘角不断变化做成推举。",
+      "过度后伸肩部或配重回落失控。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.seated-cable-fly",
+    "name": "坐姿绳索夹胸",
+    "englishName": "Seated Cable chest fly",
+    "sourceID": 1922,
+    "family": "fly",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "胸部",
+    "instructions": [
+      "调整器械或凳位，保持肩背与足底稳定。",
+      "肘部保持适度弯曲，将上臂沿弧线带到身前。",
+      "控制回到肩部舒适范围，不强行向后拉伸。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平内收",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "肘角不断变化做成推举。",
+      "过度后伸肩部或配重回落失控。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.pec-deck-fly",
+    "name": "蝴蝶机夹胸",
+    "englishName": "Butterfly",
+    "sourceID": 135,
+    "family": "fly",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "胸部",
+    "instructions": [
+      "调整器械或凳位，保持肩背与足底稳定。",
+      "肘部保持适度弯曲，将上臂沿弧线带到身前。",
+      "控制回到肩部舒适范围，不强行向后拉伸。"
+    ],
+    "secondaryMuscles": [
+      "肩前束"
+    ],
+    "movementPattern": "水平内收",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "肘角不断变化做成推举。",
+      "过度后伸肩部或配重回落失控。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.hex-dumbbell-press",
+    "name": "哑铃挤压卧推",
+    "englishName": "Dumbbell Hex Press",
+    "sourceID": 1353,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "胸部",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [
+      "肩前束"
+    ],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.barbell-reverse-row",
+    "name": "反握杠铃划船",
+    "englishName": "Bent Over Rowing Reverse",
+    "sourceID": 84,
+    "family": "row",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "背部",
+    "instructions": [
+      "根据划船变式稳定胸部或足底支撑，保持躯干受控。",
+      "让肘部向后移动，不靠耸肩或反复甩动身体拉起。",
+      "控制伸臂回到起点，身体姿势保持稳定。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "肱二头肌"
+    ],
+    "movementPattern": "水平拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用躯干大幅摆动代替拉动。",
+      "耸肩或突然松开负重。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.t-bar-row",
+    "name": "T杠划船",
+    "englishName": "Rowing, T-bar",
+    "sourceID": 513,
+    "family": "row",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "背部",
+    "instructions": [
+      "根据划船变式稳定胸部或足底支撑，保持躯干受控。",
+      "让肘部向后移动，不靠耸肩或反复甩动身体拉起。",
+      "控制伸臂回到起点，身体姿势保持稳定。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "肱二头肌",
+      "肱肌"
+    ],
+    "movementPattern": "水平拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用躯干大幅摆动代替拉动。",
+      "耸肩或突然松开负重。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.pendlay-row",
+    "name": "潘德雷杠铃划船",
+    "englishName": "Pendelay Rows",
+    "sourceID": 448,
+    "family": "row",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "背部",
+    "instructions": [
+      "根据划船变式稳定胸部或足底支撑，保持躯干受控。",
+      "让肘部向后移动，不靠耸肩或反复甩动身体拉起。",
+      "控制伸臂回到起点，身体姿势保持稳定。"
+    ],
+    "secondaryMuscles": [
+      "肱二头肌",
+      "肱三头肌"
+    ],
+    "movementPattern": "水平拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用躯干大幅摆动代替拉动。",
+      "耸肩或突然松开负重。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.inverted-row",
+    "name": "反向划船",
+    "englishName": "Inverted Rows",
+    "sourceID": 1198,
+    "family": "body-row",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "确认横杆或悬吊带牢固，身体与足部形成稳定支撑。",
+      "保持臀腹稳定，将胸部向把手或横杆方向拉近。",
+      "受控伸臂回到起点，用身体倾角调整难度。"
+    ],
+    "secondaryMuscles": [
+      "胸部",
+      "核心",
+      "斜方肌"
+    ],
+    "movementPattern": "水平拉",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支点不稳或身体塌腰。",
+      "借助摆动强行完成。"
+    ],
+    "aliases": [
+      "horizontal pull-ups"
+    ]
+  },
+  {
+    "id": "builtin.suspension-row",
+    "name": "悬吊划船",
+    "englishName": "TRX Rows",
+    "sourceID": 959,
+    "family": "body-row",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "肩前束",
+    "instructions": [
+      "确认横杆或悬吊带牢固，身体与足部形成稳定支撑。",
+      "保持臀腹稳定，将胸部向把手或横杆方向拉近。",
+      "受控伸臂回到起点，用身体倾角调整难度。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平拉",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支点不稳或身体塌腰。",
+      "借助摆动强行完成。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.machine-seated-row",
+    "name": "坐姿器械划船",
+    "englishName": "Seated Row (Machine)",
+    "sourceID": 1725,
+    "family": "row",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "背部",
+    "instructions": [
+      "根据划船变式稳定胸部或足底支撑，保持躯干受控。",
+      "让肘部向后移动，不靠耸肩或反复甩动身体拉起。",
+      "控制伸臂回到起点，身体姿势保持稳定。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "斜方肌"
+    ],
+    "movementPattern": "水平拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用躯干大幅摆动代替拉动。",
+      "耸肩或突然松开负重。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.single-arm-cable-row",
+    "name": "单臂绳索划船",
+    "englishName": "Unilateral Cable row",
+    "sourceID": 1621,
+    "family": "row",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "训练凳、绳索器械",
+    "muscle": "背部",
+    "instructions": [
+      "根据划船变式稳定胸部或足底支撑，保持躯干受控。",
+      "让肘部向后移动，不靠耸肩或反复甩动身体拉起。",
+      "控制伸臂回到起点，身体姿势保持稳定。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用躯干大幅摆动代替拉动。",
+      "耸肩或突然松开负重。"
+    ],
+    "aliases": [
+      "Single-arm cable row"
+    ]
+  },
+  {
+    "id": "builtin.close-grip-lat-pulldown",
+    "name": "窄握高位下拉",
+    "englishName": "Close-grip Lat Pull Down",
+    "sourceID": 158,
+    "family": "pulldown",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "背部",
+    "instructions": [
+      "调整座椅与腿垫，按变式选择舒适的握法。",
+      "躯干基本稳定，将肘部向下带动，把手拉向胸前。",
+      "受控伸臂回到起点，不向颈后猛拉。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "垂直拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "大幅后仰借力。",
+      "强拉至颈后或肩部不适范围。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.supinated-lat-pulldown",
+    "name": "反握高位下拉",
+    "englishName": "Close-grip supinated lat pulldown",
+    "sourceID": 1127,
+    "family": "pulldown",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "背部",
+    "instructions": [
+      "调整座椅与腿垫，按变式选择舒适的握法。",
+      "躯干基本稳定，将肘部向下带动，把手拉向胸前。",
+      "受控伸臂回到起点，不向颈后猛拉。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "垂直拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "大幅后仰借力。",
+      "强拉至颈后或肩部不适范围。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.neutral-lat-pulldown",
+    "name": "中立握高位下拉",
+    "englishName": "Neutral-grip chest pulldown",
+    "sourceID": 1136,
+    "family": "pulldown",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "调整座椅与腿垫，按变式选择舒适的握法。",
+      "躯干基本稳定，将肘部向下带动，把手拉向胸前。",
+      "受控伸臂回到起点，不向颈后猛拉。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "垂直拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "大幅后仰借力。",
+      "强拉至颈后或肩部不适范围。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.straight-arm-pulldown",
+    "name": "绳索直臂下拉",
+    "englishName": "Straight-Arm Pulldown (Cable)",
+    "sourceID": 1726,
+    "family": "pullover",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "背部",
+    "instructions": [
+      "稳固站姿并持住高位绳索把手，肘部微屈。",
+      "保持躯干和肘角稳定，将上臂向身体两侧带回。",
+      "缓慢回伸至舒适范围，不用腰部摆动带动重量。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肩伸展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "肘部大幅弯曲变成下压。",
+      "身体前后摆动借力。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.chin-up",
+    "name": "反握引体向上",
+    "englishName": "Chin Up",
+    "sourceID": 152,
+    "family": "pull-up",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "单杠",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "确认单杠牢固，采用对应变式且肩部舒适的握法。",
+      "从受控悬垂向上拉，不靠甩腿摆动。",
+      "缓慢伸臂回到可控起点，无法控制时结束。"
+    ],
+    "secondaryMuscles": [
+      "肱肌",
+      "斜方肌"
+    ],
+    "movementPattern": "垂直拉",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "摆动或猛然下落。",
+      "肩肘疼痛仍强行继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.commando-pull-up",
+    "name": "交错握引体向上",
+    "englishName": "commando pull-ups",
+    "sourceID": 980,
+    "family": "pull-up",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "单杠",
+    "muscle": "肩前束",
+    "instructions": [
+      "确认单杠牢固，采用对应变式且肩部舒适的握法。",
+      "从受控悬垂向上拉，不靠甩腿摆动。",
+      "缓慢伸臂回到可控起点，无法控制时结束。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "垂直拉",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "摆动或猛然下落。",
+      "肩肘疼痛仍强行继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.renegade-row",
+    "name": "哑铃支撑划船",
+    "englishName": "Renegade Row",
+    "sourceID": 490,
+    "family": "plank-row",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "背部",
+    "instructions": [
+      "用不会滚动的哑铃建立支撑，双脚适度分开。",
+      "保持骨盆稳定，单侧肘部向后拉起哑铃。",
+      "受控落回并换侧，按实际每侧次数记录。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平拉与抗旋转",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "哑铃滚动或手腕支撑失稳。",
+      "转髋甩起负重。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.barbell-shrug",
+    "name": "杠铃耸肩",
+    "englishName": "Shrugs, Barbells",
+    "sourceID": 571,
+    "family": "shrug",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "肩前束",
+    "instructions": [
+      "站稳持住负重，手臂自然下垂，颈部保持中立。",
+      "受控上提肩胛，不需要向前后绕肩。",
+      "缓慢下放，避免快速耸动或甩头。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肩胛上提",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "大幅绕肩或前后伸头。",
+      "使用失控重量反复弹动。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-shrug",
+    "name": "哑铃耸肩",
+    "englishName": "Shrugs, Dumbbells",
+    "sourceID": 572,
+    "family": "shrug",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "肩前束",
+    "instructions": [
+      "站稳持住负重，手臂自然下垂，颈部保持中立。",
+      "受控上提肩胛，不需要向前后绕肩。",
+      "缓慢下放，避免快速耸动或甩头。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肩胛上提",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "大幅绕肩或前后伸头。",
+      "使用失控重量反复弹动。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.smith-shrug",
+    "name": "史密斯耸肩",
+    "englishName": "Shrugs on Multipress",
+    "sourceID": 575,
+    "family": "shrug",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "肩前束",
+    "instructions": [
+      "站稳持住负重，手臂自然下垂，颈部保持中立。",
+      "受控上提肩胛，不需要向前后绕肩。",
+      "缓慢下放，避免快速耸动或甩头。"
+    ],
+    "secondaryMuscles": [
+      "肱三头肌"
+    ],
+    "movementPattern": "肩胛上提",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "大幅绕肩或前后伸头。",
+      "使用失控重量反复弹动。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.back-extension",
+    "name": "罗马椅背伸展",
+    "englishName": "Hyperextensions",
+    "sourceID": 301,
+    "family": "back-extension",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "斜方肌",
+    "instructions": [
+      "按器械变式调整支撑，确认身体不会滑动。",
+      "在可控无痛范围内伸展，不追求超过自然直立位置。",
+      "缓慢回到起点，保持呼吸，不快速甩动。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "髋伸展或躯干伸展",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "过度反弓腰部。",
+      "固定不稳仍继续运动。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.machine-back-extension",
+    "name": "坐姿器械背伸展",
+    "englishName": "Seated Back Extension Machine",
+    "sourceID": 1143,
+    "family": "back-extension",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "背部",
+    "instructions": [
+      "按器械变式调整支撑，确认身体不会滑动。",
+      "在可控无痛范围内伸展，不追求超过自然直立位置。",
+      "缓慢回到起点，保持呼吸，不快速甩动。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "髋伸展或躯干伸展",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "过度反弓腰部。",
+      "固定不稳仍继续运动。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.seated-barbell-shoulder-press",
+    "name": "坐姿杠铃推肩",
+    "englishName": "Shoulder Press, Barbell",
+    "sourceID": 566,
+    "family": "overhead",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "肩前束",
+    "instructions": [
+      "按变式坐稳或站稳，将负重置于舒适肩旁位置。",
+      "稳定臀腹，向上推起，不用腰部后仰换取幅度。",
+      "受控回落到起点，保持手腕与前臂稳定。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "垂直推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "肋骨外翻或明显后仰。",
+      "肩部疼痛时强行推过头。"
+    ],
+    "aliases": [
+      "OHP Barbell",
+      "Overhead press Barbell",
+      "Military Press with Barbell"
+    ]
+  },
+  {
+    "id": "builtin.standing-barbell-overhead-press",
+    "name": "站姿杠铃推举",
+    "englishName": "Overhead Barbell Press",
+    "sourceID": 1893,
+    "family": "overhead",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "肩前束",
+    "instructions": [
+      "按变式坐稳或站稳，将负重置于舒适肩旁位置。",
+      "稳定臀腹，向上推起，不用腰部后仰换取幅度。",
+      "受控回落到起点，保持手腕与前臂稳定。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "垂直推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "肋骨外翻或明显后仰。",
+      "肩部疼痛时强行推过头。"
+    ],
+    "aliases": [
+      "Military Press"
+    ]
+  },
+  {
+    "id": "builtin.arnold-press",
+    "name": "阿诺德哑铃推举",
+    "englishName": "Arnold Shoulder Press",
+    "sourceID": 20,
+    "family": "overhead",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "哑铃",
+    "muscle": "肩前束",
+    "instructions": [
+      "按变式坐稳或站稳，将负重置于舒适肩旁位置。",
+      "稳定臀腹，向上推起，不用腰部后仰换取幅度。",
+      "受控回落到起点，保持手腕与前臂稳定。"
+    ],
+    "secondaryMuscles": [
+      "斜方肌",
+      "肱三头肌"
+    ],
+    "movementPattern": "垂直推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "肋骨外翻或明显后仰。",
+      "肩部疼痛时强行推过头。"
+    ],
+    "aliases": [
+      "Schwarzenegger Press",
+      "Palm-to-Palm Overhead Press",
+      "Rotational Dumbbell Press",
+      "Dumbbell Corkscrew Press"
+    ]
+  },
+  {
+    "id": "builtin.smith-shoulder-press",
+    "name": "史密斯肩上推举",
+    "englishName": "Shoulder Press, on Multi Press",
+    "sourceID": 569,
+    "family": "overhead",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "肩前束",
+    "instructions": [
+      "按变式坐稳或站稳，将负重置于舒适肩旁位置。",
+      "稳定臀腹，向上推起，不用腰部后仰换取幅度。",
+      "受控回落到起点，保持手腕与前臂稳定。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "垂直推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "肋骨外翻或明显后仰。",
+      "肩部疼痛时强行推过头。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.landmine-press",
+    "name": "地雷杆推举",
+    "englishName": "Landmine press",
+    "sourceID": 346,
+    "family": "landmine",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "肩前束",
+    "instructions": [
+      "确认地雷杆固定牢靠，站稳并持住杠铃自由端。",
+      "沿杠铃自然弧线向前上方推，不扭转腰部。",
+      "缓慢回到舒适胸肩位置，保持躯干稳定。"
+    ],
+    "secondaryMuscles": [
+      "胸部",
+      "肱三头肌"
+    ],
+    "movementPattern": "斜向推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "固定端松动。",
+      "腰背大幅旋转或后仰。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-front-raise",
+    "name": "哑铃前平举",
+    "englishName": "Front Raises",
+    "sourceID": 256,
+    "family": "raise",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "杠铃、哑铃",
+    "muscle": "肩前束",
+    "instructions": [
+      "站稳或坐稳，持住哑铃或调整相应器械。",
+      "按该变式的前向或侧向路径抬臂，肩部保持舒适。",
+      "缓慢下放，不追求超过个人可控高度。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肩屈或外展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩腰借力或反复耸肩。",
+      "疼痛时强行抬高。"
+    ],
+    "aliases": [
+      "dumbbell front raises",
+      "DB Front Raises"
+    ]
+  },
+  {
+    "id": "builtin.machine-lateral-raise",
+    "name": "器械侧平举",
+    "englishName": "Machine Lateral Raise",
+    "sourceID": 1654,
+    "family": "raise",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "垫子",
+    "muscle": "肩前束",
+    "instructions": [
+      "站稳或坐稳，持住哑铃或调整相应器械。",
+      "按该变式的前向或侧向路径抬臂，肩部保持舒适。",
+      "缓慢下放，不追求超过个人可控高度。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肩屈或外展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩腰借力或反复耸肩。",
+      "疼痛时强行抬高。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.cable-rear-delt-fly",
+    "name": "绳索反向飞鸟",
+    "englishName": "Cable Rear Delt Fly",
+    "sourceID": 822,
+    "family": "reverse-fly",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "绳索器械",
+    "muscle": "肩前束",
+    "instructions": [
+      "依变式稳定俯身或胸托姿势，肘部轻微弯曲。",
+      "将上臂向两侧打开，不靠腰背起伏甩起。",
+      "控制沿原路径回落，肩部不适时缩小幅度。"
+    ],
+    "secondaryMuscles": [
+      "肱三头肌"
+    ],
+    "movementPattern": "水平外展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "俯身姿势失稳。",
+      "把手臂甩向过深后方。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.incline-reverse-fly",
+    "name": "上斜凳反向飞鸟",
+    "englishName": "Incline Bench Reverse Fly",
+    "sourceID": 828,
+    "family": "reverse-fly",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃、上斜训练凳",
+    "muscle": "肩前束",
+    "instructions": [
+      "依变式稳定俯身或胸托姿势，肘部轻微弯曲。",
+      "将上臂向两侧打开，不靠腰背起伏甩起。",
+      "控制沿原路径回落，肩部不适时缩小幅度。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平外展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "俯身姿势失稳。",
+      "把手臂甩向过深后方。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.seated-reverse-fly",
+    "name": "坐姿俯身飞鸟",
+    "englishName": "Seated rear delt rise",
+    "sourceID": 1098,
+    "family": "reverse-fly",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "背部",
+    "instructions": [
+      "依变式稳定俯身或胸托姿势，肘部轻微弯曲。",
+      "将上臂向两侧打开，不靠腰背起伏甩起。",
+      "控制沿原路径回落，肩部不适时缩小幅度。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平外展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "俯身姿势失稳。",
+      "把手臂甩向过深后方。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-rear-delt-row",
+    "name": "哑铃后束划船",
+    "englishName": "Dumbbell rear delt row",
+    "sourceID": 1227,
+    "family": "row",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "肩前束",
+    "instructions": [
+      "根据划船变式稳定胸部或足底支撑，保持躯干受控。",
+      "让肘部向后移动，不靠耸肩或反复甩动身体拉起。",
+      "控制伸臂回到起点，身体姿势保持稳定。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用躯干大幅摆动代替拉动。",
+      "耸肩或突然松开负重。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.band-face-pull",
+    "name": "弹力带面拉",
+    "englishName": "Face pulls with yellow/green band",
+    "sourceID": 1732,
+    "family": "band-pull",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "弹力带",
+    "muscle": "背部",
+    "instructions": [
+      "检查弹力带及可靠固定点，采用稳定站姿。",
+      "把手拉向面部两侧，保持肩部舒适与躯干稳定。",
+      "受控回伸，避免弹力带朝脸部回弹。"
+    ],
+    "secondaryMuscles": [
+      "斜方肌"
+    ],
+    "movementPattern": "水平拉",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "固定点不牢或带体破损。",
+      "大幅后仰借力。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.ez-bar-curl",
+    "name": "EZ杠弯举",
+    "englishName": "Biceps Curls With SZ-bar",
+    "sourceID": 94,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "EZ杠",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [
+      "肱肌"
+    ],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.preacher-curl",
+    "name": "牧师凳弯举",
+    "englishName": "Preacher Curls",
+    "sourceID": 465,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "EZ杠",
+    "muscle": "肱肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.concentration-curl",
+    "name": "哑铃集中弯举",
+    "englishName": "Dumbbell Concentration Curl",
+    "sourceID": 202,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "哑铃",
+    "muscle": "肱肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [
+      "肱二头肌"
+    ],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.incline-dumbbell-curl",
+    "name": "上斜哑铃弯举",
+    "englishName": "Dumbbell Incline Curl",
+    "sourceID": 204,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [
+      "肱肌"
+    ],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.reverse-barbell-curl",
+    "name": "反握杠铃弯举",
+    "englishName": "Reverse Grip Barbell Curls",
+    "sourceID": 1290,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [
+      "肱肌"
+    ],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.cable-hammer-curl",
+    "name": "绳索锤式弯举",
+    "englishName": "Hammercurls on Cable",
+    "sourceID": 275,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [
+      "肱肌"
+    ],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.cable-concentration-curl",
+    "name": "绳索集中弯举",
+    "englishName": "Cable Concentration Curl",
+    "sourceID": 1109,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.machine-biceps-curl",
+    "name": "器械弯举",
+    "englishName": "Biceps Curl Machine",
+    "sourceID": 1424,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [
+      "肱肌"
+    ],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.seated-dumbbell-curl",
+    "name": "坐姿哑铃弯举",
+    "englishName": "Seated Dumbbell Curls",
+    "sourceID": 1289,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [
+      "肱肌"
+    ],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-drag-curl",
+    "name": "哑铃拖拉弯举",
+    "englishName": "Dumbbell drag curls",
+    "sourceID": 1224,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.wide-dumbbell-curl",
+    "name": "哑铃宽距弯举",
+    "englishName": "Dumbbell wide bicep curls",
+    "sourceID": 1225,
+    "family": "curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "肱二头肌",
+    "instructions": [
+      "按坐姿、上斜或牧师凳变式稳定支撑和上臂位置。",
+      "通过屈肘举起负重，保持手腕与躯干受控。",
+      "缓慢伸肘回落，不甩腰、不用肩部带动。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "肘屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "甩动躯干或上臂大幅摆动。",
+      "手腕明显后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.barbell-wrist-curl",
+    "name": "杠铃腕弯举",
+    "englishName": "Barbell Wrist Curl",
+    "sourceID": 51,
+    "family": "wrist",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃、训练凳",
+    "muscle": "前臂",
+    "instructions": [
+      "稳定前臂支撑，按变式确定掌心朝向。",
+      "仅在手腕舒适幅度内屈伸，采用容易控制的重量。",
+      "缓慢回到起点，疼痛、麻木或握持失稳时结束。"
+    ],
+    "secondaryMuscles": [
+      "肱二头肌"
+    ],
+    "movementPattern": "腕屈伸",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用过大重量猛甩手腕。",
+      "前臂离开支撑借力。"
+    ],
+    "aliases": [
+      "Forearm Curls"
+    ]
+  },
+  {
+    "id": "builtin.barbell-reverse-wrist-curl",
+    "name": "杠铃反向腕弯举",
+    "englishName": "Barbell Reverse Wrist Curl",
+    "sourceID": 48,
+    "family": "wrist",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃、训练凳",
+    "muscle": "前臂",
+    "instructions": [
+      "稳定前臂支撑，按变式确定掌心朝向。",
+      "仅在手腕舒适幅度内屈伸，采用容易控制的重量。",
+      "缓慢回到起点，疼痛、麻木或握持失稳时结束。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "腕屈伸",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用过大重量猛甩手腕。",
+      "前臂离开支撑借力。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-wrist-curl",
+    "name": "哑铃腕弯举",
+    "englishName": "Wrist curl, dumbbells",
+    "sourceID": 1205,
+    "family": "wrist",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "前臂",
+    "instructions": [
+      "稳定前臂支撑，按变式确定掌心朝向。",
+      "仅在手腕舒适幅度内屈伸，采用容易控制的重量。",
+      "缓慢回到起点，疼痛、麻木或握持失稳时结束。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "腕屈伸",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用过大重量猛甩手腕。",
+      "前臂离开支撑借力。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.lying-barbell-triceps-extension",
+    "name": "仰卧杠铃臂屈伸",
+    "englishName": "Barbell Triceps Extension",
+    "sourceID": 50,
+    "family": "triceps",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "肱三头肌",
+    "instructions": [
+      "在训练凳上躺稳，稳妥持住杠铃并保持手腕稳定。",
+      "上臂位置受控，缓慢屈肘让杠铃接近头部前方的舒适位置。",
+      "通过伸肘推回起点，负重失控时立即结束并请保护者协助。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "胸部"
+    ],
+    "movementPattern": "肘伸",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "头部附近负重下放失控。",
+      "上臂大幅摆动或手腕后折。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.bench-dip",
+    "name": "凳上臂屈伸",
+    "englishName": "Dips Between Two Benches",
+    "sourceID": 197,
+    "family": "dip",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "训练凳",
+    "muscle": "肱三头肌",
+    "instructions": [
+      "确认双杠、凳或吊环稳定，先建立可靠手部支撑。",
+      "屈肘缓慢下降，幅度严格以肩部可控无痛为限。",
+      "平稳推回；辅助器械的辅助重量单独按实际记录。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑点不稳。",
+      "肩部疼痛或前移明显仍继续下沉。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.parallel-bar-dip",
+    "name": "双杠臂屈伸",
+    "englishName": "Dips",
+    "sourceID": 194,
+    "family": "dip",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "胸部",
+    "instructions": [
+      "确认双杠、凳或吊环稳定，先建立可靠手部支撑。",
+      "屈肘缓慢下降，幅度严格以肩部可控无痛为限。",
+      "平稳推回；辅助器械的辅助重量单独按实际记录。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑点不稳。",
+      "肩部疼痛或前移明显仍继续下沉。"
+    ],
+    "aliases": [
+      "Weighted Dips"
+    ]
+  },
+  {
+    "id": "builtin.ring-dip",
+    "name": "吊环臂屈伸",
+    "englishName": "Ring Dips",
+    "sourceID": 501,
+    "family": "dip",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "按变式选择双杠、训练凳或吊环",
+    "muscle": "肱三头肌",
+    "instructions": [
+      "确认双杠、凳或吊环稳定，先建立可靠手部支撑。",
+      "屈肘缓慢下降，幅度严格以肩部可控无痛为限。",
+      "平稳推回；辅助器械的辅助重量单独按实际记录。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑点不稳。",
+      "肩部疼痛或前移明显仍继续下沉。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.assisted-dip",
+    "name": "辅助双杠臂屈伸",
+    "englishName": "Triceps Dips (Assisted)",
+    "sourceID": 1372,
+    "family": "dip",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "assistance",
+    "equipment": "按变式选择双杠、训练凳或吊环",
+    "muscle": "肱三头肌",
+    "instructions": [
+      "确认双杠、凳或吊环稳定，先建立可靠手部支撑。",
+      "屈肘缓慢下降，幅度严格以肩部可控无痛为限。",
+      "平稳推回；辅助器械的辅助重量单独按实际记录。"
+    ],
+    "secondaryMuscles": [
+      "胸部"
+    ],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑点不稳。",
+      "肩部疼痛或前移明显仍继续下沉。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.floor-dip",
+    "name": "地面反向臂屈伸",
+    "englishName": "Floor dips",
+    "sourceID": 1000,
+    "family": "dip",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "肱三头肌",
+    "instructions": [
+      "确认双杠、凳或吊环稳定，先建立可靠手部支撑。",
+      "屈肘缓慢下降，幅度严格以肩部可控无痛为限。",
+      "平稳推回；辅助器械的辅助重量单独按实际记录。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "胸部"
+    ],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑点不稳。",
+      "肩部疼痛或前移明显仍继续下沉。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.standing-leg-curl",
+    "name": "站姿腿弯举",
+    "englishName": "Leg Curls (standing)",
+    "sourceID": 367,
+    "family": "leg-curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "腿弯举器械",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "调整器械转轴、靠垫和踝部垫位，保持支撑稳定。",
+      "通过屈膝卷起配重，不抬髋或甩动身体。",
+      "缓慢伸膝回位，不让配重猛烈碰撞。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "膝屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "转轴与膝关节位置不合适。",
+      "借助抬髋或摆动完成。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.single-leg-curl",
+    "name": "单腿器械腿弯举",
+    "englishName": "Single-leg hamstring curl",
+    "sourceID": 1294,
+    "family": "leg-curl",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "徒手",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "调整器械转轴、靠垫和踝部垫位，保持支撑稳定。",
+      "通过屈膝卷起配重，不抬髋或甩动身体。",
+      "缓慢伸膝回位，不让配重猛烈碰撞。"
+    ],
+    "secondaryMuscles": [
+      "臀部"
+    ],
+    "movementPattern": "膝屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "转轴与膝关节位置不合适。",
+      "借助抬髋或摆动完成。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.hack-squat",
+    "name": "哈克深蹲",
+    "englishName": "Leg Press on Hackenschmidt Machine",
+    "sourceID": 375,
+    "family": "machine-squat",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "对应深蹲器械",
+    "muscle": "股四头肌",
+    "instructions": [
+      "按器械指引设置保护限位与站姿，确认解锁方式。",
+      "屈髋屈膝下降，保持足底支撑与膝盖方向稳定。",
+      "在可控深度内站回，不反弹或撞击限位。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "蹲",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "不了解安全限位就开始。",
+      "脚跟抬起或膝盖明显内扣。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.smith-squat",
+    "name": "史密斯深蹲",
+    "englishName": "Squats on Multipress",
+    "sourceID": 341,
+    "family": "machine-squat",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "对应深蹲器械",
+    "muscle": "股四头肌",
+    "instructions": [
+      "按器械指引设置保护限位与站姿，确认解锁方式。",
+      "屈髋屈膝下降，保持足底支撑与膝盖方向稳定。",
+      "在可控深度内站回，不反弹或撞击限位。"
+    ],
+    "secondaryMuscles": [
+      "臀部"
+    ],
+    "movementPattern": "蹲",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "不了解安全限位就开始。",
+      "脚跟抬起或膝盖明显内扣。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.pendulum-squat",
+    "name": "钟摆深蹲",
+    "englishName": "Pendular hack",
+    "sourceID": 1521,
+    "family": "machine-squat",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "对应深蹲器械",
+    "muscle": "腿部",
+    "instructions": [
+      "按器械指引设置保护限位与站姿，确认解锁方式。",
+      "屈髋屈膝下降，保持足底支撑与膝盖方向稳定。",
+      "在可控深度内站回，不反弹或撞击限位。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "蹲",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "不了解安全限位就开始。",
+      "脚跟抬起或膝盖明显内扣。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.wide-leg-press",
+    "name": "宽距器械腿举",
+    "englishName": "Leg Presses (wide)",
+    "sourceID": 374,
+    "family": "leg-press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "腿举器械",
+    "muscle": "股四头肌",
+    "instructions": [
+      "设置座椅与安全限位，按宽距或窄距变式踩稳踏板。",
+      "保持腰背贴垫，控制屈膝回收，不追求失控深度。",
+      "平稳蹬起，不猛撞膝关节锁定位置。"
+    ],
+    "secondaryMuscles": [
+      "臀部"
+    ],
+    "movementPattern": "蹲推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "腰背离垫。",
+      "脚位过窄或过宽导致关节不适。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.narrow-leg-press",
+    "name": "窄距器械腿举",
+    "englishName": "Leg Presses (narrow)",
+    "sourceID": 373,
+    "family": "leg-press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "腿举器械",
+    "muscle": "股四头肌",
+    "instructions": [
+      "设置座椅与安全限位，按宽距或窄距变式踩稳踏板。",
+      "保持腰背贴垫，控制屈膝回收，不追求失控深度。",
+      "平稳蹬起，不猛撞膝关节锁定位置。"
+    ],
+    "secondaryMuscles": [
+      "臀部"
+    ],
+    "movementPattern": "蹲推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "腰背离垫。",
+      "脚位过窄或过宽导致关节不适。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-front-squat",
+    "name": "双哑铃前蹲",
+    "englishName": "Dumbbell Front Squat",
+    "sourceID": 1640,
+    "family": "squat",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "臀部",
+    "instructions": [
+      "按变式持住负重或采用徒手姿势，双脚踩稳。",
+      "屈髋屈膝下蹲，膝盖随脚尖方向受控移动。",
+      "在个人可控幅度内蹬地站起，不强求固定深度。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "核心"
+    ],
+    "movementPattern": "蹲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "脚跟离地或膝盖失控内扣。",
+      "为求深度而腰背失控。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.double-kettlebell-front-squat",
+    "name": "双壶铃前蹲",
+    "englishName": "Double Kettlebell Front Squat",
+    "sourceID": 1361,
+    "family": "squat",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "壶铃",
+    "muscle": "臀部",
+    "instructions": [
+      "按变式持住负重或采用徒手姿势，双脚踩稳。",
+      "屈髋屈膝下蹲，膝盖随脚尖方向受控移动。",
+      "在个人可控幅度内蹬地站起，不强求固定深度。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌",
+      "小腿",
+      "核心"
+    ],
+    "movementPattern": "蹲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "脚跟离地或膝盖失控内扣。",
+      "为求深度而腰背失控。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.sumo-squat",
+    "name": "相扑深蹲",
+    "englishName": "Sumo Squats",
+    "sourceID": 632,
+    "family": "squat",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "徒手",
+    "muscle": "臀部",
+    "instructions": [
+      "按变式持住负重或采用徒手姿势，双脚踩稳。",
+      "屈髋屈膝下蹲，膝盖随脚尖方向受控移动。",
+      "在个人可控幅度内蹬地站起，不强求固定深度。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "蹲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "脚跟离地或膝盖失控内扣。",
+      "为求深度而腰背失控。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.prisoner-squat",
+    "name": "抱头徒手深蹲",
+    "englishName": "Prisoner Squat",
+    "sourceID": 1208,
+    "family": "body-squat",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "臀部",
+    "instructions": [
+      "按变式持住负重或采用徒手姿势，双脚踩稳。",
+      "屈髋屈膝下蹲，膝盖随脚尖方向受控移动。",
+      "在个人可控幅度内蹬地站起，不强求固定深度。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌"
+    ],
+    "movementPattern": "蹲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "脚跟离地或膝盖失控内扣。",
+      "为求深度而腰背失控。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.cossack-squat",
+    "name": "哥萨克侧蹲",
+    "englishName": "Cossack squat",
+    "sourceID": 1407,
+    "family": "side-lunge",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "稳固地面；滑动变式需合适滑垫",
+    "muscle": "臀部",
+    "instructions": [
+      "选择稳固地面，双脚站开并建立平衡。",
+      "将重心受控移向一侧，另一腿按变式舒展。",
+      "蹬地回到起点后换侧，滑动变式先确认地面安全。"
+    ],
+    "secondaryMuscles": [
+      "小腿",
+      "核心"
+    ],
+    "movementPattern": "侧弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "膝盖与脚尖方向失配。",
+      "滑动过远或失衡。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.lateral-lunge",
+    "name": "侧向弓步蹲",
+    "englishName": "Side split squats left",
+    "sourceID": 986,
+    "family": "side-lunge",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "腿部",
+    "instructions": [
+      "选择稳固地面，双脚站开并建立平衡。",
+      "将重心受控移向一侧，另一腿按变式舒展。",
+      "蹬地回到起点后换侧，滑动变式先确认地面安全。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "侧弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "膝盖与脚尖方向失配。",
+      "滑动过远或失衡。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.sliding-lateral-lunge",
+    "name": "滑动侧弓步蹲",
+    "englishName": "Sliding Lateral Lunge",
+    "sourceID": 1604,
+    "family": "side-lunge",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "杠铃",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "选择稳固地面，双脚站开并建立平衡。",
+      "将重心受控移向一侧，另一腿按变式舒展。",
+      "蹬地回到起点后换侧，滑动变式先确认地面安全。"
+    ],
+    "secondaryMuscles": [
+      "小腿",
+      "腹斜肌"
+    ],
+    "movementPattern": "侧弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "膝盖与脚尖方向失配。",
+      "滑动过远或失衡。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.bulgarian-split-squat",
+    "name": "保加利亚分腿蹲",
+    "englishName": "Bulgarian split squats left",
+    "sourceID": 988,
+    "family": "split-squat",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "臀部",
+    "instructions": [
+      "建立前后稳定站距；后脚抬高时确认凳面可靠。",
+      "屈髋屈膝下降，重心受控，不以过窄站距维持动作。",
+      "平稳站回，左右分别按实际次数记录。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌"
+    ],
+    "movementPattern": "弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "站距过窄失衡。",
+      "后脚支点不稳或前脚脚跟抬起。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-bulgarian-split-squat",
+    "name": "哑铃保加利亚分腿蹲",
+    "englishName": "Bulgarian Squat with Dumbbells",
+    "sourceID": 1706,
+    "family": "split-squat",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "臀部",
+    "instructions": [
+      "建立前后稳定站距；后脚抬高时确认凳面可靠。",
+      "屈髋屈膝下降，重心受控，不以过窄站距维持动作。",
+      "平稳站回，左右分别按实际次数记录。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌"
+    ],
+    "movementPattern": "弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "站距过窄失衡。",
+      "后脚支点不稳或前脚脚跟抬起。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-split-squat",
+    "name": "哑铃分腿蹲",
+    "englishName": "Dumbbell Split Squat",
+    "sourceID": 1366,
+    "family": "split-squat",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "臀部",
+    "instructions": [
+      "建立前后稳定站距；后脚抬高时确认凳面可靠。",
+      "屈髋屈膝下降，重心受控，不以过窄站距维持动作。",
+      "平稳站回，左右分别按实际次数记录。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌",
+      "小腿"
+    ],
+    "movementPattern": "弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "站距过窄失衡。",
+      "后脚支点不稳或前脚脚跟抬起。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.barbell-lunge",
+    "name": "杠铃弓步蹲",
+    "englishName": "Barbell Lunges Standing",
+    "sourceID": 46,
+    "family": "lunge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "股四头肌",
+    "instructions": [
+      "建立前后稳定站距；后脚抬高时确认凳面可靠。",
+      "屈髋屈膝下降，重心受控，不以过窄站距维持动作。",
+      "平稳站回，左右分别按实际次数记录。"
+    ],
+    "secondaryMuscles": [
+      "臀部"
+    ],
+    "movementPattern": "弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "站距过窄失衡。",
+      "后脚支点不稳或前脚脚跟抬起。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.barbell-reverse-lunge",
+    "name": "杠铃后撤弓步蹲",
+    "englishName": "Barbell Step Back Lunge",
+    "sourceID": 1830,
+    "family": "lunge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃",
+    "muscle": "股四头肌",
+    "instructions": [
+      "建立前后稳定站距；后脚抬高时确认凳面可靠。",
+      "屈髋屈膝下降，重心受控，不以过窄站距维持动作。",
+      "平稳站回，左右分别按实际次数记录。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "站距过窄失衡。",
+      "后脚支点不稳或前脚脚跟抬起。"
+    ],
+    "aliases": [
+      "Barbell Reverse Lunge"
+    ]
+  },
+  {
+    "id": "builtin.walking-dumbbell-lunge",
+    "name": "哑铃行走弓步蹲",
+    "englishName": "Dumbbell Lunges Walking",
+    "sourceID": 206,
+    "family": "lunge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "股四头肌",
+    "instructions": [
+      "建立前后稳定站距；后脚抬高时确认凳面可靠。",
+      "屈髋屈膝下降，重心受控，不以过窄站距维持动作。",
+      "平稳站回，左右分别按实际次数记录。"
+    ],
+    "secondaryMuscles": [
+      "臀部"
+    ],
+    "movementPattern": "弓步",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "站距过窄失衡。",
+      "后脚支点不稳或前脚脚跟抬起。"
+    ],
+    "aliases": [
+      "Walking Lunges"
+    ]
+  },
+  {
+    "id": "builtin.step-up",
+    "name": "徒手登阶",
+    "englishName": "Step-ups",
+    "sourceID": 981,
+    "family": "step",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "训练凳",
+    "muscle": "臀部",
+    "instructions": [
+      "选不会倾倒的低台阶，整只脚踩稳，按需要持负重。",
+      "主要用踩台腿蹬起，保持膝盖受控。",
+      "缓慢踏回地面，不跳落；左右按实际记录。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌",
+      "小腿"
+    ],
+    "movementPattern": "登阶",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "台阶过高或会移动。",
+      "用地面脚猛蹬代替受控登阶。"
+    ],
+    "aliases": [
+      "Chair steps"
+    ]
+  },
+  {
+    "id": "builtin.weighted-step-up",
+    "name": "负重登阶",
+    "englishName": "Weighted Step-ups",
+    "sourceID": 722,
+    "family": "step",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "稳固低台阶",
+    "muscle": "臀部",
+    "instructions": [
+      "选不会倾倒的低台阶，整只脚踩稳，按需要持负重。",
+      "主要用踩台腿蹬起，保持膝盖受控。",
+      "缓慢踏回地面，不跳落；左右按实际记录。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌",
+      "小腿"
+    ],
+    "movementPattern": "登阶",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "台阶过高或会移动。",
+      "用地面脚猛蹬代替受控登阶。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.single-leg-calf-raise",
+    "name": "单腿提踵",
+    "englishName": "Calf raises, one legged",
+    "sourceID": 702,
+    "family": "calf",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "小腿",
+    "instructions": [
+      "按变式稳定站姿或设置器械支撑，足部踩稳。",
+      "受控抬起脚跟，脚踝不向内外翻。",
+      "缓慢落回舒适位置，避免连续弹跳。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "踝跖屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "踝关节向侧面歪斜。",
+      "弹跳代替控制抬落。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.leg-press-calf-raise",
+    "name": "腿举机提踵",
+    "englishName": "Calf Press Using Leg Press Machine",
+    "sourceID": 146,
+    "family": "calf",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "小腿",
+    "instructions": [
+      "按变式稳定站姿或设置器械支撑，足部踩稳。",
+      "受控抬起脚跟，脚踝不向内外翻。",
+      "缓慢落回舒适位置，避免连续弹跳。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "踝跖屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "踝关节向侧面歪斜。",
+      "弹跳代替控制抬落。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.hack-machine-calf-raise",
+    "name": "哈克机提踵",
+    "englishName": "Calf Raises on Hackenschmitt Machine",
+    "sourceID": 148,
+    "family": "calf",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "小腿",
+    "instructions": [
+      "按变式稳定站姿或设置器械支撑，足部踩稳。",
+      "受控抬起脚跟，脚踝不向内外翻。",
+      "缓慢落回舒适位置，避免连续弹跳。"
+    ],
+    "secondaryMuscles": [
+      "比目鱼肌"
+    ],
+    "movementPattern": "踝跖屈",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "踝关节向侧面歪斜。",
+      "弹跳代替控制抬落。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.sumo-deadlift",
+    "name": "相扑硬拉",
+    "englishName": "Sumo Deadlift",
+    "sourceID": 630,
+    "family": "hinge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "确认负重与脚位稳定，膝盖保留自然弯曲。",
+      "向后送髋，负重贴近身体，腰背保持受控。",
+      "伸髋站回，不用腰部过度后仰结束；单腿变式先保证平衡。"
+    ],
+    "secondaryMuscles": [
+      "斜方肌"
+    ],
+    "movementPattern": "髋铰链",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "把重量甩离身体。",
+      "圆背或单腿失衡仍继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.kettlebell-deadlift",
+    "name": "壶铃硬拉",
+    "englishName": "Kettlebell deadlifts",
+    "sourceID": 1003,
+    "family": "hinge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "壶铃",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "确认负重与脚位稳定，膝盖保留自然弯曲。",
+      "向后送髋，负重贴近身体，腰背保持受控。",
+      "伸髋站回，不用腰部过度后仰结束；单腿变式先保证平衡。"
+    ],
+    "secondaryMuscles": [
+      "股四头肌",
+      "斜方肌"
+    ],
+    "movementPattern": "髋铰链",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "把重量甩离身体。",
+      "圆背或单腿失衡仍继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-deadlift",
+    "name": "哑铃硬拉",
+    "englishName": "Dumbbell Deadlift",
+    "sourceID": 1370,
+    "family": "hinge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "确认负重与脚位稳定，膝盖保留自然弯曲。",
+      "向后送髋，负重贴近身体，腰背保持受控。",
+      "伸髋站回，不用腰部过度后仰结束；单腿变式先保证平衡。"
+    ],
+    "secondaryMuscles": [
+      "股四头肌",
+      "斜方肌"
+    ],
+    "movementPattern": "髋铰链",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "把重量甩离身体。",
+      "圆背或单腿失衡仍继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-sumo-deadlift",
+    "name": "哑铃相扑硬拉",
+    "englishName": "Dumbbell sumo deadlift",
+    "sourceID": 1088,
+    "family": "hinge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "确认负重与脚位稳定，膝盖保留自然弯曲。",
+      "向后送髋，负重贴近身体，腰背保持受控。",
+      "伸髋站回，不用腰部过度后仰结束；单腿变式先保证平衡。"
+    ],
+    "secondaryMuscles": [
+      "股四头肌",
+      "斜方肌"
+    ],
+    "movementPattern": "髋铰链",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "把重量甩离身体。",
+      "圆背或单腿失衡仍继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.single-leg-dumbbell-rdl",
+    "name": "单腿哑铃罗马尼亚硬拉",
+    "englishName": "Single-Leg Deadlift with Dumbbell",
+    "sourceID": 1736,
+    "family": "single-hinge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "确认负重与脚位稳定，膝盖保留自然弯曲。",
+      "向后送髋，负重贴近身体，腰背保持受控。",
+      "伸髋站回，不用腰部过度后仰结束；单腿变式先保证平衡。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "髋铰链",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "把重量甩离身体。",
+      "圆背或单腿失衡仍继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.single-leg-kettlebell-rdl",
+    "name": "单腿壶铃硬拉",
+    "englishName": "Kettlebell One Legged Deadlift",
+    "sourceID": 1641,
+    "family": "single-hinge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "哑铃、壶铃",
+    "muscle": "臀部",
+    "instructions": [
+      "确认负重与脚位稳定，膝盖保留自然弯曲。",
+      "向后送髋，负重贴近身体，腰背保持受控。",
+      "伸髋站回，不用腰部过度后仰结束；单腿变式先保证平衡。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "髋铰链",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "把重量甩离身体。",
+      "圆背或单腿失衡仍继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.rack-pull",
+    "name": "架上硬拉",
+    "englishName": "Rack Deadlift",
+    "sourceID": 484,
+    "family": "hinge",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "按实际器械设置",
+    "muscle": "臀部",
+    "instructions": [
+      "确认负重与脚位稳定，膝盖保留自然弯曲。",
+      "向后送髋，负重贴近身体，腰背保持受控。",
+      "伸髋站回，不用腰部过度后仰结束；单腿变式先保证平衡。"
+    ],
+    "secondaryMuscles": [
+      "肱二头肌"
+    ],
+    "movementPattern": "髋铰链",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "把重量甩离身体。",
+      "圆背或单腿失衡仍继续。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.good-morning",
+    "name": "杠铃早安式",
+    "englishName": "Good Morning",
+    "sourceID": 1392,
+    "family": "good-morning",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "徒手",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "设置可靠保护架，轻负重稳定放在上背部。",
+      "微屈膝向后送髋，保持背部受控，不追求深度。",
+      "用髋伸展站回，无法保持稳定时结束。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "髋铰链",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "上背杠位不稳。",
+      "负重过大导致腰背弯曲失控。"
+    ],
+    "aliases": [
+      "Hip Hinge"
+    ]
+  },
+  {
+    "id": "builtin.dumbbell-hip-thrust",
+    "name": "哑铃臀推",
+    "englishName": "Dumbbell Hip Thrust",
+    "sourceID": 1642,
+    "family": "hip-thrust",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "哑铃",
+    "muscle": "臀部",
+    "instructions": [
+      "上背靠在稳固凳边，髋部负重有舒适缓冲。",
+      "双脚踩稳，通过伸髋将躯干抬到可控位置。",
+      "缓慢落回，不以腰部过伸换取高度。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "髋伸展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "凳子滑动。",
+      "抬起时肋骨外翻、腰部过伸。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.cable-glute-kickback",
+    "name": "绳索后踢腿",
+    "englishName": "Cable glute extension",
+    "sourceID": 1131,
+    "family": "hip-extension",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "臀部",
+    "instructions": [
+      "稳固站姿并检查脚踝绑带与绳索连接。",
+      "在骨盆稳定范围内将腿向后带，不大幅反弓腰部。",
+      "控制回到起点，左右分别记录。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "髋伸展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "用腰部后仰代替髋伸展。",
+      "支撑腿不稳。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.wall-sit",
+    "name": "靠墙静蹲",
+    "englishName": "Wall Squat",
+    "sourceID": 718,
+    "family": "wall-sit",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "背靠牢固墙面，双脚前移到能稳定支撑的位置。",
+      "下移至可控、无痛的屈膝姿势，保持自然呼吸。",
+      "在姿势开始失稳前站回，不要求固定膝角或力竭时长。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "静态蹲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "为延长时间屏气。",
+      "膝部疼痛仍保持姿势。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.high-plank",
+    "name": "高位平板支撑",
+    "englishName": "High plank",
+    "sourceID": 1001,
+    "family": "plank",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "核心",
+    "instructions": [
+      "双手或前臂与足部建立稳固支撑，臀腹保持稳定。",
+      "保持自然呼吸；触肩或抬腿变式只在骨盆稳定时交替移动。",
+      "姿势开始失控前结束，不以塌腰换取时间。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "腹斜肌",
+      "肱三头肌"
+    ],
+    "movementPattern": "抗伸展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "塌腰、耸肩或屏气。",
+      "交替动作时骨盆明显旋转。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.reverse-plank",
+    "name": "反向平板支撑",
+    "englishName": "Reverse Plank",
+    "sourceID": 500,
+    "family": "reverse-plank",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "核心",
+    "instructions": [
+      "坐在地面，双手放到肩部舒适的后方位置。",
+      "脚部踩稳并受控抬髋，保持自然呼吸。",
+      "肩腕不适或姿势失稳时落回，不强求抬高。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "后侧链支撑",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "肩腕过度后伸。",
+      "颈部后仰或腰部过伸。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.plank-shoulder-tap",
+    "name": "平板支撑交替触肩",
+    "englishName": "Plank Shoulder Taps",
+    "sourceID": 1091,
+    "family": "plank-tap",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "垫子",
+    "muscle": "肩前束",
+    "instructions": [
+      "双手或前臂与足部建立稳固支撑，臀腹保持稳定。",
+      "保持自然呼吸；触肩或抬腿变式只在骨盆稳定时交替移动。",
+      "姿势开始失控前结束，不以塌腰换取时间。"
+    ],
+    "secondaryMuscles": [
+      "背部"
+    ],
+    "movementPattern": "抗伸展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "塌腰、耸肩或屏气。",
+      "交替动作时骨盆明显旋转。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.plank-leg-lift",
+    "name": "平板支撑交替抬腿",
+    "englishName": "Plank with Alternating Leg Lift",
+    "sourceID": 1410,
+    "family": "plank-tap",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "臀部",
+    "instructions": [
+      "双手或前臂与足部建立稳固支撑，臀腹保持稳定。",
+      "保持自然呼吸；触肩或抬腿变式只在骨盆稳定时交替移动。",
+      "姿势开始失控前结束，不以塌腰换取时间。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "抗伸展",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "塌腰、耸肩或屏气。",
+      "交替动作时骨盆明显旋转。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.pallof-press",
+    "name": "绳索帕洛夫推",
+    "englishName": "Pallof Press",
+    "sourceID": 1194,
+    "family": "pallof",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "绳索器械",
+    "muscle": "肩前束",
+    "instructions": [
+      "侧对胸部高度的绳索，双脚站稳，双手持把手。",
+      "保持胸廓与骨盆朝前，将双手缓慢推离胸部。",
+      "受控拉回胸前后换侧，不让负重把身体扭转。"
+    ],
+    "secondaryMuscles": [
+      "胸部",
+      "肱三头肌"
+    ],
+    "movementPattern": "抗旋转",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "固定点或站位不稳。",
+      "转腰完成推拉。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.russian-twist",
+    "name": "俄罗斯转体",
+    "englishName": "Russian Twist",
+    "sourceID": 1193,
+    "family": "twist",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "哑铃、垫子、瑞士球",
+    "muscle": "背部",
+    "instructions": [
+      "按坐姿转体或站姿侧屈变式建立稳定支撑。",
+      "在舒适活动范围内缓慢移动躯干，不快速甩动。",
+      "回到中立位置，再完成另一侧，腰部不适时停止。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "躯干旋转或侧屈",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "借惯性快速甩腰。",
+      "在负重下强扭或过度侧屈。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.medicine-ball-twist",
+    "name": "药球转体",
+    "englishName": "Medicine ball twist",
+    "sourceID": 1089,
+    "family": "twist",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "瑞士球",
+    "muscle": "腹斜肌",
+    "instructions": [
+      "按坐姿转体或站姿侧屈变式建立稳定支撑。",
+      "在舒适活动范围内缓慢移动躯干，不快速甩动。",
+      "回到中立位置，再完成另一侧，腰部不适时停止。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "躯干旋转或侧屈",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "借惯性快速甩腰。",
+      "在负重下强扭或过度侧屈。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.bicycle-crunch",
+    "name": "自行车卷腹",
+    "englishName": "bicycle crunches",
+    "sourceID": 1412,
+    "family": "crunch",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "核心",
+    "instructions": [
+      "按地面、球面或器械变式稳定支撑与脚位。",
+      "通过腹部受控卷起躯干，不用双手猛拉颈部。",
+      "缓慢回落并呼吸；负重或绳索变式先用容易控制的阻力。"
+    ],
+    "secondaryMuscles": [
+      "腹斜肌"
+    ],
+    "movementPattern": "躯干屈曲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "猛拉颈部或甩动起身。",
+      "支撑球或凳面不稳。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.side-crunch",
+    "name": "侧卷腹",
+    "englishName": "Side Crunch",
+    "sourceID": 576,
+    "family": "crunch",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "垫子",
+    "muscle": "腹斜肌",
+    "instructions": [
+      "按地面、球面或器械变式稳定支撑与脚位。",
+      "通过腹部受控卷起躯干，不用双手猛拉颈部。",
+      "缓慢回落并呼吸；负重或绳索变式先用容易控制的阻力。"
+    ],
+    "secondaryMuscles": [
+      "核心"
+    ],
+    "movementPattern": "躯干屈曲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "猛拉颈部或甩动起身。",
+      "支撑球或凳面不稳。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.incline-crunch",
+    "name": "斜板卷腹",
+    "englishName": "Incline Crunches",
+    "sourceID": 171,
+    "family": "crunch",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "上斜训练凳",
+    "muscle": "核心",
+    "instructions": [
+      "按地面、球面或器械变式稳定支撑与脚位。",
+      "通过腹部受控卷起躯干，不用双手猛拉颈部。",
+      "缓慢回落并呼吸；负重或绳索变式先用容易控制的阻力。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "躯干屈曲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "猛拉颈部或甩动起身。",
+      "支撑球或凳面不稳。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.cable-crunch",
+    "name": "绳索卷腹",
+    "englishName": "Crunches With Cable",
+    "sourceID": 173,
+    "family": "crunch",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "绳索器械",
+    "muscle": "核心",
+    "instructions": [
+      "按地面、球面或器械变式稳定支撑与脚位。",
+      "通过腹部受控卷起躯干，不用双手猛拉颈部。",
+      "缓慢回落并呼吸；负重或绳索变式先用容易控制的阻力。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "躯干屈曲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "猛拉颈部或甩动起身。",
+      "支撑球或凳面不稳。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.machine-crunch",
+    "name": "器械卷腹",
+    "englishName": "Crunches on Machine",
+    "sourceID": 172,
+    "family": "crunch",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "按实际器械设置",
+    "muscle": "核心",
+    "instructions": [
+      "按地面、球面或器械变式稳定支撑与脚位。",
+      "通过腹部受控卷起躯干，不用双手猛拉颈部。",
+      "缓慢回落并呼吸；负重或绳索变式先用容易控制的阻力。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "躯干屈曲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "猛拉颈部或甩动起身。",
+      "支撑球或凳面不稳。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.swiss-ball-crunch",
+    "name": "瑞士球卷腹",
+    "englishName": "Ball crunches",
+    "sourceID": 165,
+    "family": "crunch",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "按实际器械设置",
+    "muscle": "核心",
+    "instructions": [
+      "按地面、球面或器械变式稳定支撑与脚位。",
+      "通过腹部受控卷起躯干，不用双手猛拉颈部。",
+      "缓慢回落并呼吸；负重或绳索变式先用容易控制的阻力。"
+    ],
+    "secondaryMuscles": [
+      "腹斜肌"
+    ],
+    "movementPattern": "躯干屈曲",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "猛拉颈部或甩动起身。",
+      "支撑球或凳面不稳。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.lying-leg-raise",
+    "name": "仰卧举腿",
+    "englishName": "Leg Raises, Lying",
+    "sourceID": 377,
+    "family": "leg-raise",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "垫子",
+    "muscle": "核心",
+    "instructions": [
+      "按仰卧或坐姿变式稳定骨盆及手部支撑。",
+      "在腰背可控范围内抬腿或收膝，不追求失控幅度。",
+      "缓慢回到起点，出现腰部不适时缩小幅度或结束。"
+    ],
+    "secondaryMuscles": [
+      "前锯肌"
+    ],
+    "movementPattern": "屈髋与腹部稳定",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "抬腿过低导致腰背失控。",
+      "利用惯性甩腿。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.hanging-leg-raise",
+    "name": "悬垂举腿",
+    "englishName": "Hanging Leg Raises",
+    "sourceID": 283,
+    "family": "hanging-raise",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "单杠",
+    "muscle": "核心",
+    "instructions": [
+      "确认单杠与握持可靠，先建立受控悬垂。",
+      "稳定躯干后抬腿，不靠摆动增加幅度。",
+      "缓慢下放，不让身体持续摆荡。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "悬垂屈髋",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "握持疲劳仍继续悬垂。",
+      "甩腿或腰背失控。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.seated-knee-tuck",
+    "name": "坐姿屈膝收腹",
+    "englishName": "Seated Knee Tuck",
+    "sourceID": 1105,
+    "family": "knee-tuck",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "核心",
+    "instructions": [
+      "按仰卧或坐姿变式稳定骨盆及手部支撑。",
+      "在腰背可控范围内抬腿或收膝，不追求失控幅度。",
+      "缓慢回到起点，出现腰部不适时缩小幅度或结束。"
+    ],
+    "secondaryMuscles": [
+      "腹斜肌"
+    ],
+    "movementPattern": "屈髋与腹部稳定",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "抬腿过低导致腰背失控。",
+      "利用惯性甩腿。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-side-bend",
+    "name": "哑铃侧屈",
+    "englishName": "Dumbbell Side Bend",
+    "sourceID": 1650,
+    "family": "side-bend",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "哑铃",
+    "muscle": "腹斜肌",
+    "instructions": [
+      "按坐姿转体或站姿侧屈变式建立稳定支撑。",
+      "在舒适活动范围内缓慢移动躯干，不快速甩动。",
+      "回到中立位置，再完成另一侧，腰部不适时停止。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "躯干旋转或侧屈",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "借惯性快速甩腰。",
+      "在负重下强扭或过度侧屈。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.decline-push-up",
+    "name": "下斜俯卧撑",
+    "englishName": "Push-Ups | Decline",
+    "sourceID": 1112,
+    "family": "push-up",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "训练凳、上斜训练凳",
+    "muscle": "胸部",
+    "instructions": [
+      "按下斜、支撑架或折刀变式建立可靠手足支撑。",
+      "屈肘受控下降，保持臀腹及肩部稳定。",
+      "平稳推回，支撑点或身体姿势失稳时结束。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "肱三头肌"
+    ],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑架或脚部垫台滑动。",
+      "塌腰、顶肩或强行追求深度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.pike-push-up",
+    "name": "折刀俯卧撑",
+    "englishName": "Pike Push Ups",
+    "sourceID": 454,
+    "family": "pike",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "胸部",
+    "instructions": [
+      "按下斜、支撑架或折刀变式建立可靠手足支撑。",
+      "屈肘受控下降，保持臀腹及肩部稳定。",
+      "平稳推回，支撑点或身体姿势失稳时结束。"
+    ],
+    "secondaryMuscles": [
+      "肱三头肌"
+    ],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑架或脚部垫台滑动。",
+      "塌腰、顶肩或强行追求深度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.parallette-push-up",
+    "name": "俯卧撑架俯卧撑",
+    "englishName": "Push-Ups | Parallettes",
+    "sourceID": 1113,
+    "family": "push-up",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "按变式选择稳定支撑架或低台",
+    "muscle": "胸部",
+    "instructions": [
+      "按下斜、支撑架或折刀变式建立可靠手足支撑。",
+      "屈肘受控下降，保持臀腹及肩部稳定。",
+      "平稳推回，支撑点或身体姿势失稳时结束。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "肱三头肌"
+    ],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑架或脚部垫台滑动。",
+      "塌腰、顶肩或强行追求深度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.rotational-push-up",
+    "name": "转体俯卧撑",
+    "englishName": "Push-up rotations",
+    "sourceID": 985,
+    "family": "push-up",
+    "kind": "bodyweight",
+    "metric": "repetitions",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "胸部",
+    "instructions": [
+      "按下斜、支撑架或折刀变式建立可靠手足支撑。",
+      "屈肘受控下降，保持臀腹及肩部稳定。",
+      "平稳推回，支撑点或身体姿势失稳时结束。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "腹斜肌"
+    ],
+    "movementPattern": "支撑推",
+    "difficulty": "进阶",
+    "commonMistakes": [
+      "支撑架或脚部垫台滑动。",
+      "塌腰、顶肩或强行追求深度。"
+    ],
+    "aliases": [
+      "Push up rotations",
+      "Pushup rotations"
+    ]
+  },
+  {
+    "id": "builtin.bear-crawl",
+    "name": "熊爬",
+    "englishName": "Bear Walk 2",
+    "sourceID": 57,
+    "family": "crawl",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "肩前束",
+    "instructions": [
+      "选择平整空旷地面，双手与足部建立支撑。",
+      "小步交替移动，保持骨盆受控和自然呼吸。",
+      "手腕、肩部不适或动作失稳时停下。"
+    ],
+    "secondaryMuscles": [
+      "臀部",
+      "背部",
+      "腹斜肌",
+      "股四头肌",
+      "斜方肌"
+    ],
+    "movementPattern": "爬行",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "移动过快导致塌腰。",
+      "手足落点太远失衡。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.dumbbell-farmer-carry",
+    "name": "哑铃农夫行走",
+    "englishName": "Dumbbell farmer's carry",
+    "sourceID": 1116,
+    "family": "carry",
+    "kind": "strength",
+    "metric": "duration",
+    "loadConvention": "perHand",
+    "equipment": "哑铃",
+    "muscle": "全身",
+    "instructions": [
+      "选平整无障碍路线，稳妥提起哑铃后站直。",
+      "保持自然呼吸和稳定步幅，不耸肩或左右摇摆。",
+      "在握持明显失稳前停下，屈髋屈膝稳妥放回重量。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "负重行走",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "屏气赶步。",
+      "握力失稳仍继续走。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.interval-running",
+    "name": "间歇跑",
+    "englishName": "Run - Interval Training",
+    "sourceID": 529,
+    "family": "cardio-run",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "安全跑道或道路",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.treadmill-running",
+    "name": "跑步机跑步",
+    "englishName": "Run - Treadmill",
+    "sourceID": 530,
+    "family": "cardio-machine",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "跑步机",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.jump-rope",
+    "name": "跳绳",
+    "englishName": "Jump rope: basic jumps",
+    "sourceID": 993,
+    "family": "cardio-jump",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "跳绳、平整地面",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.jumping-jack",
+    "name": "开合跳",
+    "englishName": "Jumping Jacks",
+    "sourceID": 320,
+    "family": "cardio-jump",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "平整地面",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.high-knees",
+    "name": "高抬腿",
+    "englishName": "High knees",
+    "sourceID": 983,
+    "family": "cardio-run",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "平整地面",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": [
+      "Running in place"
+    ]
+  },
+  {
+    "id": "builtin.butt-kicks",
+    "name": "后踢腿跑",
+    "englishName": "Talons fesses",
+    "sourceID": 1285,
+    "family": "cardio-run",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "平整地面",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": [
+      "Bum kicks"
+    ]
+  },
+  {
+    "id": "builtin.punching-bag",
+    "name": "沙袋拳击",
+    "englishName": "Bag training",
+    "sourceID": 1092,
+    "family": "cardio-box",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "拳击沙袋、护具",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "肱二头肌",
+      "腘绳肌",
+      "小腿",
+      "背部",
+      "腹斜肌",
+      "核心"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.recumbent-bike",
+    "name": "卧式单车",
+    "englishName": "Recumbent Bike",
+    "sourceID": 1376,
+    "family": "cardio-machine",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "卧式单车",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.stair-climber",
+    "name": "登阶机",
+    "englishName": "ClimbMill",
+    "sourceID": 1449,
+    "family": "cardio-machine",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "登阶机",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌",
+      "臀部"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.ski-ergometer",
+    "name": "滑雪机",
+    "englishName": "Ski Machine",
+    "sourceID": 1526,
+    "family": "cardio-machine",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "滑雪测功机",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌",
+      "臀部",
+      "股四头肌",
+      "核心"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.battle-rope",
+    "name": "战绳",
+    "englishName": "Battle Ropes",
+    "sourceID": 1524,
+    "family": "cardio-rope",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "战绳、可靠固定点",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "肱二头肌",
+      "胸部",
+      "斜方肌",
+      "肱三头肌"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.sled-push",
+    "name": "推雪橇",
+    "englishName": "Sled Push",
+    "sourceID": 1523,
+    "family": "cardio-sled",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "训练雪橇、合适场地",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "腘绳肌",
+      "肱三头肌"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.medicine-ball-slam",
+    "name": "药球砸地",
+    "englishName": "Ball Slams",
+    "sourceID": 1525,
+    "family": "cardio-ball",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "适用砸地的药球",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "臀部"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.march-in-place",
+    "name": "原地踏步",
+    "englishName": "March or jog in place",
+    "sourceID": 1584,
+    "family": "cardio-march",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "平整地面",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "肱二头肌",
+      "腹斜肌",
+      "核心",
+      "肱三头肌"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.step-jack",
+    "name": "侧点地开合步",
+    "englishName": "Step Jack",
+    "sourceID": 1962,
+    "family": "cardio-march",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "平整地面",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "肩前束",
+      "臀部",
+      "腹斜肌",
+      "核心"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": [
+      "Side Step Jack",
+      "Low Impact Jumping Jack"
+    ]
+  },
+  {
+    "id": "builtin.freestyle-swimming",
+    "name": "自由泳持续游",
+    "englishName": "Easy Continuous Swim (Freestyle)",
+    "sourceID": 2480,
+    "family": "cardio-swim",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "安全泳池",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌",
+      "小腿",
+      "臀部",
+      "股四头肌",
+      "核心",
+      "肱三头肌"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.kickboard-swimming",
+    "name": "浮板打腿",
+    "englishName": "Kick with Board",
+    "sourceID": 2481,
+    "family": "cardio-swim",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "安全泳池、浮板",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "腘绳肌",
+      "小腿",
+      "核心"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.boxing",
+    "name": "拳击步法与出拳",
+    "englishName": "Boxing",
+    "sourceID": 2542,
+    "family": "cardio-box",
+    "kind": "cardio",
+    "metric": "cardio",
+    "loadConvention": "bodyweight",
+    "equipment": "安全练习场地、合适护具",
+    "muscle": "全身",
+    "instructions": [
+      "确认场地、器材与动作能力适合自己，先用低强度进入运动。",
+      "以能稳定控制的节奏进行；记录实际时间，距离仅在有可靠读数时填写。",
+      "逐步降低强度后结束；异常不适时立即停止，不追求未知心率或速度目标。"
+    ],
+    "secondaryMuscles": [
+      "肱二头肌",
+      "背部"
+    ],
+    "movementPattern": "有氧运动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "未经适应就突然大幅提强度。",
+      "疲劳或不适时仍追赶预设成绩。"
+    ],
+    "aliases": [
+      "Nah workout"
+    ]
+  },
+  {
+    "id": "builtin.standing-calf-stretch",
+    "name": "站姿小腿拉伸",
+    "englishName": "Standing Calf Stretch",
+    "sourceID": 1239,
+    "family": "stretch",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "小腿",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.seated-calf-stretch",
+    "name": "坐姿小腿拉伸",
+    "englishName": "Sitting Calf Stretch (Dorsiflexion)",
+    "sourceID": 1274,
+    "family": "stretch",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "小腿",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.hip-flexor-stretch",
+    "name": "髋屈肌拉伸",
+    "englishName": "Hip Flexor Stretch",
+    "sourceID": 1867,
+    "family": "stretch",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "髋部",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.figure-four-stretch",
+    "name": "仰卧四字臀部拉伸",
+    "englishName": "Lying Figure Four Stretch",
+    "sourceID": 1869,
+    "family": "stretch",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "臀部",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.band-hamstring-stretch",
+    "name": "弹力带仰卧腘绳肌拉伸",
+    "englishName": "Lying Hamstring Stretch with Band",
+    "sourceID": 1870,
+    "family": "stretch",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "弹力带",
+    "muscle": "腘绳肌",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.quadriceps-stretch",
+    "name": "股四头肌拉伸",
+    "englishName": "Quad Stretch",
+    "sourceID": 1873,
+    "family": "stretch",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "股四头肌",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.lunge-twist-stretch",
+    "name": "弓步转体拉伸",
+    "englishName": "Lunge with Twist Stretch",
+    "sourceID": 1868,
+    "family": "stretch",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "全身",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.ankle-dorsiflexion-rock",
+    "name": "踝背屈前移练习",
+    "englishName": "ankle dorsiflexion rocks",
+    "sourceID": 1804,
+    "family": "mobility",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "徒手",
+    "muscle": "足踝",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.hip-circle",
+    "name": "髋关节绕环",
+    "englishName": "Hip Circles",
+    "sourceID": 1862,
+    "family": "mobility",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "按变式选择垫子、弹力带或墙面",
+    "muscle": "髋部",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.band-ankle-mobility",
+    "name": "弹力带踝关节活动",
+    "englishName": "Banded Ankle Mobility",
+    "sourceID": 1865,
+    "family": "mobility",
+    "kind": "bodyweight",
+    "metric": "duration",
+    "loadConvention": "bodyweight",
+    "equipment": "按变式选择垫子、弹力带或墙面",
+    "muscle": "足踝",
+    "instructions": [
+      "按该部位选择稳定支撑，先在小幅无痛范围熟悉动作。",
+      "缓慢进入轻度牵拉或关节活动，保持自然呼吸，不借助弹震。",
+      "出现疼痛、麻木或头晕时结束，缓慢回到中立位置。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "拉伸与活动",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "把疼痛当成有效拉伸。",
+      "使用弹震或他人强压增加幅度。"
+    ],
+    "aliases": []
+  },
+  {
+    "id": "builtin.close-grip-barbell-press",
+    "name": "窄握杠铃卧推",
+    "englishName": "Bench Press Narrow Grip",
+    "sourceID": 76,
+    "family": "press",
+    "kind": "strength",
+    "metric": "repetitions",
+    "loadConvention": "total",
+    "equipment": "杠铃、训练凳",
+    "muscle": "胸部",
+    "instructions": [
+      "设置训练凳与保护装置，双脚和肩背稳定支撑。",
+      "保持手腕受力稳定，控制下放至肩部舒适的位置。",
+      "沿稳定路径推回，保留余力，不用反弹完成动作。"
+    ],
+    "secondaryMuscles": [],
+    "movementPattern": "水平推",
+    "difficulty": "基础",
+    "commonMistakes": [
+      "下放失控或弹胸借力。",
+      "肩部疼痛时仍追求更深幅度。"
+    ],
+    "aliases": []
+  }
+]

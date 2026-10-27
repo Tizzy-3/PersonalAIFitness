@@ -80,6 +80,9 @@ public struct ProfileField<Value: Codable & Equatable & Sendable>: Codable, Equa
 /// can never be mistaken for a fact.
 public struct StructuredProfile: Codable, Equatable, Sendable {
     /// The user's own confirmation that they are 18 or older. Never assumed.
+    public var ageYears: ProfileField<Int>
+    public var heightCM: ProfileField<Double>
+    public var weightKG: ProfileField<Double>
     public var adultStatus: ProfileField<Bool>
     public var primaryGoal: ProfileField<PlanningGoal>
     public var secondaryGoals: ProfileField<[PlanningGoal]>
@@ -100,6 +103,7 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
     public var adherenceBarriers: ProfileField<String>
 
     public init() {
+        ageYears = .unknown; heightCM = .unknown; weightKG = .unknown
         adultStatus = .unknown
         primaryGoal = .unknown; secondaryGoals = .unknown; experience = .unknown
         capabilityNote = .unknown; weekdays = .unknown; minutesPerSession = .unknown
@@ -116,6 +120,9 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
 
     public func isUsable(_ topic: InterviewTopic) -> Bool {
         switch topic {
+        case .age: return ageYears.isUsable
+        case .height: return heightCM.isUsable
+        case .weight: return weightKG.isUsable
         case .adultStatus: return adultStatus.isUsable
         case .primaryGoal: return primaryGoal.isUsable
         case .secondaryGoals: return secondaryGoals.isUsable
@@ -137,6 +144,9 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
 
     public func provenance(of topic: InterviewTopic) -> ProfileProvenance {
         switch topic {
+        case .age: return ageYears.provenance
+        case .height: return heightCM.provenance
+        case .weight: return weightKG.provenance
         case .adultStatus: return adultStatus.provenance
         case .primaryGoal: return primaryGoal.provenance
         case .secondaryGoals: return secondaryGoals.provenance
@@ -202,6 +212,9 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
         guard let adult = adultStatus.value, adult else {
             throw CoreError.invalidState("本批自动计划只面向已明确确认年满 18 岁的健康成人。")
         }
+        if ageYears.isUsable, let age = ageYears.value, age < 18 {
+            throw CoreError.invalidState("已记录的年龄未满18岁，不能自动制定成人训练计划。")
+        }
         let input = PlanningInput(goal: goal, experience: experience, weekdays: days.sorted(),
                                   minutesPerSession: minutes, equipment: Set(gear),
                                   adultConfirmed: adult, safety: .noKnownRestrictions,
@@ -220,6 +233,12 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
     }
 
     public func validate() throws {
+        try ageYears.validate(name: "年龄")
+        try heightCM.validate(name: "身高")
+        try weightKG.validate(name: "体重")
+        if let value = ageYears.value, !(1...120).contains(value) { throw CoreError.invalidInput("年龄超出允许输入范围。") }
+        if let value = heightCM.value, !value.isFinite || !(50...250).contains(value) { throw CoreError.invalidInput("身高超出允许输入范围。") }
+        if let value = weightKG.value, !value.isFinite || !(15...400).contains(value) { throw CoreError.invalidInput("体重超出允许输入范围。") }
         try adultStatus.validate(name: "成年确认")
         try primaryGoal.validate(name: "主目标")
         try secondaryGoals.validate(name: "次目标")
@@ -267,5 +286,33 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
         for field in [sleepNote.note, dailyActivityNote.note, adherenceBarriers.note] {
             if let field, field.count > 1_000 { throw CoreError.invalidInput("说明过长。") }
         }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ageYears, heightCM, weightKG
+        case adultStatus, primaryGoal, secondaryGoals, experience, capabilityNote, weekdays, minutesPerSession, equipment, equipmentLoads, venue, preferredExerciseIDs, excludedExerciseIDs, restrictions, sleepNote, dailyActivityNote, adherenceBarriers
+    }
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        ageYears = try values.decodeIfPresent(ProfileField<Int>.self, forKey: .ageYears) ?? .unknown
+        heightCM = try values.decodeIfPresent(ProfileField<Double>.self, forKey: .heightCM) ?? .unknown
+        weightKG = try values.decodeIfPresent(ProfileField<Double>.self, forKey: .weightKG) ?? .unknown
+        adultStatus = try values.decode(ProfileField<Bool>.self, forKey: .adultStatus)
+        primaryGoal = try values.decode(ProfileField<PlanningGoal>.self, forKey: .primaryGoal)
+        secondaryGoals = try values.decode(ProfileField<[PlanningGoal]>.self, forKey: .secondaryGoals)
+        experience = try values.decode(ProfileField<PlanningExperience>.self, forKey: .experience)
+        capabilityNote = try values.decode(ProfileField<String>.self, forKey: .capabilityNote)
+        weekdays = try values.decode(ProfileField<[Int]>.self, forKey: .weekdays)
+        minutesPerSession = try values.decode(ProfileField<Int>.self, forKey: .minutesPerSession)
+        equipment = try values.decode(ProfileField<[PlanningEquipment]>.self, forKey: .equipment)
+        equipmentLoads = try values.decode(ProfileField<[String]>.self, forKey: .equipmentLoads)
+        venue = try values.decode(ProfileField<String>.self, forKey: .venue)
+        preferredExerciseIDs = try values.decode(ProfileField<[String]>.self, forKey: .preferredExerciseIDs)
+        excludedExerciseIDs = try values.decode(ProfileField<[String]>.self, forKey: .excludedExerciseIDs)
+        restrictions = try values.decode(ProfileField<String>.self, forKey: .restrictions)
+        sleepNote = try values.decode(ProfileField<String>.self, forKey: .sleepNote)
+        dailyActivityNote = try values.decode(ProfileField<String>.self, forKey: .dailyActivityNote)
+        adherenceBarriers = try values.decode(ProfileField<String>.self, forKey: .adherenceBarriers)
     }
 }

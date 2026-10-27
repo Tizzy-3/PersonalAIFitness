@@ -21,7 +21,7 @@ struct PersonalizedPlanConsentView: View {
                 LabeledContent("模型", value: prepared.configuration.model)
                 Text("本次会发送你已确认的目标、能力、器械、偏好等档案，以及本地训练数量和允许的动作池。下方是实际发送的内容。")
                     .font(.footnote).foregroundStyle(.secondary)
-                Text("不包含健康原始样本、未确认推断、旧访谈全文或API密钥。你配置的服务可能留存发送内容。")
+                Text("包含你保存的自由叙述及深入问答（可能含本人输入的身体或限制说明），用于理解具体目标；不知道和跳过会明确标记。它们不替代已确认字段。不包含Apple健康原始样本、未确认抽取或API密钥。你配置的服务可能留存发送内容。")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Section("实际发送内容") {

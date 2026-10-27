@@ -11,6 +11,8 @@ enum CoachClientError: Error, LocalizedError, Equatable {
     case invalidResponse
     case responseTooLarge
     case emptyReply
+    case outputTruncated
+    case jsonModeUnsupported
     case refused
     case network(String)
     case decoding(String)
@@ -26,6 +28,8 @@ enum CoachClientError: Error, LocalizedError, Equatable {
         case .invalidResponse: return "服务没有返回受支持的 Chat Completions JSON 文本。请检查接口类型；Responses API、网页和流式 SSE 地址不能直接用于这里。"
         case .responseTooLarge: return "服务响应超过 1 MB，已停止读取。没有保存或应用这次建议。"
         case .emptyReply: return "服务返回了空回答或输出被截断。你的提问仍保留，可调整问题后手动重试。"
+        case .outputTruncated: return "模型输出达到服务长度上限（finish_reason=length），JSON 尚未完整，未采用。已有回答保留，请重试；若持续发生，请在服务端提高输出上限或更换模型。"
+        case .jsonModeUnsupported: return "接口明确不支持 response_format JSON 模式，可使用普通文本模式重试；返回内容仍须通过同样的结构与安全校验。"
         case .refused: return "模型没有回答这次请求。训练计划未改变，可修改问题后再试。"
         case .network(let message): return message
         case .decoding(let message): return "服务返回的内容不符合约定格式，未采用：\(message)"
@@ -45,6 +49,14 @@ private final class RejectCoachRedirects: NSObject, URLSessionTaskDelegate, @unc
 struct CoachMessage: Codable, Sendable {
     let role: String
     let content: String
+}
+
+enum CoachOutputFormat: Equatable, Sendable { case text, jsonObject }
+
+/// Only safe protocol metadata is exposed. Reasoning text, headers and raw response bodies are not diagnostics.
+struct CoachCompletion: Sendable {
+    let content: String
+    let finishReason: String?
 }
 
 /// Non-streaming Chat Completions, read incrementally with a strict byte bound.
@@ -68,23 +80,35 @@ struct CoachHTTPClient: Sendable {
         }
     }
 
-    func complete(configuration: AIConfiguration, key: String, messages: [CoachMessage]) async throws -> String {
+    func complete(configuration: AIConfiguration, key: String, messages: [CoachMessage],
+                  outputFormat: CoachOutputFormat = .text) async throws -> String {
+        try await completeDetailed(configuration: configuration, key: key, messages: messages,
+                                   outputFormat: outputFormat).content
+    }
+
+    func completeDetailed(configuration: AIConfiguration, key: String, messages: [CoachMessage],
+                          outputFormat: CoachOutputFormat = .text) async throws -> CoachCompletion {
         try Task.checkCancellation()
         let url = try configuration.validatedURL()
         guard !key.isEmpty, key.utf8.count <= 8_192, !key.contains(where: \.isWhitespace) else {
             throw CoachClientError.configuration("请先为这个服务器填写有效 API Key。")
         }
         struct RequestBody: Encodable {
+            struct Format: Encodable { let type = "json_object" }
             let model: String
             let messages: [CoachMessage]
             let stream = false
+            let response_format: Format?
+            let max_tokens: Int?
         }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 60)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONEncoder().encode(RequestBody(model: configuration.normalized.model, messages: messages))
+        request.httpBody = try JSONEncoder().encode(RequestBody(model: configuration.normalized.model, messages: messages,
+                response_format: outputFormat == .jsonObject ? .init() : nil,
+                max_tokens: outputFormat == .jsonObject ? 4_096 : nil))
         guard let body = request.httpBody, body.count <= 512 * 1_024 else {
             throw CoachClientError.configuration("本次发送内容超过 512 KB。请缩短问题或先减少纳入的训练记录。")
         }
@@ -96,6 +120,18 @@ struct CoachHTTPClient: Sendable {
             case 200...299: break
             case 300...399: throw CoachClientError.redirectBlocked
             case 401, 403: throw CoachClientError.authentication
+            case 400, 422:
+                guard outputFormat == .jsonObject else { throw CoachClientError.http(response.statusCode) }
+                // A compatibility fallback is permitted only when the server identifies the optional
+                // JSON-format parameter. Never retry arbitrary bad requests, authentication or quota failures.
+                var detail = Data()
+                for try await byte in bytes {
+                    try Task.checkCancellation()
+                    guard detail.count < 16_384 else { throw CoachClientError.http(response.statusCode) }
+                    detail.append(byte)
+                }
+                if Self.isUnsupportedJSONMode(detail) { throw CoachClientError.jsonModeUnsupported }
+                throw CoachClientError.http(response.statusCode)
             case 429: throw CoachClientError.rateLimited
             case 500...599: throw CoachClientError.server(response.statusCode)
             default: throw CoachClientError.http(response.statusCode)
@@ -110,7 +146,7 @@ struct CoachHTTPClient: Sendable {
                 data.append(byte)
             }
             try Task.checkCancellation()
-            return try Self.decodeEnvelope(data)
+            return try Self.decodeCompletion(data)
         } catch is CancellationError { throw CancellationError() }
         catch let error as URLError {
             if error.code == .cancelled { throw CancellationError() }
@@ -123,9 +159,38 @@ struct CoachHTTPClient: Sendable {
     }
 
     static func decodeEnvelope(_ data: Data) throws -> String {
+        try decodeCompletion(data).content
+    }
+
+    static func isUnsupportedJSONMode(_ data: Data) -> Bool {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let error = object["error"] as? [String: Any] else { return false }
+        let parameter = error["param"] as? String
+        let code = error["code"] as? String
+        return parameter == "response_format" && ["unsupported_parameter", "unsupported_value", "invalid_parameter"].contains(code ?? "")
+    }
+
+    static func decodeCompletion(_ data: Data) throws -> CoachCompletion {
         struct Envelope: Decodable {
             struct Choice: Decodable {
-                struct Message: Decodable { let content: String?; let refusal: String? }
+                struct Message: Decodable {
+                    struct Part: Decodable { let type: String; let text: String? }
+                    struct ToolCall: Decodable { }
+                    let content: String?
+                    let refusal: String?
+                    let hasToolCalls: Bool
+                    enum CodingKeys: String, CodingKey { case content, refusal, tool_calls }
+                    init(from decoder: Decoder) throws {
+                        let values = try decoder.container(keyedBy: CodingKeys.self)
+                        refusal = try values.decodeIfPresent(String.self, forKey: .refusal)
+                        hasToolCalls = !(try values.decodeIfPresent([ToolCall].self, forKey: .tool_calls) ?? []).isEmpty
+                        if let string = try? values.decode(String.self, forKey: .content) { content = string }
+                        else if let parts = try? values.decode([Part].self, forKey: .content), !parts.isEmpty,
+                                parts.count <= 64, parts.allSatisfy({ $0.type == "text" && $0.text != nil }) {
+                            content = parts.compactMap(\.text).joined()
+                        } else { content = nil }
+                    }
+                }
                 let message: Message
                 let finish_reason: String?
             }
@@ -135,10 +200,12 @@ struct CoachHTTPClient: Sendable {
               let choice = envelope.choices.first else { throw CoachClientError.invalidResponse }
         if let refusal = choice.message.refusal, !refusal.isEmpty { throw CoachClientError.refused }
         if choice.finish_reason == "content_filter" { throw CoachClientError.refused }
-        guard choice.finish_reason != "length",
-              let content = choice.message.content?.trimmingCharacters(in: .whitespacesAndNewlines),
+        if choice.finish_reason == "length" { throw CoachClientError.outputTruncated }
+        guard !choice.message.hasToolCalls, choice.finish_reason != "tool_calls" else { throw CoachClientError.invalidResponse }
+        guard let content = choice.message.content?.trimmingCharacters(in: .whitespacesAndNewlines),
               !content.isEmpty else { throw CoachClientError.emptyReply }
-        return content
+        let reason = choice.finish_reason.map { ["stop", "length", "content_filter", "tool_calls", "function_call"].contains($0) ? $0 : "other" }
+        return CoachCompletion(content: content, finishReason: reason)
     }
 }
 

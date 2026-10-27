@@ -203,8 +203,8 @@ struct TodayView: View {
     }
     private var historyCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NavigationLink { TrainingInsightsView(store: store) } label: {
-                HStack { Label("本周 \(thisWeek.count) 次训练", systemImage: "chart.bar"); Spacer(); Text("查看记录").font(.caption); Image(systemName: "chevron.right").font(.caption2) }
+            NavigationLink { TrainingHistoryCalendarView(store: store, openWorkout: openWorkout) } label: {
+                HStack { Label("本周 \(thisWeek.count) 次训练", systemImage: "calendar"); Spacer(); Text("月历历史").font(.caption); Image(systemName: "chevron.right").font(.caption2) }
                     .font(.subheadline).padding(14).background(FitnessTheme.blueTint, in: RoundedRectangle(cornerRadius: 13))
             }.buttonStyle(.plain).foregroundStyle(FitnessTheme.accent)
             if let recent = store.sessions.first(where: { !$0.status.isOngoing }) {
