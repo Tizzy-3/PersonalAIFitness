@@ -128,9 +128,21 @@ final class StoreLocationTests: XCTestCase {
     func testFreshInstallUsesDedicatedPathAndDoesNotCreateDefaultStore() throws {
         let root = try directory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let legacy = root.appendingPathComponent("default.store")
-        let dedicated = root.appendingPathComponent("PersonalFitness/Training.store")
-        let scan = StoreLocator.scan(roots: [("support", root)], legacyURL: legacy, dedicatedURL: dedicated)
+        let support = root.appendingPathComponent("support")
+        let caches = root.appendingPathComponent("Caches")
+        let reference = caches.appendingPathComponent("StartupModelReferences/interrupted-run/V1.store")
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: reference.deletingLastPathComponent(), withIntermediateDirectories: true)
+        do {
+            let schema = Schema(versionedSchema: FitnessSchemaV1.self)
+            let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: reference, cloudKitDatabase: .none)])
+            try container.mainContext.save()
+        }
+        let legacy = support.appendingPathComponent("default.store")
+        let dedicated = support.appendingPathComponent("PersonalFitness/Training.store")
+        let scan = StoreLocator.scan(roots: [("support", support), ("Caches", caches)], legacyURL: legacy, dedicatedURL: dedicated)
+        XCTAssertTrue(scan.fitnessCandidates.isEmpty, "Diagnostic references must never be mistaken for recovered history")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: reference.path), "Discovery must not delete leftover references")
         XCTAssertEqual(try StoreLocator.select(scan), dedicated)
         XCTAssertFalse(FileManager.default.fileExists(atPath: legacy.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: dedicated.path), "Selection must not create files")

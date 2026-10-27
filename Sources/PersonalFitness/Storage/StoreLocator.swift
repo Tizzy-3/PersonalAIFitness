@@ -68,6 +68,13 @@ enum StoreLocator {
             while let url = enumerator.nextObject() as? URL {
                 guard visited < maxEntries else { truncated = true; break }
                 visited += 1
+                // A killed diagnostic run may leave empty reference models in Caches.
+                // Those disposable stores are never a source of the user's fitness history.
+                if name == "Caches", enumerator.level == 1,
+                   ["StartupModelReferences", "StartupDiagnostics"].contains(url.lastPathComponent) {
+                    enumerator.skipDescendants()
+                    continue
+                }
                 // Deliberately scoped to four levels, not an unrestricted device-wide search.
                 if enumerator.level > 4 { enumerator.skipDescendants(); continue }
                 do {
