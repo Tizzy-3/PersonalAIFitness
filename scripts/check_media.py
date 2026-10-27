@@ -16,10 +16,19 @@ def main():
     ids, names = set(), {'media-manifest.json', 'NOTICE.md', 'wger-license-metadata.json', 'wger-image-license-metadata.json'}
     sources = {'wger.image.' + str(x['id']): x for x in json.loads((MEDIA / 'wger-image-license-metadata.json').read_text(encoding='utf-8'))}
     static_count = 0
+    active_count = 0
+    disabled_count = 0
     for item in entries:
         if item['exerciseID'] in ids:
             raise SystemExit('Duplicate exercise media identifier.')
         ids.add(item['exerciseID'])
+        if 'disabledReason' in item:
+            reason = item['disabledReason']
+            if not isinstance(reason, str) or not reason.strip() or len(reason) > 500:
+                raise SystemExit('Disabled media requires a bounded review reason.')
+            disabled_count += 1
+        else:
+            active_count += 1
         if item['type'] in ('image', 'stillSequence'):
             if not item.get('frames') or (item['type'] == 'stillSequence') != (len(item['frames']) > 1):
                 raise SystemExit('Invalid static sequence mapping.')
@@ -61,7 +70,7 @@ def main():
                     raise SystemExit('GIF dimensions exceed reviewed bounds.')
     if names != {p.name for p in MEDIA.iterdir() if p.is_file()}:
         raise SystemExit('Unlisted or missing file in bundled media directory.')
-    print('MEDIA CHECKS PASSED: %d movement mappings / %d static frames; %d exact bundled files.' % (len(entries), static_count, len(names)))
+    print('MEDIA CHECKS PASSED: %d active movement mappings / %d disabled retained sources / %d static frames; %d exact bundled files.' % (active_count, disabled_count, static_count, len(names)))
     print('Checksums/paths/manifest verified. Correct personal technique is not established by this check.')
 
 

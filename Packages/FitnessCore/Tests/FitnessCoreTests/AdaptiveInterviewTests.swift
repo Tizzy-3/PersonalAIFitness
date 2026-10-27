@@ -117,4 +117,18 @@ final class AdaptiveInterviewTests: XCTestCase {
         XCTAssertThrowsError(try InterviewQuestion(topic: .sleep, kind: .text, prompt: "问题", detailKey: "medical.diagnosis").validate())
         XCTAssertThrowsError(try InterviewQuestion(topic: .sleep, kind: .text, prompt: "问题", detailKey: "sleep.秘密").validate())
     }
+
+    func testExplicitReopenChangesClosedQuestionContextWithoutLosingEarlierAnswers() throws {
+        var session = InterviewSession(createdAt: start)
+        let capability = InterviewQuestion(topic: .capability, kind: .text, prompt: "目前能力？", detailKey: "capability.current")
+        let sleep = InterviewQuestion(topic: .sleep, kind: .text, prompt: "睡眠如何？", detailKey: "sleep.schedule")
+        try session.appendTurn(.init(questions: [capability, sleep]), at: start)
+        try session.answer([.init(questionID: capability.id, text: "能走30分钟", answeredAt: start),
+                            .init(questionID: sleep.id, text: "作息不固定", answeredAt: start)], at: start)
+        XCTAssertEqual(session.closedQuestionKeys, [capability.stableKey, sleep.stableKey].sorted())
+        try session.reopenTopic(.capability, at: start.addingTimeInterval(1))
+        XCTAssertEqual(session.closedQuestionKeys, [sleep.stableKey])
+        XCTAssertEqual(session.dialogueEvidence.count, 2)
+        XCTAssertEqual(try session.appendTurn(.init(questions: [capability]), at: start.addingTimeInterval(2)).questions.count, 1)
+    }
 }

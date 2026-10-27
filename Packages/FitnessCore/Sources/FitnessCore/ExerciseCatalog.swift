@@ -2,7 +2,7 @@ import Foundation
 
 /// Stable movement identities. General instructions are not individual clearance or prescriptions.
 public enum ExerciseCatalog {
-    public static let version = "2026.10.27.3"
+    public static let version = "2026.10.28.1"
     public static let exercises: [Exercise] = baseExercises + ExpandedExerciseCatalog.exercises
     private static let baseExercises: [Exercise] = [
         Exercise(id: "builtin.dumbbell-bench-press", name: "哑铃卧推", englishName: "Dumbbell Bench Press", kind: .strength, metric: .repetitions, equipment: "哑铃、平板训练凳", muscle: "胸部", loadConvention: .perHand, instructions: ["双脚踩稳、肩胛贴稳凳面，将哑铃置于胸部两侧。", "前臂大致竖直，在无痛范围内控制下放。", "向上推起并呼气，不用哑铃相撞结束动作。"]),

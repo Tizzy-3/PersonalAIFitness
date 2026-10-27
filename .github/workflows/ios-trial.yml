@@ -38,6 +38,7 @@ jobs:
           python3 scripts/generate_project.py
           plutil -lint PersonalFitness.xcodeproj/project.pbxproj Sources/PersonalFitness/Resources/Info.plist Sources/PersonalFitness/Resources/PersonalFitness.entitlements
           python3 scripts/check_source.py | tee "$PF_OUTPUT/static-checks.log"
+          python3 scripts/sync_expanded_catalog.py | tee "$PF_OUTPUT/catalog-checks.log"
           python3 scripts/check_media.py | tee "$PF_OUTPUT/media-checks.log"
 
       - name: Run independent core tests

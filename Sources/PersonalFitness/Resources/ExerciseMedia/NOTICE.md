@@ -19,6 +19,8 @@ Verified from the wger public API on 2026-10-26. Each derivative keeps the sourc
 
 ## Additional static artwork (2026-10-27)
 
+Display review on 2026-10-28 disabled four ambiguous or mismatched variant bindings: decline-barbell-press, smith-incline-press, rack-pull, and side-crunch. The derivative files and source attributions remain retained, with `disabledReason` recorded in the manifest; they are not displayed as demonstrations for these movements. File counts therefore differ from active display-mapping counts.
+
 Only images explicitly attributed to Everkinetic by the wger image API, licensed CC BY-SA 3.0, are included in this expansion. Images were visually reviewed; nominally CC uploads bearing other commercial artwork watermarks were excluded. Files are resized/re-encoded as JPEG, not GIF or video. Every frame, author, source URL, source image ID, derivative SHA256 and transformation is listed in media-manifest.json; source metadata is retained in wger-image-license-metadata.json. These derivatives retain CC BY-SA 3.0 (not upgraded to 4.0). License: https://creativecommons.org/licenses/by-sa/3.0/
 
 Exercise text/name source attribution is separate in Data/exercise-catalog-sources.json; upstream text uses the per-entry CC license shown there. Chinese notes are conservative movement-family guidance adapted/authored for the catalogue, not a full translated lesson or individual clearance. Original descriptions are available from each movement source. Original 11 Goulart CC BY-SA 4.0 clips are unchanged.

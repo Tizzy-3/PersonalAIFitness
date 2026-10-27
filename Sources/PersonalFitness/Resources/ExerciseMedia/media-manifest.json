@@ -834,7 +834,8 @@
         "changes": "Resized to at most 480px and re-encoded as JPEG on white; same CC-BY-SA 3.0 license retained."
       }
     ],
-    "verifiedDate": "2026-10-27"
+    "verifiedDate": "2026-10-27",
+    "disabledReason": "The source name says decline, but the visible bench angle and support do not establish this variant. Display binding disabled after review."
   },
   {
     "exerciseID": "builtin.dumbbell-shrug",
@@ -1241,7 +1242,8 @@
         "changes": "Resized to at most 480px and re-encoded as JPEG on white; same CC-BY-SA 3.0 license retained."
       }
     ],
-    "verifiedDate": "2026-10-27"
+    "verifiedDate": "2026-10-27",
+    "disabledReason": "The image shows a Smith-machine lift from the floor, not a partial lift from rack supports. Display binding disabled after review."
   },
   {
     "exerciseID": "builtin.seated-barbell-shoulder-press",
@@ -1409,7 +1411,8 @@
         "changes": "Resized to at most 480px and re-encoded as JPEG on white; same CC-BY-SA 3.0 license retained."
       }
     ],
-    "verifiedDate": "2026-10-27"
+    "verifiedDate": "2026-10-27",
+    "disabledReason": "The illustration does not reliably show the defined side-lying variant. Display binding disabled after review."
   },
   {
     "exerciseID": "builtin.smith-incline-press",
@@ -1451,7 +1454,8 @@
         "changes": "Resized to at most 480px and re-encoded as JPEG on white; same CC-BY-SA 3.0 license retained."
       }
     ],
-    "verifiedDate": "2026-10-27"
+    "verifiedDate": "2026-10-27",
+    "disabledReason": "The source identifies a close-grip press, not this incline Smith-machine variant. Display binding disabled after review."
   },
   {
     "exerciseID": "builtin.standing-leg-curl",

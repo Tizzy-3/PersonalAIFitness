@@ -55,13 +55,10 @@ struct InterviewAPI: Sendable {
             .map { ($0.rawValue, describe($0, profile: session.profile)) }
         let pending = InterviewTopic.allCases.filter { session.profile.provenance(of: $0) == .inferred }
             .map { ($0.rawValue, describe($0, profile: session.profile)) }
-        let closed = session.allTurns.flatMap { turn in turn.questions.filter { question in
-            turn.answers.contains { $0.questionID == question.id }
-        }.map(\.stableKey) }
         let request = Request(rulesVersion: InterviewRules.rulesVersion, phase: session.phase.rawValue,
             openTopics: session.openTopics.map(\.rawValue), answeredProfile: Dictionary(uniqueKeysWithValues: answered),
             pendingInferences: Dictionary(uniqueKeysWithValues: pending), declinedTopics: session.declinedTopics.map(\.rawValue).sorted(),
-            closedQuestionKeys: Array(Set(closed)).sorted(), userNarratives: session.narratives ?? [], savedConversation: session.allTurns,
+            closedQuestionKeys: session.closedQuestionKeys, userNarratives: session.narratives ?? [], savedConversation: session.allTurns,
             candidateExercises: ExerciseCatalog.exercises.map { ExerciseReference(id: $0.id, name: $0.name, englishName: $0.englishName, equipment: $0.equipment, muscle: $0.muscle) })
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

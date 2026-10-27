@@ -1,9 +1,23 @@
 import XCTest
+import Foundation
 import AVFoundation
 import FitnessCore
 @testable import PersonalFitness
 
 final class ExerciseMediaTests: XCTestCase {
+    @MainActor
+    func testCatalogMediaExactlyMatchesReviewedActiveManifestAndNeverUsesDisabledSources() throws {
+        let url = try XCTUnwrap(ExerciseMediaAsset.url(for: "media-manifest.json"))
+        let entries = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [[String: Any]])
+        let activeIDs = try Set(entries.filter { $0["disabledReason"] == nil }.map { try XCTUnwrap($0["exerciseID"] as? String) })
+        let actualIDs = Set(ExerciseCatalog.exercises.filter { ExerciseDetails.details(for: $0.id)?.media != nil }.map(\.id))
+        XCTAssertEqual(actualIDs, activeIDs, "Unused or unreviewed media must not silently enter the catalogue")
+        for entry in entries where entry["disabledReason"] != nil {
+            let id = try XCTUnwrap(entry["exerciseID"] as? String)
+            XCTAssertNil(ExerciseDetails.details(for: id)?.media, "A mismatched movement image must remain unavailable: \(id)")
+        }
+    }
+
     @MainActor
     func testBundledLicensedMediaAndPostersResolve() throws {
         for exercise in ExerciseCatalog.exercises {

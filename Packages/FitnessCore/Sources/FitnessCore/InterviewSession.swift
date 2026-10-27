@@ -78,6 +78,17 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     }
 
     public var allTurns: [InterviewTurn] { (archivedTurns ?? []) + turns }
+    /// A deliberate reopen starts a new asking window for that topic. Keep earlier answers in
+    /// history, but do not tell the model that the newly reopened question is still forbidden.
+    public var closedQuestionKeys: [String] {
+        let keys = allTurns.enumerated().flatMap { index, turn -> [String] in
+            turn.questions.filter { question in
+                index >= (reopenedTopicOffsets?[question.topic.rawValue] ?? 0)
+                    && turn.answers.contains { $0.questionID == question.id }
+            }.map(\.stableKey)
+        }
+        return Array(Set(keys)).sorted()
+    }
     public var dialogueEvidence: [InterviewDialogueEvidence] {
         allTurns.flatMap { turn in
             turn.questions.compactMap { question -> InterviewDialogueEvidence? in
