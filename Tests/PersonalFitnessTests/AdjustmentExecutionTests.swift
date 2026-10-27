@@ -180,6 +180,7 @@ final class AdjustmentExecutionTests: XCTestCase {
         interview.profile.equipment = ProfileField(value: [.bodyweight], provenance: .stated, confirmedAt: date)
         interview.profile.restrictions = ProfileField(value: "无已知限制", provenance: .stated, confirmedAt: date)
         try store.saveInterview(interview)
+        interview = try XCTUnwrap(store.interview)
         let pool = try PlannerEngine.candidatePool(input: interview.profile.planningInput())
         let choices = pool.compactMapValues(\.first)
         let reply = PersonalizedPlanReply(choices: choices, explanation: "测试夹具：按本人档案选择动作", limitations: ["负荷尚未校准"])

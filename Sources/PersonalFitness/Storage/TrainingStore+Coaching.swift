@@ -15,7 +15,7 @@ extension TrainingStore {
     @discardableResult
     func startInterview(at date: Date = Date()) throws -> InterviewSession {
         if let existing = interview { return existing }
-        let session = InterviewSession(createdAt: date)
+        let session = try RecordCodec.decode(InterviewSession.self, from: RecordCodec.encode(InterviewSession(createdAt: date)))
         try validateInterviewCandidate(session)
         let data = try RecordCodec.encode(session)
         try write { metadata.interviewData = data; metadata.revision += 1 }
@@ -24,10 +24,14 @@ extension TrainingStore {
     }
 
     func saveInterview(_ session: InterviewSession) throws {
-        try validateInterviewCandidate(session)
-        let data = try RecordCodec.encode(session)
+        // Publish the same timestamp representation that persistence and frozen plan drafts use.
+        // Otherwise an immediate confirmation can compare nanosecond input with decoded dates and
+        // incorrectly conclude that the user's profile changed.
+        let committed = try RecordCodec.decode(InterviewSession.self, from: RecordCodec.encode(session))
+        try validateInterviewCandidate(committed)
+        let data = try RecordCodec.encode(committed)
         try write { metadata.interviewData = data; metadata.revision += 1 }
-        interview = session
+        interview = committed
     }
 
     /// Applies a validated session after the caller mutated it, keeping the same guarantees.
@@ -36,7 +40,8 @@ extension TrainingStore {
         var session = try interview ?? startInterview(at: date)
         try mutation(&session)
         try saveInterview(session)
-        return session
+        guard let committed = interview else { throw CoreError.invalidState("访谈保存后无法读取。") }
+        return committed
     }
 
     func discardInterview() throws {
