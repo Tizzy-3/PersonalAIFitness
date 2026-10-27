@@ -8,7 +8,7 @@ import CoreData
 enum StartupDiagnostics {
     static let reportName = "latest-startup-diagnostic.json"
 
-    struct ErrorInfo: Codable {
+    struct ErrorInfo: Codable, Sendable {
         var domain: String
         var code: Int
         var summary: String
@@ -39,9 +39,12 @@ enum StartupDiagnostics {
         var referenceHashes: [String: [String: String]]
         var referenceErrors: [String: ErrorInfo]
         var error: ErrorInfo?
+        var storageCandidates: [StoreLocator.CandidateInfo]?
+        var storageScanTruncated: Bool?
+        var storageScanErrors: [ErrorInfo]?
     }
 
-    static func errorInfo(_ error: Error, depth: Int = 0) -> ErrorInfo {
+    nonisolated static func errorInfo(_ error: Error, depth: Int = 0) -> ErrorInfo {
         let value = error as NSError
         var nested: [ErrorInfo] = []
         if depth < 4 {

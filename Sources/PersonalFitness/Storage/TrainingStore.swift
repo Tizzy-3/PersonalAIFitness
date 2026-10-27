@@ -56,17 +56,22 @@ final class TrainingStore {
         return planVersions.first { $0.id == id && !deletedPlanIDs.contains($0.planID) }
     }
 
-    convenience init(inMemory: Bool = false) throws {
+    convenience init(inMemory: Bool = false, explicitlyStartSeparate: Bool = false) throws {
+        if !inMemory {
+            let scan = try StoreLocator.scanDefault()
+            let url = try StoreLocator.select(scan, explicitlyStartSeparate: explicitlyStartSeparate)
+            do { try self.init(storageURL: url) }
+            catch { throw StoreOpenFailure(url: url, original: error) }
+            return
+        }
         let schema = Schema(versionedSchema: FitnessSchemaV4.self)
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory, cloudKitDatabase: .none)
-        let directory: URL?
-        if inMemory { directory = nil }
-        else { directory = try Self.defaultRecoveryDirectory() }
-        try self.init(configuration: config, recoveryDirectory: directory)
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        try self.init(configuration: config, recoveryDirectory: nil)
     }
 
     /// A separately located real store permits reopen tests without touching the user's library.
     convenience init(storageURL: URL) throws {
+        try FileManager.default.createDirectory(at: storageURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         let schema = Schema(versionedSchema: FitnessSchemaV4.self)
         let config = ModelConfiguration(schema: schema, url: storageURL, cloudKitDatabase: .none)
         try self.init(configuration: config, recoveryDirectory: storageURL.deletingLastPathComponent().appendingPathComponent("Recovery", isDirectory: true))
@@ -728,8 +733,4 @@ final class TrainingStore {
         return url
     }
 
-    private static func defaultRecoveryDirectory() throws -> URL {
-        try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent("RestoreRecovery", isDirectory: true)
-    }
 }

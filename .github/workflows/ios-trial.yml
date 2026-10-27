@@ -107,18 +107,18 @@ jobs:
           (cd "$staging" && /usr/bin/zip -qry "$PF_OUTPUT/PersonalFitness-unsigned.ipa" Payload)
           shasum -a 256 "$PF_OUTPUT/PersonalFitness-unsigned.ipa" > "$PF_OUTPUT/SHA256.txt"
           printf '%s\n' \
-            'Personal Fitness 0.4.2 diagnostic trial; native SwiftUI + SwiftData.' \
+            'Personal Fitness 0.4.3 store-location trial; native SwiftUI + SwiftData.' \
             "Source commit: $GITHUB_SHA" \
             "Workflow run: $GITHUB_RUN_ID / $GITHUB_RUN_ATTEMPT" \
             'Minimum iOS: 27.0. Unsigned IPA: sign before installation.' \
             'Default bundle ID: com.personalfitness.private; use a matching profile and preserve com.apple.developer.healthkit.' \
             'No seeded personal plans, workouts or health data.' \
-            'Startup failure: copy/export metadata-only diagnostics. No automatic reset, delete, or alternate-schema retry. Device startup incident remains under diagnosis.' \
+            'Startup selects an existing fitness store by metadata; foreign default stores are preserved and blocked before migration. New installs use a dedicated path. A separate empty store requires explicit user choice when old data is unresolved.' \
             'Includes: resumable AI interview with protected confirmed facts; a real model movement-composition request within the local candidate pool; independently validated quantities and a confirmed weekly program; daily feedback and readiness evidence; UUID-based health additions/deletions; accepted one-off adjustments applied to one real session; deterministic reviews.' \
             'Not implemented: automatic progressive/cycle proposal generation, personal physiological baselines, medical adaptation, history correction, full trend charts, teaching videos for every movement.' \
             'CI and Simulator success do not prove device signing or HealthKit access.' \
             > "$PF_OUTPUT/BUILD-INFO.txt"
-          { echo '### Personal Fitness 0.4.2 diagnostics'; echo 'Historical compiled-schema probes, Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'HealthKit requires a compatible final signature/profile. Device startup incident remains under diagnosis.'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '### Personal Fitness 0.4.3 store-location protection'; echo 'Historical compiled-schema probes, Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'HealthKit requires a compatible final signature/profile. Original device history recovery remains unverified.'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
