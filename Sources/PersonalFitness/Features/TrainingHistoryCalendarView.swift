@@ -12,6 +12,7 @@ struct TrainingHistoryCalendarView: View {
     @State private var showDatePicker = false
     @State private var showSettings = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .caption) private var accessibleDayWidth: CGFloat = 44
 
     init(store: TrainingStore, openWorkout: ((UUID) -> Void)? = nil) {
         self.store = store
@@ -113,6 +114,21 @@ struct TrainingHistoryCalendarView: View {
     }
 
     private func monthCalendar(_ month: TrainingHistoryMonth) -> some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("大字体下可左右滑动查看整周，点日期看完整记录。")
+                        .font(.footnote).foregroundStyle(FitnessTheme.muted)
+                    ScrollView(.horizontal) {
+                        calendarGrid(month).frame(width: accessibleDayWidth * 7 + 18)
+                    }
+                    .scrollIndicators(.visible)
+                }
+            } else { calendarGrid(month) }
+        }
+    }
+
+    private func calendarGrid(_ month: TrainingHistoryMonth) -> some View {
         VStack(spacing: 8) {
             HStack(spacing: 3) {
                 ForEach(["一", "二", "三", "四", "五", "六", "日"], id: \.self) { day in
