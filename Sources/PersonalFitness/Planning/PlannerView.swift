@@ -26,10 +26,26 @@ struct PlannerView: View {
     var body: some View {
         Form {
             Section {
-                Text("先把安排做实，再让 AI 选择与解释").font(.headline)
-                Text("填写实际可训练条件，本地规则生成可行的七天候选；AI 只能从候选中选择并说明取舍。你看完每日动作后明确确认，才替换当前安排。")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                NavigationLink { AISettingsView() } label: { Label("配置 AI 接口与密钥", systemImage: "slider.horizontal.3") }
+                HStack(alignment: .top, spacing: 12) {
+                    CoachIconBadge(symbol: "calendar.badge.plus", color: FitnessTheme.accent)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("把一周训练安排好").font(.headline)
+                        Text("先填写实际条件，再核对每天的动作。")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                }.padding(.vertical, 6)
+                HStack(spacing: 8) {
+                    CoachStatusPill(text: "1 实际条件")
+                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary).accessibilityHidden(true)
+                    CoachStatusPill(text: "2 可行候选", color: FitnessTheme.teal)
+                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary).accessibilityHidden(true)
+                    CoachStatusPill(text: "3 本人确认", color: FitnessTheme.violet)
+                }.padding(.vertical, 4).accessibilityElement(children: .combine)
+                DisclosureGroup("计划怎样生成") {
+                    Text("本地规则先生成可行的七天候选，AI只能从候选选择并解释。你看完每日动作并明确确认后，才替换当前安排。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    NavigationLink { AISettingsView() } label: { Label("配置 AI 接口与密钥", systemImage: "slider.horizontal.3") }
+                }.font(.subheadline)
             }
             goalsSection
             scheduleSection
@@ -46,8 +62,8 @@ struct PlannerView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                     Button("重试保存并查看候选") { persist(unsavedDraft) }
                 } else {
-                    Button("生成可行周计划，进入 AI 安排", systemImage: "calendar.badge.plus") { generate() }
-                        .font(.headline).frame(maxWidth: .infinity, minHeight: 44)
+                    Button("生成训练候选", systemImage: "calendar.badge.plus") { generate() }
+                        .buttonStyle(FitnessPrimaryButtonStyle())
                         .disabled(store.activeSession != nil)
                 }
                 if store.activeSession != nil {
@@ -71,12 +87,17 @@ struct PlannerView: View {
                     }
                 }
             }
-            Section("本批范围") {
-                Text("当前是健康成人的保守起步周计划，支持力量、有氧和徒手。完整身体状态评估、医学限制适配与长期自动进阶尚未完成；没有健康资料时不会编造恢复结论或最佳重量。")
-                    .font(.footnote).foregroundStyle(.secondary)
+            Section {
+                DisclosureGroup("适用范围与数据限制") {
+                    Text("当前是健康成人的保守起步周计划，支持力量、有氧和徒手。完整身体状态评估、医学限制适配与长期自动进阶尚未完成；没有健康资料时不会编造恢复结论或最佳重量。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }.font(.subheadline)
             }
         }
-        .navigationTitle("为我制定计划").navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(FitnessTheme.canvas)
+        .tint(FitnessTheme.accent)
+        .navigationTitle("制定周计划").navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $draftID) { id in PlanningDraftDetailView(store: store, draftID: id) }
         .sheet(isPresented: $pickingExclusions) { NavigationStack { PlanningExclusionPicker(selected: $excluded) } }
         .fitnessError($issue)
@@ -192,6 +213,9 @@ private struct PlanningExclusionPicker: View {
                 if value { selected.insert(exercise.id) } else { selected.remove(exercise.id) }
             })) { ExerciseListLabel(exercise: exercise) }
         }
+        .scrollContentBackground(.hidden)
+        .background(FitnessTheme.canvas)
+        .tint(FitnessTheme.accent)
         .navigationTitle("排除动作").navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search, prompt: "搜索真实动作")
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }

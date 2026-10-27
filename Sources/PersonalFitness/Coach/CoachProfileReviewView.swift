@@ -15,16 +15,30 @@ struct CoachProfileReviewView: View {
     private var profile: StructuredProfile { store.interview?.profile ?? StructuredProfile() }
 
     var body: some View {
-        List {
-            Section {
-                Text("这里是教练目前理解的你的情况。每项都标了来源：本人回答、本人确认、健康数据，或还是待确认的推断。未知的项不会被当成“没有”。")
-                    .font(.footnote).foregroundStyle(.secondary)
-                if let status { Text(status).font(.footnote).foregroundStyle(.secondary) }
-            }
-            ForEach(InterviewTopic.allCases, id: \.self) { topic in
-                row(topic)
-            }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                CoachPanel {
+                    HStack(spacing: 12) {
+                        CoachIconBadge(symbol: "person.crop.rectangle", color: FitnessTheme.violet)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("教练眼中的你").font(.headline)
+                            Text("已确认 \(profile.answeredTopics.count) 项资料")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    DisclosureGroup("资料来源与未知项") {
+                        Text("每项资料会标明本人回答、本人确认、健康数据或待确认推断。未知不等于没有；你可以逐项核对、修改或重新询问。")
+                            .font(.footnote).foregroundStyle(.secondary).padding(.top, 6)
+                    }.font(.footnote)
+                    if let status { Label(status, systemImage: "checkmark.circle").font(.footnote).foregroundStyle(FitnessTheme.teal) }
+                }
+                ForEach(InterviewTopic.allCases, id: \.self) { topic in
+                    CoachPanel { row(topic) }
+                }
+            }.padding(.horizontal, 18).padding(.vertical, 16)
         }
+        .background(FitnessTheme.canvas)
+        .tint(FitnessTheme.accent)
         .navigationTitle("我的训练档案")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $showingInterview) { CoachInterviewView(store: store) }
@@ -57,9 +71,7 @@ struct CoachProfileReviewView: View {
             HStack {
                 Text(topic.title).font(.subheadline.weight(.semibold))
                 Spacer()
-                Text(provenance.title)
-                    .font(.caption2)
-                    .foregroundStyle(color(for: provenance))
+                CoachStatusPill(text: provenance.title, color: color(for: provenance))
             }
             Text(InterviewAPI.describe(topic, profile: profile))
                 .font(.footnote).foregroundStyle(.secondary)
@@ -67,7 +79,7 @@ struct CoachProfileReviewView: View {
                 HStack {
                     Button("确认") { confirm(topic, accept: true) }
                     Button("删掉") { confirm(topic, accept: false) }.foregroundStyle(.red)
-                }.buttonStyle(.borderless)
+                }.buttonStyle(.bordered).controlSize(.large)
             } else {
                 HStack {
                     Button(provenance == .unknown ? "重新询问这项" : "修改／重新询问") { reopening = topic }
@@ -75,16 +87,16 @@ struct CoachProfileReviewView: View {
                         Button("标记为未知") { clearing = topic }
                             .foregroundStyle(.secondary)
                     }
-                }.font(.footnote).buttonStyle(.borderless)
+                }.font(.footnote).buttonStyle(.bordered).controlSize(.large)
             }
         }.padding(.vertical, 3)
     }
 
     private func color(for provenance: ProfileProvenance) -> Color {
         switch provenance {
-        case .stated, .confirmed: return .secondary
-        case .healthSource: return .blue
-        case .inferred: return .orange
+        case .stated, .confirmed: return FitnessTheme.teal
+        case .healthSource: return FitnessTheme.accent
+        case .inferred: return FitnessTheme.orange
         case .unknown: return .secondary
         }
     }

@@ -19,6 +19,9 @@ struct SettingsView: View {
             }
             Section("本地数据") {
                 NavigationLink { BackupView(store: store) } label: { Label("加密备份与恢复", systemImage: "externaldrive") }
+                NavigationLink { LegacyStoreManagementView(currentStoreURL: store.storageURL) } label: {
+                    Label("彻底删除原数据库", systemImage: "externaldrive.badge.minus").foregroundStyle(.red)
+                }
                 LabeledContent("训练会话", value: "\(store.sessions.count)")
                 LabeledContent("计划版本", value: "\(store.planVersions.count)")
             }
@@ -41,6 +44,7 @@ struct SettingsView: View {
                 Text("未签名构建需要你自行签名安装。升级前保留可用备份，不通过卸载重装更新，避免清除本地沙盒。")
             }.font(.footnote).foregroundStyle(.secondary)
         }
+        .scrollContentBackground(.hidden).background(FitnessTheme.canvas).tint(FitnessTheme.accent)
         .navigationTitle("设置").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
     }

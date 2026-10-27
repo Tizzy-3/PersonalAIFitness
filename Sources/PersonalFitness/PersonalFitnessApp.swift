@@ -13,10 +13,24 @@ struct PersonalFitnessApp: App {
     @State private var confirmSeparate = false
     @State private var copied = false
     @State private var separateStoreNotice = UserDefaults.standard.bool(forKey: "fitness.separateStoreChosen")
+    @State private var managingLegacy = false
+    @State private var rootIdentity = UUID()
+    @State private var erasureNotice = false
 
     init() {
         do {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--capture-workout") {
+                let isolated = try TrainingStore(inMemory: true)
+                if let exercise = isolated.allExercises.first(where: { $0.id == "builtin.barbell-bench-press" }) {
+                    let plan = try isolated.confirmPlan(name: "界面验证 · 不保存", items: [.init(exercise: exercise)])
+                    _ = try isolated.startWorkout(plan: plan)
+                }
+                _store = State(initialValue: isolated)
+            } else { _store = State(initialValue: try TrainingStore()) }
+            #else
             _store = State(initialValue: try TrainingStore())
+            #endif
         } catch {
             _startupError = State(initialValue: error.localizedDescription)
             let (report, separate) = Self.makeDiagnostic(error)
@@ -28,12 +42,20 @@ struct PersonalFitnessApp: App {
 
     var body: some Scene {
         WindowGroup {
+          Group {
             if let store {
-                RootView(store: store)
+                RootView(store: store).id(rootIdentity)
                     .safeAreaInset(edge: .top) {
                         if separateStoreNotice {
                             Text("正在使用独立新库，之前的计划与记录尚未恢复。原文件仍保留。")
                                 .font(.footnote).padding(12).frame(maxWidth: .infinity).background(.yellow.opacity(0.16))
+                        }
+                        if erasureNotice {
+                            HStack {
+                                Label("原数据库已永久删除", systemImage: "checkmark.shield")
+                                Spacer()
+                                Button("知道了") { erasureNotice = false }
+                            }.font(.footnote).padding(12).foregroundStyle(FitnessTheme.teal).background(FitnessTheme.surface)
                         }
                     }
             } else {
@@ -65,6 +87,11 @@ struct PersonalFitnessApp: App {
                             Button("保留原文件，使用独立新库") { confirmSeparate = true }
                                 .frame(minHeight: 44)
                         }
+                        Divider()
+                        Button("彻底删除原数据库", role: .destructive) { managingLegacy = true }
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                        Text("查看原库文件后再确认永久删除；当前独立健身库会保留。")
+                            .font(.footnote).foregroundStyle(FitnessTheme.muted)
                     }.padding(24)
                 }
                 .alert("原计划尚未恢复", isPresented: $confirmSeparate) {
@@ -74,6 +101,41 @@ struct PersonalFitnessApp: App {
                     Text("这会建立一个没有旧计划和训练记录的独立数据库，不是数据恢复。现有数据库文件全部保留。如需找回旧记录，请先发送诊断信息。")
                 }
             }
+          }
+          .tint(FitnessTheme.accent)
+          .environment(\.legacyErasureAction, LegacyErasureAction(perform: { review in try eraseLegacy(review) }))
+          .sheet(isPresented: $managingLegacy) {
+              NavigationStack { LegacyStoreManagementView(currentStoreURL: store?.storageURL) }
+          }
+        }
+    }
+
+    private func eraseLegacy(_ review: LegacyStoreErasure.Review) throws {
+        let previous = store
+        let activeLegacy = previous?.storageURL?.resolvingSymlinksInPath().standardizedFileURL
+            == review.location.legacyURL.resolvingSymlinksInPath().standardizedFileURL
+        if activeLegacy {
+            previous?.retireForErasure()
+            store = nil
+            rootIdentity = UUID()
+        }
+        do {
+            try LegacyStoreErasure.execute(review, confirmed: true,
+                liveContainer: activeLegacy ? previous?.container : nil, liveURL: previous?.storageURL)
+            if previous == nil || activeLegacy { store = try TrainingStore(storageURL: review.location.dedicatedURL) }
+            separateStoreNotice = false
+            UserDefaults.standard.set(false, forKey: "fitness.separateStoreChosen")
+            UserDefaults.standard.set(Date(), forKey: "fitness.legacyStoreErasedAt")
+            erasureNotice = true
+        } catch {
+            if activeLegacy {
+                startupError = error.localizedDescription
+                let (report, separate) = Self.makeDiagnostic(error)
+                diagnosticText = StartupDiagnostics.text(report)
+                diagnosticURL = try? StartupDiagnostics.save(report)
+                canStartSeparate = separate
+            }
+            throw error
         }
     }
 

@@ -31,7 +31,9 @@ final class TrainingStore {
     @ObservationIgnored let container: ModelContainer
     @ObservationIgnored let context: ModelContext
     @ObservationIgnored let metadata: FitnessSchemaV4.MetadataRecord
+    @ObservationIgnored let storageURL: URL?
     @ObservationIgnored private let recoveryDirectory: URL?
+    @ObservationIgnored private var retiredForErasure = false
 
     var currentPlan: PlanVersion? { planVersions.first { $0.id == activePlanVersionID } }
     var activeSession: WorkoutSession? { sessions.first { $0.status.isOngoing } }
@@ -134,6 +136,7 @@ final class TrainingStore {
         container = createdContainer
         context = createdContext
         metadata = root
+        storageURL = configuration.isStoredInMemoryOnly ? nil : configuration.url
         self.recoveryDirectory = recoveryDirectory
         profile = loaded.profile
         planVersions = loaded.planVersions.sorted { $0.confirmedAt > $1.confirmedAt }
@@ -715,6 +718,7 @@ final class TrainingStore {
     }
 
     func write(_ changes: () throws -> Void) throws {
+        guard !retiredForErasure else { throw StorageError.invalidStore("原数据容器正在永久清理，已停止后续写入。") }
         do {
             try context.transaction { try changes() }
         } catch {
@@ -722,6 +726,8 @@ final class TrainingStore {
             throw StorageError.persistence(error.localizedDescription)
         }
     }
+
+    func retireForErasure() { retiredForErasure = true }
 
     private func retainPreRestoreSnapshot(_ snapshot: AppSnapshot) throws -> URL? {
         guard let recoveryDirectory else { return nil }

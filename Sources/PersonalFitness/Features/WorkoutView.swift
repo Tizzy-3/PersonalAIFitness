@@ -6,6 +6,7 @@ struct WorkoutView: View {
     let store: TrainingStore
     let sessionID: UUID
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var issue: String?
     @State private var adding = false
     @State private var finishing = false
@@ -18,41 +19,55 @@ struct WorkoutView: View {
         Group {
             if let session {
                 VStack(spacing: 0) {
+                    #if DEBUG
+                    if ProcessInfo.processInfo.arguments.contains("--capture-workout") {
+                        Text("界面验证数据 · 内存临时会话 · 不保存")
+                            .font(.caption).foregroundStyle(FitnessTheme.orange).frame(maxWidth: .infinity).padding(8)
+                            .background(FitnessTheme.surface)
+                    }
+                    #endif
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        HStack(spacing: 28) {
-                            metric("训练时长", value: UIInput.duration(session.elapsed(at: context.date)))
-                            metric("完成正式组", value: "\(session.completedWorkingSets) / \(session.plannedWorkingSets)")
-                            Spacer(minLength: 0)
-                            if session.status == .paused { Text("已暂停").font(.caption.weight(.semibold)).foregroundStyle(.orange) }
-                        }.padding(.horizontal, 20).padding(.vertical, 14)
-                    }.background(FitnessTheme.surface)
+                        summary(session, at: context.date)
+                    }.padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 4)
                     ScrollView {
-                        LazyVStack(spacing: 18) {
+                        LazyVStack(spacing: 16) {
                             if session.exercises.isEmpty {
-                                ContentUnavailableView("添加你要练的动作", systemImage: "dumbbell", description: Text("从动作库选择，填写每组结果后勾选完成。"))
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Image(systemName: "dumbbell.fill")
+                                        .font(.largeTitle).foregroundStyle(FitnessTheme.accent)
+                                        .frame(width: 72, height: 72).background(FitnessTheme.blueTint, in: RoundedRectangle(cornerRadius: 18))
+                                    Text("从第一个动作开始").font(.title3.weight(.semibold))
+                                    Text("从动作库添加动作，再逐组填写实际结果。")
+                                        .font(.subheadline).foregroundStyle(.secondary)
+                                    Button("选择动作", systemImage: "plus") { adding = true }
+                                        .buttonStyle(FitnessPrimaryButtonStyle()).disabled(session.status != .active)
+                                }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
+                                    .background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
                             }
                             ForEach(session.exercises) { item in exerciseCard(item, session: session) }
                         }.padding(16)
-                    }.background(FitnessTheme.canvas)
-                    if session.status.isOngoing { restDock(session) }
+                    }.scrollDismissesKeyboard(.interactively)
                 }
+                .background(FitnessTheme.canvas)
                 .navigationTitle(session.name).navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) { Button { dismiss() } label: { Image(systemName: "chevron.down") }.accessibilityLabel("收起训练，保留记录") }
+                    ToolbarItem(placement: .topBarLeading) { Button { hideKeyboard(); dismiss() } label: { Image(systemName: "chevron.down").frame(minWidth: 44, minHeight: 44) }.accessibilityLabel("收起训练，保留记录") }
                     ToolbarItem(placement: .topBarTrailing) { Button("结束") { hideKeyboard(); finishing = true }.disabled(!session.status.isOngoing) }
                 }
                 .safeAreaInset(edge: .bottom) {
                     if session.status.isOngoing {
-                        HStack(spacing: 12) {
-                            Button { togglePause(session) } label: {
-                                Image(systemName: session.status == .paused ? "play.fill" : "pause.fill")
-                                    .frame(width: 50, height: 48).background(FitnessTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
-                            }.accessibilityLabel(session.status == .paused ? "恢复训练" : "暂停训练")
+                        VStack(spacing: 4) {
+                            restDock(session).padding(.bottom, 8)
                             Button("添加动作", systemImage: "plus") { adding = true }
-                                .frame(maxWidth: .infinity, minHeight: 48)
-                                .background(FitnessTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
+                                .buttonStyle(FitnessPrimaryButtonStyle())
                                 .disabled(session.status == .paused)
-                        }.font(.subheadline.weight(.semibold)).padding(.horizontal, 20).padding(.vertical, 10).background(FitnessTheme.surface)
+                            HStack {
+                                Button("收起训练") { hideKeyboard(); dismiss() }.frame(minHeight: 44)
+                                Spacer(minLength: 8)
+                                Label("本地记录", systemImage: "externaldrive.badge.checkmark")
+                                    .foregroundStyle(FitnessTheme.teal)
+                            }.font(.caption)
+                        }.padding(.horizontal, 16).padding(.top, 10).background(FitnessTheme.surface)
                     }
                 }
             } else {
@@ -93,35 +108,72 @@ struct WorkoutView: View {
 
     private func metric(_ title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(.caption2).foregroundStyle(.secondary)
-            Text(value).font(.title3.weight(.semibold).monospacedDigit()).minimumScaleFactor(0.7).lineLimit(1)
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(value).font(.title.weight(.bold).monospacedDigit()).fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func summary(_ session: WorkoutSession, at date: Date) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if dynamicTypeSize.isAccessibilitySize {
+                metric("本次时长", value: UIInput.duration(session.elapsed(at: date)))
+                metric("完成正式组", value: "\(session.completedWorkingSets) / \(session.plannedWorkingSets)")
+                if session.status.isOngoing { pauseButton(session) }
+            } else {
+                HStack(alignment: .center, spacing: 16) {
+                    metric("本次时长", value: UIInput.duration(session.elapsed(at: date))).frame(maxWidth: .infinity, alignment: .leading)
+                    metric("完成正式组", value: "\(session.completedWorkingSets) / \(session.plannedWorkingSets)")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if session.status.isOngoing { pauseButton(session) }
+                }
+            }
+            if session.status == .paused {
+                Label("训练已暂停，恢复后继续记录", systemImage: "pause.circle.fill")
+                    .font(.caption).foregroundStyle(FitnessTheme.orange)
+            }
+            if session.plannedWorkingSets > 0 {
+                ProgressView(value: Double(session.completedWorkingSets), total: Double(session.plannedWorkingSets))
+                    .tint(FitnessTheme.teal)
+                    .accessibilityLabel("正式组进度")
+                    .accessibilityValue("已完成\(session.completedWorkingSets)组，共\(session.plannedWorkingSets)组")
+            }
+        }.padding(16).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func pauseButton(_ session: WorkoutSession) -> some View {
+        Button { togglePause(session) } label: {
+            Image(systemName: session.status == .paused ? "play.fill" : "pause.fill")
+                .font(.body.weight(.semibold)).foregroundStyle(FitnessTheme.accent)
+                .frame(width: 46, height: 48).background(FitnessTheme.blueTint, in: RoundedRectangle(cornerRadius: 12))
+        }.buttonStyle(.plain).accessibilityLabel(session.status == .paused ? "恢复训练" : "暂停训练")
     }
 
     private func exerciseCard(_ item: WorkoutExercise, session: WorkoutSession) -> some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                ExerciseTile(exercise: item.exercise, size: 54,
+            HStack(alignment: .top, spacing: 14) {
+                ExerciseTile(exercise: item.exercise, size: dynamicTypeSize.isAccessibilitySize ? 64 : 98,
                              animated: session.status == .active && item.id == session.exercises.first(where: {
                                  !$0.skipped && $0.sets.contains(where: { !$0.isCompleted && !$0.skipped })
                              })?.id)
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text(item.exercise.name).font(.headline)
                     Text(item.skipped ? "本次已跳过" : item.exercise.loadConvention.title).font(.caption).foregroundStyle(.secondary)
+                    NavigationLink { ExerciseDetailView(exercise: item.exercise, store: store) } label: {
+                        Label(ExerciseDetails.details(for: item.exercise.id)?.media?.kind == .video ? "动作示范" : "动作要点",
+                              systemImage: ExerciseDetails.details(for: item.exercise.id)?.media?.kind == .video ? "play.rectangle" : "text.book.closed")
+                            .font(.caption.weight(.semibold)).padding(.horizontal, 10).frame(minHeight: 44)
+                            .background(FitnessTheme.blueTint, in: RoundedRectangle(cornerRadius: 8))
+                    }.buttonStyle(.plain).foregroundStyle(FitnessTheme.accent)
                 }
                 Spacer(minLength: 0)
                 Menu {
                     Button("添加热身组") { appendSet(item, kind: .warmup) }
                     Button("备注") { noteTarget = NoteRoute(id: item.id, note: item.note) }
                     Button(item.skipped ? "恢复本次动作" : "跳过本次动作") { skip(item) }
-                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
+                } label: { Image(systemName: "ellipsis").foregroundStyle(.secondary).frame(width: 44, height: 44) }
                     .disabled(session.status != .active)
-            }.padding(14)
-            HStack {
-                NavigationLink { ExerciseDetailView(exercise: item.exercise, store: store) } label: { Label("动作说明", systemImage: "info.circle") }
-                Spacer()
-                Button("备注", systemImage: "note.text") { noteTarget = NoteRoute(id: item.id, note: item.note) }.disabled(session.status != .active)
-            }.font(.caption).padding(.horizontal, 16).padding(.bottom, 12)
+                    .accessibilityLabel("\(item.exercise.name)的更多操作")
+            }.padding(16)
             if !item.note.isEmpty { Text(item.note).font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).padding(.bottom, 10) }
             WorkoutTableHeader(exercise: item.exercise)
             ForEach(Array(item.sets.enumerated()), id: \.element.id) { index, set in
@@ -130,34 +182,65 @@ struct WorkoutView: View {
                               canEdit: session.status == .active && !item.skipped)
             }
             if !item.skipped {
-                Button("添加一组", systemImage: "plus") { appendSet(item, kind: .working) }
-                    .font(.subheadline).frame(maxWidth: .infinity, minHeight: 46)
-                    .disabled(session.status != .active)
                 Divider()
                 HStack {
-                    Text("完成后开始休息").font(.caption2).foregroundStyle(.secondary)
+                    Button("增加一组", systemImage: "plus") { appendSet(item, kind: .working) }
+                        .font(.subheadline.weight(.semibold)).frame(minHeight: 46)
+                        .disabled(session.status != .active)
                     Spacer()
                     Button("复制上一组") { copyLast(item) }.font(.caption)
+                        .frame(minHeight: 46)
                         .disabled(session.status != .active || item.sets.isEmpty)
-                }.padding(.horizontal, 16).padding(.vertical, 10)
+                }.padding(.horizontal, 16)
             }
         }.background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func restDock(_ session: WorkoutSession) -> some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            HStack(spacing: 10) {
-                Image(systemName: "timer").foregroundStyle(.secondary)
-                Text("组间休息").font(.caption).foregroundStyle(.secondary)
-                Text(UIInput.duration(session.remainingRest(at: context.date))).font(.title3.weight(.semibold).monospacedDigit())
-                Spacer(minLength: 0)
-                Button("−15") { adjustRest(-15) }.accessibilityLabel("缩短休息十五秒")
-                Button("+15") { adjustRest(15) }.accessibilityLabel("延长休息十五秒")
-                Button("跳过") { adjustRest(nil) }
-            }.font(.caption).buttonStyle(.bordered).controlSize(.small)
-                .padding(.horizontal, 20).padding(.vertical, 10)
-                .background(FitnessTheme.surface)
+            let seconds = session.remainingRest(at: context.date)
+            Group {
+                if dynamicTypeSize >= .xxLarge {
+                    VStack(alignment: .leading, spacing: 6) {
+                        restHeading(session, seconds: seconds)
+                        HStack { Text("休息操作").font(.caption); Spacer(); restControls(seconds: seconds) }
+                    }
+                } else {
+                    HStack(spacing: 6) {
+                        restHeading(session, seconds: seconds)
+                        restControls(seconds: seconds)
+                    }
+                }
+            }.padding(12).background(FitnessTheme.blueTint, in: RoundedRectangle(cornerRadius: 14))
         }
+    }
+
+    private func restHeading(_ session: WorkoutSession, seconds: Double) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "timer").font(.system(size: 19, weight: .medium)).foregroundStyle(FitnessTheme.accent)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("组间休息").font(.caption.weight(.semibold))
+                Text(seconds > 0 ? session.status == .paused ? "暂停中" : "计时中" : "完成一组后开始")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            Text(UIInput.duration(seconds)).font(.title3.weight(.semibold).monospacedDigit()).foregroundStyle(FitnessTheme.accent)
+        }
+    }
+
+    private func restControls(seconds: Double) -> some View {
+        HStack(spacing: 0) {
+            Button { adjustRest(nil) } label: {
+                Image(systemName: "forward.end.fill").font(.system(size: 16)).frame(width: 44, height: 44)
+            }.accessibilityLabel("跳过休息").disabled(seconds <= 0)
+            Menu {
+                Button("缩短 15 秒") { adjustRest(-15) }
+                Button("延长 15 秒") { adjustRest(15) }
+                Button("跳过休息") { adjustRest(nil) }
+            } label: {
+                Image(systemName: "slider.horizontal.3").font(.system(size: 18, weight: .medium)).frame(width: 44, height: 44)
+            }.accessibilityLabel("调整组间休息")
+        }.buttonStyle(.borderless).foregroundStyle(FitnessTheme.accent)
     }
 
     private func mutate(_ action: (inout WorkoutSession) throws -> Void) {

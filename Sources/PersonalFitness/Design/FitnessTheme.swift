@@ -1,13 +1,29 @@
 import SwiftUI
+import UIKit
 import FitnessCore
 
 enum FitnessTheme {
-    static let accent = Color(red: 0.84, green: 0.96, blue: 0.37)
-    static let accentInk = Color(red: 0.10, green: 0.16, blue: 0.04)
-    static let canvas = Color(uiColor: .systemGroupedBackground)
-    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
-    static let success = Color(uiColor: .systemGreen)
-    static let cover = Color(red: 0.11, green: 0.15, blue: 0.12)
+    static let accent = adaptive(0x1967DF, 0x8EB8FF)
+    static let accentInk = adaptive(0xFFFFFF, 0x10294D)
+    static let canvas = adaptive(0xF3F6FA, 0x101720)
+    static let surface = adaptive(0xFFFFFF, 0x1A2431)
+    static let ink = adaptive(0x182335, 0xF2F5FA)
+    static let muted = adaptive(0x6B778A, 0xA7B5C8)
+    static let blueTint = adaptive(0xEAF2FF, 0x203452)
+    static let teal = adaptive(0x16836C, 0x72D9BE)
+    static let orange = adaptive(0xB65C1A, 0xF5B574)
+    static let violet = adaptive(0x7455C9, 0xBCA8FF)
+    static let success = teal
+    static let cover = adaptive(0x184A94, 0x19365D)
+
+    private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            let value = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: CGFloat((value >> 16) & 255) / 255,
+                           green: CGFloat((value >> 8) & 255) / 255,
+                           blue: CGFloat(value & 255) / 255, alpha: 1)
+        })
+    }
 }
 
 struct FitnessPrimaryButtonStyle: ButtonStyle {
@@ -15,7 +31,8 @@ struct FitnessPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .font(.body.weight(.semibold))
             .foregroundStyle(FitnessTheme.accentInk)
-            .frame(maxWidth: .infinity, minHeight: 52)
+            .padding(.horizontal, 16).padding(.vertical, 13)
+            .frame(maxWidth: .infinity, minHeight: 50)
             .background(FitnessTheme.accent.opacity(configuration.isPressed ? 0.75 : 1), in: RoundedRectangle(cornerRadius: 14))
     }
 }
@@ -38,8 +55,11 @@ struct ExerciseTile: View {
                 } else if let poster = ExerciseMediaAsset.poster(for: exercise.id) {
                     Image(uiImage: poster).resizable().scaledToFit().background(Color.white)
                 } else {
-                    Image(systemName: exercise.kind == .cardio ? "figure.walk" : exercise.kind == .bodyweight ? "figure.strengthtraining.functional" : "dumbbell")
-                        .font(.system(size: size * 0.42, weight: .medium)).foregroundStyle(.secondary)
+                    ZStack {
+                        FitnessTheme.blueTint
+                        Image(systemName: exercise.kind == .cardio ? "figure.walk" : exercise.kind == .bodyweight ? "figure.strengthtraining.functional" : "dumbbell")
+                            .font(.system(size: size * 0.38, weight: .medium)).foregroundStyle(FitnessTheme.accent)
+                    }
                 }
             }.frame(width: size, height: size)
             if ExerciseDetails.details(for: exercise.id)?.media?.kind == .video {
@@ -49,6 +69,28 @@ struct ExerciseTile: View {
         .frame(width: size, height: size)
         .background(FitnessTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
         .clipShape(RoundedRectangle(cornerRadius: 12)).accessibilityHidden(true)
+    }
+}
+
+struct FitnessIconBadge: View {
+    let symbol: String
+    var color: Color = FitnessTheme.accent
+    var body: some View {
+        Image(systemName: symbol).font(.system(size: 19, weight: .semibold))
+            .foregroundStyle(color).frame(width: 42, height: 42)
+            .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityHidden(true)
+    }
+}
+
+struct FitnessSectionHeading: View {
+    let title: String
+    var subtitle: String? = nil
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.headline).foregroundStyle(FitnessTheme.ink)
+            if let subtitle { Text(subtitle).font(.caption).foregroundStyle(FitnessTheme.muted) }
+        }
     }
 }
 

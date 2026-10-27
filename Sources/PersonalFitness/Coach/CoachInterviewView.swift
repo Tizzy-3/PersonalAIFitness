@@ -17,40 +17,45 @@ struct CoachInterviewView: View {
     @State private var unsavedPlan: PlanningDraft?
 
     var body: some View {
-        List {
-            availabilitySection
-            if let unsavedPlan {
-                Section("计划尚未保存") {
-                    Text("AI已返回动作选择，但本地保存未完成。请重试保存，不需要重复请求模型。")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    Button("重试保存计划草案") { persistPlan(unsavedPlan) }
-                    Button("放弃未保存结果，按最新资料重新制定", role: .destructive) { self.unsavedPlan = nil }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 18) {
+                availabilitySection
+                if let unsavedPlan {
+                    CoachPanel {
+                        Label("计划尚未保存", systemImage: "exclamationmark.circle")
+                            .font(.headline).foregroundStyle(FitnessTheme.orange)
+                        Text("AI已返回动作选择，但本地保存未完成。重试保存不需要重复请求模型。")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        Button("重试保存计划草案") { persistPlan(unsavedPlan) }.buttonStyle(FitnessPrimaryButtonStyle())
+                        Button("放弃未保存结果，按最新资料重新制定", role: .destructive) { self.unsavedPlan = nil }
+                            .frame(minHeight: 44)
+                    }
                 }
-            }
-            if let session {
-                progressSection(session)
-                conversationSection(session)
-                if !session.unansweredQuestions.isEmpty {
-                    answerSection(session)
+                if let session {
+                    progressSection(session)
+                    if !session.unansweredQuestions.isEmpty { answerSection(session) }
+                    if !session.pendingInferences.isEmpty { inferenceSection(session) }
+                    if session.profile.isReadyForPlanning { planSection(session) }
+                    conversationSection(session)
+                    syncSection(session)
                 }
-                if !session.pendingInferences.isEmpty {
-                    inferenceSection(session)
+                if let status {
+                    CoachPanel { Label(status, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary) }
                 }
-                if session.profile.isReadyForPlanning {
-                    planSection(session)
-                }
-                syncSection(session)
-            }
-            if let status { Section { Text(status).font(.footnote).foregroundStyle(.secondary) } }
+            }.padding(.horizontal, 18).padding(.vertical, 16)
         }
-        .navigationTitle("AI 教练 · 建档")
+        .background(FitnessTheme.canvas)
+        .tint(FitnessTheme.accent)
+        .navigationTitle("教练建档")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $draftRoute) { route in
             PlanningDraftDetailView(store: store, draftID: route.id)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink { CoachProfileReviewView(store: store) } label: { Text("档案") }
+                NavigationLink { CoachProfileReviewView(store: store) } label: {
+                    Label("档案", systemImage: "person.crop.rectangle").frame(minHeight: 44)
+                }
             }
         }
         .task { await prepare() }
@@ -65,106 +70,164 @@ struct CoachInterviewView: View {
     // MARK: - Sections
 
     private var availabilitySection: some View {
-        Section {
-            if configuration == nil {
-                Text("还没有配置 AI 接口。建档访谈需要联网调用你配置的服务，未配置时不会开始，也不会用预设内容假装是教练的提问。")
-                    .font(.footnote).foregroundStyle(.secondary)
-                NavigationLink { AISettingsView() } label: { Label("去配置接口与密钥", systemImage: "slider.horizontal.3") }
-            } else {
-                Text("访谈会把你回答的内容发送给你配置的服务（\(configuration?.model ?? "")）。健康数据不会在访谈中发送。")
-                    .font(.footnote).foregroundStyle(.secondary)
+        CoachPanel {
+            HStack(spacing: 12) {
+                CoachIconBadge(symbol: "person.text.rectangle", color: FitnessTheme.violet)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("把你的情况，慢慢聊清楚").font(.headline)
+                    Text(configuration == nil ? "先连接你选择的 AI 服务" : "使用 \(configuration?.model ?? "")")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
-        } header: { Text("访谈需要联网") }
+            if configuration == nil {
+                NavigationLink { AISettingsView() } label: { Label("配置接口与本机密钥", systemImage: "slider.horizontal.3") }
+                    .frame(minHeight: 44)
+                Text("访谈需要联网。尚未配置时不会开始，也不会用预设内容假装是教练提问。")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else {
+                DisclosureGroup("这次访谈会发送哪些内容") {
+                    Text("你的回答会发送给已配置的服务。健康数据不会在访谈中发送；推断的资料会先请你核对。")
+                        .font(.footnote).foregroundStyle(.secondary).padding(.top, 6)
+                }.font(.footnote)
+            }
+        }
     }
 
     private func progressSection(_ session: InterviewSession) -> some View {
-        Section("进度") {
-            LabeledContent("阶段", value: session.phase.title)
-            LabeledContent("已确认信息", value: "\(session.profile.answeredTopics.count) 项")
-            LabeledContent("待确认推断", value: "\(session.pendingInferences.count) 项")
-            if !session.profile.missingRequiredTopics.isEmpty {
-                Text("还缺少：" + session.profile.missingRequiredTopics.map(\.title).joined(separator: "、"))
-                    .font(.footnote).foregroundStyle(.secondary)
+        CoachPanel {
+            HStack(alignment: .firstTextBaseline) {
+                Text("正在了解你的情况").font(.headline)
+                Spacer(minLength: 8)
+                CoachStatusPill(text: session.phase.title, color: FitnessTheme.violet)
             }
-            Button {
-                Task { await askNext() }
-            } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(session.profile.answeredTopics.count)").font(.title.weight(.semibold).monospacedDigit())
+                Text("/ \(InterviewTopic.allCases.count) 项资料已确认").font(.caption).foregroundStyle(.secondary)
+            }
+            ProgressView(value: Double(session.profile.answeredTopics.count), total: Double(InterviewTopic.allCases.count))
+                .tint(FitnessTheme.violet)
+                .accessibilityLabel("已确认的档案资料")
+            if !session.pendingInferences.isEmpty {
+                Label("\(session.pendingInferences.count) 项推断等待你核对", systemImage: "person.crop.circle.badge.questionmark")
+                    .font(.footnote).foregroundStyle(FitnessTheme.orange)
+            }
+            if !session.profile.missingRequiredTopics.isEmpty {
+                DisclosureGroup("制定计划前还需要的资料") {
+                    Text(session.profile.missingRequiredTopics.map(\.title).joined(separator: "、"))
+                        .font(.footnote).foregroundStyle(.secondary).padding(.top, 6)
+                }.font(.footnote)
+            }
+            Button { Task { await askNext() } } label: {
                 Label(request == nil ? "继续访谈" : "正在询问…", systemImage: "bubble.left.and.bubble.right")
             }
+            .buttonStyle(FitnessPrimaryButtonStyle())
             .disabled(configuration == nil || request != nil || !session.canContinueInterview)
-            if !session.unansweredQuestions.isEmpty {
-                Text("请先处理下面未回答的问题；不清楚时可明确选择未知或跳过。")
+            if request != nil {
+                HStack {
+                    ProgressView()
+                    Text("等待教练回应").font(.footnote).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("取消请求") { request?.cancel() }.font(.footnote).frame(minHeight: 44)
+                }
+            } else if !session.unansweredQuestions.isEmpty {
+                Text("先回答下面的问题。不清楚时，可以明确选择不知道或跳过。")
                     .font(.caption).foregroundStyle(.secondary)
             } else if session.profile.isReadyForPlanning, session.canContinueInterview {
-                Text("已经可以制定保守首版计划，也可以继续补充实际能力、偏好和坚持困难，让教练更了解你。")
+                Text("已经可以制定保守首版计划，也能继续补充能力、偏好和坚持困难。")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
     }
 
     private func conversationSection(_ session: InterviewSession) -> some View {
-        Section("对话") {
-            if session.turns.isEmpty {
-                Text("还没有开始。点“继续访谈”后，教练会先问你几个问题。").font(.footnote).foregroundStyle(.secondary)
-            }
-            ForEach(session.turns.suffix(6)) { turn in
-                ForEach(turn.questions) { question in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(question.prompt).font(.subheadline.weight(.semibold))
-                        if let answer = turn.answers.first(where: { $0.questionID == question.id }) {
-                            Text("你：\(InterviewAPI.describe(answer))").font(.footnote).foregroundStyle(.secondary)
-                        } else {
-                            Text("待回答").font(.footnote).foregroundStyle(.orange)
-                        }
-                    }.padding(.vertical, 2)
+        CoachPanel {
+            DisclosureGroup {
+                if session.turns.isEmpty {
+                    Text("还没有开始。点“继续访谈”，教练会先问你几个问题。")
+                        .font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
                 }
+                ForEach(session.turns.suffix(6)) { turn in
+                    ForEach(turn.questions) { question in
+                        VStack(alignment: .leading, spacing: 7) {
+                            Text(question.prompt).font(.subheadline.weight(.semibold))
+                            if let answer = turn.answers.first(where: { $0.questionID == question.id }) {
+                                Text("你：\(InterviewAPI.describe(answer))").font(.footnote).foregroundStyle(.secondary)
+                            } else {
+                                CoachStatusPill(text: "待回答", color: FitnessTheme.orange)
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 10)
+                        Divider()
+                    }
+                }
+            } label: {
+                Label("对话记录 · \(session.turns.count) 轮", systemImage: "text.bubble")
+                    .font(.subheadline.weight(.semibold))
             }
         }
     }
 
     private func answerSection(_ session: InterviewSession) -> some View {
-        Section("回答") {
-            ForEach(session.unansweredQuestions) { question in
-                QuestionAnswerRow(question: question, draft: $draft)
+        VStack(alignment: .leading, spacing: 12) {
+            CoachSectionHeading(title: "告诉教练", detail: "\(session.unansweredQuestions.count) 个待回答问题")
+            CoachPanel {
+                ForEach(session.unansweredQuestions) { question in
+                    QuestionAnswerRow(question: question, draft: $draft)
+                    if question.id != session.unansweredQuestions.last?.id { Divider() }
+                }
+                Button("提交这些回答") { submitAnswers() }
+                    .buttonStyle(FitnessPrimaryButtonStyle()).disabled(request != nil)
             }
-            Button("提交这些回答") { submitAnswers() }.disabled(request != nil)
         }
     }
 
     private func inferenceSection(_ session: InterviewSession) -> some View {
-        Section {
-            ForEach(session.pendingInferences, id: \.self) { topic in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(topic.title).font(.subheadline.weight(.semibold))
-                    Text("教练的推断：" + InterviewAPI.describe(topic, profile: session.profile))
-                        .font(.footnote).foregroundStyle(.secondary)
-                    HStack {
-                        Button("对，是这样") { confirm(topic, accept: true) }
-                        Button("不对，删掉") { confirm(topic, accept: false) }.foregroundStyle(.red)
-                    }.buttonStyle(.borderless)
-                }.padding(.vertical, 2)
+        VStack(alignment: .leading, spacing: 12) {
+            CoachSectionHeading(title: "这些理解，对吗？", detail: "待你确认")
+            CoachPanel {
+                ForEach(session.pendingInferences, id: \.self) { topic in
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text(topic.title).font(.subheadline.weight(.semibold))
+                            Spacer()
+                            CoachStatusPill(text: "推断", color: FitnessTheme.orange)
+                        }
+                        Text(InterviewAPI.describe(topic, profile: session.profile))
+                            .font(.footnote).foregroundStyle(.secondary)
+                        HStack(spacing: 12) {
+                            Button("对，是这样") { confirm(topic, accept: true) }.tint(FitnessTheme.accent)
+                            Button("不对，删掉", role: .destructive) { confirm(topic, accept: false) }
+                        }.buttonStyle(.bordered).controlSize(.large)
+                    }.padding(.vertical, 4)
+                }
+                Text("推断还不算事实。只有你确认的资料，才会用于安排训练。")
+                    .font(.caption).foregroundStyle(.secondary)
             }
-        } header: { Text("待你确认的推断") } footer: {
-            Text("这些是教练从你的话里推断的，还没算数。你确认之后才会用于制定计划。")
         }
     }
 
     private func planSection(_ session: InterviewSession) -> some View {
-        Section {
-            Text("信息够了，可以让教练按你的情况组合第一版计划。生成后会先给你看完整的七天安排，你确认才生效。")
-                .font(.footnote).foregroundStyle(.secondary)
-            Button {
-                generatePlan(session)
-            } label: { Label("生成第一版计划", systemImage: "calendar.badge.plus") }
+        CoachPanel {
+            HStack(spacing: 12) {
+                CoachIconBadge(symbol: "calendar.badge.plus", color: FitnessTheme.teal)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("可以制定第一份计划了").font(.headline)
+                    Text("先看完整七天安排，你确认后才生效。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+            Button { generatePlan(session) } label: { Label("生成第一版计划", systemImage: "calendar.badge.plus") }
+                .buttonStyle(FitnessPrimaryButtonStyle())
                 .disabled(request != nil || configuration == nil || !session.unansweredQuestions.isEmpty || !session.pendingInferences.isEmpty || unsavedPlan != nil)
-        } header: { Text("下一步") }
+        }
     }
 
     private func syncSection(_ session: InterviewSession) -> some View {
-        Section {
-            Button("保留已确认档案，重新访谈") { restart() }.disabled(request != nil)
-        } footer: {
-            Text("已确认的档案会保留在“档案”页，不会因为重新访谈而消失。")
+        CoachPanel {
+            DisclosureGroup("访谈管理") {
+                Button("保留已确认档案，重新访谈") { restart() }.disabled(request != nil).frame(minHeight: 44)
+                Text("已确认资料留在档案里，不会因为重新访谈而消失。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }.font(.subheadline)
         }
     }
 
@@ -371,8 +434,9 @@ private struct QuestionAnswerRow: View {
                     Button(draft.skipped.contains(question.id) ? "✓ 跳过" : "跳过") { toggle(&draft.skipped) }
                         .font(.footnote)
                 }
-            }.buttonStyle(.borderless)
-        }.padding(.vertical, 4)
+            }.buttonStyle(.bordered).controlSize(.large)
+        }.padding(12)
+            .background(FitnessTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
     }
 
     @ViewBuilder private var input: some View {

@@ -26,121 +26,209 @@ struct CoachView: View {
     }
 
     var body: some View {
-        List {
-            Section {
-                NavigationLink { CoachInterviewView(store: store) } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("让教练先了解我（建档访谈）", systemImage: "person.text.rectangle")
-                            .font(.title3.weight(.semibold))
-                        Text("教练会详细询问你的情况与目标，猜测的内容会先问你；核对档案后才制定第一版计划。需要联网。")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                    }.padding(.vertical, 6)
-                }
-                NavigationLink { CoachProfileReviewView(store: store) } label: {
-                    Label("查看我的训练档案", systemImage: "list.bullet.rectangle")
-                }
-            }
-            Section {
-                NavigationLink { PlannerView(store: store) } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("直接填写训练条件", systemImage: "calendar.badge.plus")
-                            .font(.title3.weight(.semibold))
-                        Text("已明确条件时，可跳过访谈查看保守规则候选。希望教练深入了解你，请使用上方建档访谈。")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                    }.padding(.vertical, 6)
-                }
-                if let program = store.currentWeeklyProgram {
-                    NavigationLink { WeeklyProgramDetailView(store: store, programID: program.id) } label: {
-                        Label("查看当前每周安排", systemImage: "calendar")
-                    }
-                }
-            }
-            Section("每天跟进") {
-                NavigationLink { CheckInView(store: store) } label: {
-                    Label("今天的训练前记录", systemImage: "checklist")
-                }
-                NavigationLink { ReadinessView(store: store) } label: {
-                    Label("今天的状态与建议", systemImage: "waveform.path.ecg")
-                }
-                NavigationLink { AdjustmentReviewView(store: store) } label: {
-                    HStack {
-                        Label("调整建议", systemImage: "arrow.triangle.2.circlepath")
-                        Spacer()
-                        if store.pendingAdjustment != nil { Text("待确认").font(.caption).foregroundStyle(.orange) }
-                    }
-                }
-                NavigationLink { ReviewView(store: store) } label: {
-                    Label("周月复盘", systemImage: "chart.line.uptrend.xyaxis")
-                }
-                NavigationLink { HealthStatusView(store: store) } label: {
-                    Label("Apple 健康数据", systemImage: "heart.text.square")
-                }
-            }
-            Section {
-                Text("从你的实际记录出发").font(.title3.weight(.semibold))
-                Text("解释计划、查看最近训练、讨论怎样调整。每次发送前都可以核对数据，计划不会因一句回答自动改变。")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                NavigationLink { AISettingsView() } label: { Label("配置 AI 接口与本机密钥", systemImage: "slider.horizontal.3") }
-            }
-            Section("问教练") {
-                TextField("例如：根据最近的训练记录，哪些地方需要关注？", text: $question, axis: .vertical)
-                    .lineLimit(3...10)
-                    .disabled(request != nil || unsavedTurn != nil)
-                if question.count > 4_000 { Text("问题超过 4000 字，请缩短。").font(.footnote).foregroundStyle(.red) }
-                if request == nil && unsavedTurn == nil {
-                    Button("预览数据并准备发送", systemImage: "paperplane") { prepare() }
-                        .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || question.count > 4_000)
-                }
-                if request != nil {
-                    HStack { ProgressView(); Text("等待模型回答…"); Spacer(); Button("取消请求") { request?.cancel() } }
-                    Text("\(requestQuestion ?? "")").font(.footnote).foregroundStyle(.secondary)
-                }
-                if let status { Text(status).font(.footnote).foregroundStyle(.secondary) }
-            }
-            if request == nil && unsavedTurn == nil {
-                Section("可以从这里开始") {
-                    Button("解释当前计划的安排") { question = "请解释当前计划的动作安排与记录方式，指出已有依据和目前缺少的信息，不修改计划。" }
-                    Button("复盘最近训练") { question = "请依据近28天程序统计和最近训练记录复盘，区分已有证据与未知信息，不编造成绩。" }
-                    Button("今天时间不够，怎样减量？") { question = "今天可训练时间比原计划少。请先解释保留和减少哪些训练的取舍；如依据充分，只提出同动作同顺序的保守减量草案，等待我确认。" }
-                }
-            }
-            if let turn = unsavedTurn {
-                Section("回答尚未保存") {
-                    Text(turn.reply.answer).textSelection(.enabled)
-                    Text("模型已经返回回答，但本地保存失败。请先重试保存，不需要再次请求模型；离开此页面可能丢失未保存回答。")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    Button("重试保存这次回答") { persist(turn) }
-                }
-            }
-            Section("教练记录") {
-                if store.coachTurns.isEmpty {
-                    ContentUnavailableView("还没有教练记录", systemImage: "text.bubble", description: Text("配置接口后发送你的第一个问题。这里不会显示预设的 AI 回答。"))
-                }
-                ForEach(store.coachTurns.sorted { $0.createdAt > $1.createdAt }) { turn in
-                    NavigationLink { CoachTurnDetailView(store: store, turnID: turn.id) } label: {
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text(turn.question).font(.subheadline.weight(.semibold)).lineLimit(2)
-                            Text(turn.reply.answer).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                            HStack {
-                                Text(turn.createdAt, format: .dateTime.month().day().hour().minute())
-                                Spacer()
-                                if turn.reply.proposal != nil { Text(decisionTitle(turn.decision)) }
-                            }.font(.caption2).foregroundStyle(.secondary)
-                        }.padding(.vertical, 4)
-                    }
-                }
-            }
-            Section {
-                Text("上方“为我制定训练计划”可创建经规则校验的起步周安排。本问答中的调整仍只支持已有手动单日计划的保守减量。模型解释可能有误，所有生效变更都需确认；完整健康评估、长期自动进阶与周期化仍未完成。")
-                    .font(.footnote).foregroundStyle(.secondary)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 22) {
+                onboardingCard
+                dailyCard
+                planningCard
+                questionCard
+                if request == nil && unsavedTurn == nil { promptsCard }
+                if let turn = unsavedTurn { unsavedCard(turn) }
+                historyCard
+                scopeCard
+            }.padding(.horizontal, 18).padding(.vertical, 16)
+        }
+        .background(FitnessTheme.canvas)
+        .navigationTitle("AI 教练")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink { AISettingsView() } label: {
+                    Image(systemName: "slider.horizontal.3").frame(minWidth: 44, minHeight: 44)
+                }.accessibilityLabel("配置 AI 接口与本机密钥")
             }
         }
-        .navigationTitle("AI 教练")
         .sheet(item: $prepared) { prepared in
             NavigationStack { CoachConsentView(prepared: prepared, send: { send(prepared) }) }
         }
         .onDisappear { request?.cancel() }
         .fitnessError($issue)
+    }
+
+    private var onboardingCard: some View {
+        CoachPanel {
+            HStack(alignment: .top, spacing: 12) {
+                CoachIconBadge(symbol: "person.text.rectangle", color: FitnessTheme.violet)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("先了解你，再安排训练").font(.title3.weight(.semibold))
+                    Text("从目标、身体情况与实际条件开始，一起建立适合你的计划。")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+            }
+            if let interview = store.interview {
+                HStack {
+                    CoachStatusPill(text: interview.phase.title, color: FitnessTheme.violet)
+                    Spacer(minLength: 8)
+                    Text("已确认 \(interview.profile.answeredTopics.count) 项资料")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            NavigationLink { CoachInterviewView(store: store) } label: {
+                Label(store.interview == nil ? "开始建档访谈" : "继续了解我的情况", systemImage: "bubble.left.and.bubble.right")
+            }.buttonStyle(FitnessPrimaryButtonStyle())
+            NavigationLink { CoachProfileReviewView(store: store) } label: {
+                HStack {
+                    Text("核对我的训练档案").font(.subheadline.weight(.medium))
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption)
+                }.frame(minHeight: 44)
+            }.buttonStyle(.plain).foregroundStyle(FitnessTheme.accent)
+        }
+    }
+
+    private var dailyCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            CoachSectionHeading(title: "每天跟进", detail: "记录 · 判断 · 再调整")
+            CoachPanel {
+                NavigationLink { CheckInView(store: store) } label: {
+                    CoachNavigationLabel(title: "训练前记录", subtitle: "今天的时间、疲劳与不适", symbol: "checklist", color: FitnessTheme.teal)
+                }.buttonStyle(.plain)
+                Divider()
+                NavigationLink { ReadinessView(store: store) } label: {
+                    CoachNavigationLabel(title: "身体状态与建议", subtitle: "分别看安全、证据与不确定性", symbol: "waveform.path.ecg", color: FitnessTheme.orange)
+                }.buttonStyle(.plain)
+                Divider()
+                NavigationLink { AdjustmentReviewView(store: store) } label: {
+                    CoachNavigationLabel(title: "调整建议", subtitle: store.pendingAdjustment == nil ? "确认后才改变安排" : "有建议等待你确认", symbol: "arrow.triangle.2.circlepath", color: FitnessTheme.violet)
+                }.buttonStyle(.plain)
+                Divider()
+                NavigationLink { ReviewView(store: store) } label: {
+                    CoachNavigationLabel(title: "周月复盘", subtitle: "回看实际完成与变化", symbol: "chart.line.uptrend.xyaxis", color: FitnessTheme.accent)
+                }.buttonStyle(.plain)
+                Divider()
+                NavigationLink { HealthStatusView(store: store) } label: {
+                    CoachNavigationLabel(title: "Apple 健康", subtitle: "来源、更新时间与数据缺口", symbol: "heart.text.square", color: FitnessTheme.teal)
+                }.buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var planningCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            CoachSectionHeading(title: "训练安排")
+            CoachPanel {
+                if let program = store.currentWeeklyProgram {
+                    NavigationLink { WeeklyProgramDetailView(store: store, programID: program.id) } label: {
+                        CoachNavigationLabel(title: "我的每周安排", subtitle: "查看已确认的训练日与休息日", symbol: "calendar", color: FitnessTheme.accent)
+                    }.buttonStyle(.plain)
+                    Divider()
+                }
+                NavigationLink { PlannerView(store: store) } label: {
+                    CoachNavigationLabel(title: "直接填写训练条件", subtitle: "已明确条件时，查看保守规则候选", symbol: "calendar.badge.plus", color: FitnessTheme.accent)
+                }.buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var questionCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            CoachSectionHeading(title: "问教练", detail: "发送前可核对资料")
+            CoachPanel {
+                TextField("想聊训练、计划，还是最近的变化？", text: $question, axis: .vertical)
+                    .lineLimit(3...10).padding(12)
+                    .background(FitnessTheme.canvas, in: RoundedRectangle(cornerRadius: 12))
+                    .disabled(request != nil || unsavedTurn != nil)
+                    .accessibilityLabel("给教练的问题")
+                if question.count > 4_000 { Text("问题超过 4000 字，请缩短。").font(.footnote).foregroundStyle(.red) }
+                if request == nil && unsavedTurn == nil {
+                    Button("预览数据并准备发送", systemImage: "paperplane") { prepare() }
+                        .buttonStyle(FitnessPrimaryButtonStyle())
+                        .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || question.count > 4_000)
+                }
+                if request != nil {
+                    HStack {
+                        ProgressView()
+                        Text("等待模型回答…").font(.subheadline)
+                        Spacer()
+                        Button("取消") { request?.cancel() }.frame(minHeight: 44)
+                    }
+                    Text(requestQuestion ?? "").font(.footnote).foregroundStyle(.secondary)
+                }
+                if let status { Label(status, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary) }
+            }
+        }
+    }
+
+    private var promptsCard: some View {
+        CoachPanel {
+            Text("从一个具体问题开始").font(.subheadline.weight(.semibold))
+            Button { question = "请解释当前计划的动作安排与记录方式，指出已有依据和目前缺少的信息，不修改计划。" } label: {
+                CoachNavigationLabel(title: "解释当前计划", subtitle: "了解动作与安排的依据", symbol: "list.bullet.rectangle")
+            }.buttonStyle(.plain)
+            Divider()
+            Button { question = "请依据近28天程序统计和最近训练记录复盘，区分已有证据与未知信息，不编造成绩。" } label: {
+                CoachNavigationLabel(title: "复盘最近训练", subtitle: "从真实记录里找到下一步", symbol: "clock.arrow.circlepath", color: FitnessTheme.teal)
+            }.buttonStyle(.plain)
+            Divider()
+            Button { question = "今天可训练时间比原计划少。请先解释保留和减少哪些训练的取舍；如依据充分，只提出同动作同顺序的保守减量草案，等待我确认。" } label: {
+                CoachNavigationLabel(title: "今天时间不够", subtitle: "讨论保留什么、减少什么", symbol: "timer", color: FitnessTheme.orange)
+            }.buttonStyle(.plain)
+        }
+    }
+
+    private func unsavedCard(_ turn: CoachTurn) -> some View {
+        CoachPanel {
+            Label("回答尚未保存", systemImage: "exclamationmark.circle").font(.headline).foregroundStyle(FitnessTheme.orange)
+            Text(turn.reply.answer).textSelection(.enabled)
+            Text("模型已经返回回答，但本地保存失败。请重试保存，无需再次请求模型；离开页面可能丢失这次未保存回答。")
+                .font(.footnote).foregroundStyle(.secondary)
+            Button("重试保存这次回答") { persist(turn) }.buttonStyle(FitnessPrimaryButtonStyle())
+        }
+    }
+
+    private var historyCard: some View {
+        let turns = store.coachTurns.sorted { $0.createdAt > $1.createdAt }
+        return VStack(alignment: .leading, spacing: 12) {
+            CoachSectionHeading(title: "教练记录", detail: "\(store.coachTurns.count) 次对话")
+            CoachPanel {
+                if store.coachTurns.isEmpty {
+                    HStack(spacing: 12) {
+                        CoachIconBadge(symbol: "text.bubble", color: FitnessTheme.violet)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("你的第一段对话，还未开始").font(.subheadline.weight(.semibold))
+                            Text("保存后的回答和建议会留在这里。").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }.padding(.vertical, 6)
+                }
+                ForEach(turns) { turn in
+                    NavigationLink { CoachTurnDetailView(store: store, turnID: turn.id) } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(turn.question).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(2)
+                            Text(turn.reply.answer).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                            HStack {
+                                Text(turn.createdAt, format: .dateTime.month().day().hour().minute()).font(.caption2).foregroundStyle(.secondary)
+                                Spacer()
+                                if turn.reply.proposal != nil { CoachStatusPill(text: decisionTitle(turn.decision), color: FitnessTheme.violet) }
+                            }
+                        }.padding(.vertical, 6)
+                    }.buttonStyle(.plain)
+                    if turn.id != turns.last?.id { Divider() }
+                }
+            }
+        }
+    }
+
+    private var scopeCard: some View {
+        CoachPanel {
+            DisclosureGroup("数据与能力说明") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("每次发送前可查看实际数据。AI 的回答本身不会修改生效计划，调整需要你另外确认。")
+                    Text("建档访谈会详细询问你的情况与目标；猜测的内容要先核对。已明确训练条件时，可直接填写条件查看保守规则候选。")
+                    Text("问答里的计划调整仍限于已有手动单日计划的保守减量。模型解释可能有误；完整健康评估、长期自动进阶与周期化仍未完成。")
+                    NavigationLink { AISettingsView() } label: { Label("接口、模型与本机密钥", systemImage: "slider.horizontal.3") }
+                }.font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
+            }.font(.subheadline)
+        }
     }
 
     private func prepare() {
@@ -215,6 +303,7 @@ private struct CoachConsentView: View {
                 Text(prepared.preview).font(.caption.monospaced()).textSelection(.enabled)
             }
         }
+        .scrollContentBackground(.hidden).background(FitnessTheme.canvas).tint(FitnessTheme.accent)
         .navigationTitle("发送前核对").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } } }
         .safeAreaInset(edge: .bottom) {
@@ -311,6 +400,7 @@ struct CoachTurnDetailView: View {
                 ContentUnavailableView("找不到这条教练记录", systemImage: "text.bubble", description: Text("恢复备份后记录可能已变化，请返回列表重新打开。"))
             }
         }
+        .scrollContentBackground(.hidden).background(FitnessTheme.canvas).tint(FitnessTheme.accent)
         .navigationTitle("教练记录").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("确认让这条建议生成新计划版本？", isPresented: $confirming, titleVisibility: .visible) {
             Button("确认保存并生效") { decide(accept: true) }

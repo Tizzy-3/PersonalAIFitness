@@ -52,6 +52,7 @@ struct ProfileView: View {
             Section { Button("保存档案") { save() }.frame(maxWidth: .infinity) }
         }
         .navigationTitle("个人档案").navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden).background(FitnessTheme.canvas).tint(FitnessTheme.accent)
         .fitnessError($issue)
         .alert("档案已保存", isPresented: $saved) { Button("知道了", role: .cancel) { } }
         .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("收起键盘") { hideKeyboard() } } }
