@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib
 import json
 import re
+from check_free_exercise_media import validate as validate_free_media
 
 ROOT = Path(__file__).resolve().parents[1]
 MEDIA = ROOT / 'Sources/PersonalFitness/Resources/ExerciseMedia'
@@ -86,6 +87,10 @@ def main():
                 height = int.from_bytes(data[8:10], 'little')
                 if width > 160 or height > 160:
                     raise SystemExit('GIF dimensions exceed reviewed bounds.')
+    imported_names = validate_free_media(MEDIA)
+    if names.intersection(imported_names):
+        raise SystemExit('Imported media must not replace a legacy resource file.')
+    names.update(imported_names)
     if names != {p.name for p in MEDIA.iterdir() if p.is_file()}:
         raise SystemExit('Unlisted or missing file in bundled media directory.')
     print('MEDIA CHECKS PASSED: %d active movement mappings / %d disabled retained sources / %d static frames; %d exact bundled files.' % (active_count, disabled_count, static_count, len(names)))

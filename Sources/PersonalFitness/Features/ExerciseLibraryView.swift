@@ -21,7 +21,7 @@ struct ExerciseLibraryView: View {
             return first == second ? $0 < $1 : first < second
         }
     }
-    private let equipmentOptions = ["全部", "徒手", "哑铃", "杠铃", "器械", "弹力带", "单车"]
+    private let equipmentOptions = ["全部", "徒手", "哑铃", "杠铃", "壶铃", "绳索", "器械", "弹力带", "史密斯", "稳定球", "单车"]
 
     private var filtered: [Exercise] {
         let matches = store.allExercises.filter { exercise in
@@ -231,6 +231,9 @@ struct ExerciseDetailView: View {
     @State private var issue: String?
 
     private var detail: ExerciseDetail? { ExerciseDetails.details(for: exercise.id) }
+    private var displayedSteps: [String] {
+        exercise.id.hasPrefix("free-exercise.") ? Array(exercise.instructions.dropFirst()) : exercise.instructions
+    }
 
     var body: some View {
         List {
@@ -248,9 +251,13 @@ struct ExerciseDetailView: View {
                 LabeledContent("记录方式", value: exercise.metric.title)
                 LabeledContent("负重口径", value: exercise.loadConvention.title)
             }
-            Section("分步骤提示") {
+            Section(exercise.id.hasPrefix("free-exercise.") ? "分步骤提示 · 来源英文" : "分步骤提示") {
+                if exercise.id.hasPrefix("free-exercise.") {
+                    Text("动作名称、器械与肌群已整理为中文；下方保留上游教学原文，尚未完成全部文字的逐项专业审校。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
                 if exercise.instructions.isEmpty { Text("这个动作尚未填写经过核验的文字说明。").foregroundStyle(.secondary) }
-                ForEach(Array(exercise.instructions.enumerated()), id: \.offset) { index, instruction in
+                ForEach(Array(displayedSteps.enumerated()), id: \.offset) { index, instruction in
                     ExerciseInstructionRow(number: index + 1, text: instruction)
                 }
                 NavigationLink {
@@ -267,6 +274,12 @@ struct ExerciseDetailView: View {
                                 .padding(.top, 3).accessibilityHidden(true)
                             Text(mistake).frame(maxWidth: .infinity, alignment: .leading)
                         }.padding(.vertical, 3)
+                    }
+                }
+                if let imported = FreeExerciseCatalog.records.first(where: { $0.exerciseID == exercise.id }) {
+                    Section("上游辅助提示 · 英文原文") {
+                        ForEach(imported.formCues, id: \.self) { cue in Text(cue) }
+                        if !imported.breathing.isEmpty { LabeledContent("呼吸提示", value: imported.breathing) }
                     }
                 }
                 Section("可比较的替代动作") {
@@ -297,9 +310,11 @@ struct ExerciseDetailView: View {
                         LabeledContent("作者", value: media.author)
                         if let license = URL(string: media.licenseURL), let source = URL(string: media.sourceURL) {
                             Link("许可：\(media.licenseName)", destination: license)
-                            Link("查看 wger 原始媒体", destination: source)
+                            Link("查看原始媒体", destination: source)
                         }
-                        Text("媒体已压缩或调整尺寸供离线查看，衍生媒体沿用原许可。来源不等于已完成针对你个人的动作评估。")
+                        Text(media.fileName.hasPrefix("fed-")
+                             ? "示范视频使用由本人确认；保留维护者原始来源说明。视频已转码供离线查看，不代表针对你个人的动作适用性评估。"
+                             : "媒体已压缩或调整尺寸供离线查看，衍生媒体沿用原许可。来源不等于已完成针对你个人的动作评估。")
                             .font(.footnote).foregroundStyle(.secondary)
                     } else {
                         Text("这个动作暂未提供已核验的示范媒体。").foregroundStyle(.secondary)
@@ -318,7 +333,9 @@ struct ExerciseDetailView: View {
             if let source = ExerciseDetails.contentSource(for: exercise.id) {
                 Section {
                     DisclosureGroup("动作资料来源与原文") {
-                        Text("中文提示为一般动作要点重写，不是完整逐字译文或个人训练处方。")
+                        Text(exercise.id.hasPrefix("free-exercise.")
+                             ? "保留上游英文说明与来源，不把生成的教学文字当作针对你的训练处方。"
+                             : "中文提示为一般动作要点重写，不是完整逐字译文或个人训练处方。")
                             .font(.footnote).foregroundStyle(.secondary)
                         Text(source.title).font(.subheadline.weight(.semibold)).textSelection(.enabled)
                         Text("作者：\(source.author) · \(source.licenseName)").font(.caption).textSelection(.enabled)

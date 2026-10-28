@@ -4,7 +4,12 @@ import FitnessCore
 
 @MainActor
 enum ExerciseMediaAsset {
-    private static var posters: [String: UIImage] = [:]
+    private static let posters: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 48
+        cache.totalCostLimit = 32 * 1024 * 1024
+        return cache
+    }()
 
     static func url(for fileName: String) -> URL? {
         guard !fileName.contains("/"), !fileName.contains("\\"), !fileName.contains("..") else { return nil }
@@ -13,9 +18,14 @@ enum ExerciseMediaAsset {
 
     static func poster(for exerciseID: String) -> UIImage? {
         guard let media = ExerciseDetails.details(for: exerciseID)?.media else { return nil }
-        if let cached = posters[media.posterFileName] { return cached }
-        guard let url = url(for: media.posterFileName), let image = UIImage(contentsOfFile: url.path) else { return nil }
-        posters[media.posterFileName] = image
+        return poster(fileName: media.posterFileName)
+    }
+
+    static func poster(fileName: String) -> UIImage? {
+        if let cached = posters.object(forKey: fileName as NSString) { return cached }
+        guard let url = url(for: fileName), let image = UIImage(contentsOfFile: url.path) else { return nil }
+        let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
+        posters.setObject(image, forKey: fileName as NSString, cost: cost)
         return image
     }
 }
@@ -29,10 +39,39 @@ struct ExerciseDemonstrationView: View {
     @State private var player: AVQueuePlayer?
     @State private var looper: AVPlayerLooper?
     @State private var showingPlayer = false
+    @State private var selectedVariantID: String?
 
-    private var media: ExerciseMediaDescriptor? { ExerciseDetails.details(for: exerciseID)?.media }
+    private var variants: [ExerciseDemonstrationVariant] { FreeExerciseCatalog.mediaVariants(for: exerciseID) }
+    init(exerciseID: String) {
+        self.exerciseID = exerciseID
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--capture-media-female") {
+            _selectedVariantID = State(initialValue: FreeExerciseCatalog.mediaVariants(for: exerciseID)
+                .first { $0.media.fileName.hasSuffix("-female.mp4") }?.id)
+        }
+        #endif
+    }
+    private var media: ExerciseMediaDescriptor? {
+        variants.first(where: { $0.id == selectedVariantID })?.media
+            ?? variants.first?.media ?? ExerciseDetails.details(for: exerciseID)?.media
+    }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if variants.count > 1 {
+                Picker("示范版本", selection: Binding(get: { selectedVariantID ?? variants[0].id }, set: { selectedVariantID = $0 })) {
+                    ForEach(variants) { variant in Text(variant.label).tag(variant.id) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityHint("切换离线男、女动作示范，不改变你的训练计划")
+            } else if let variant = variants.first {
+                Label(variant.label, systemImage: "video").font(.caption).foregroundStyle(.secondary)
+            }
+            demonstrationContent
+        }
+    }
+
+    @ViewBuilder private var demonstrationContent: some View {
         if let media, let frames = media.stillImages, !frames.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(Array(frames.enumerated()), id: \.offset) { _, frame in
@@ -56,7 +95,7 @@ struct ExerciseDemonstrationView: View {
                     Group {
                         if media.kind == .video, !reduceMotion, let player {
                             VideoPlayer(player: player).allowsHitTesting(false)
-                        } else if let poster = ExerciseMediaAsset.poster(for: exerciseID) {
+                        } else if let poster = ExerciseMediaAsset.poster(fileName: media.posterFileName) {
                             Image(uiImage: poster).resizable().scaledToFit().frame(maxWidth: .infinity)
                         }
                     }

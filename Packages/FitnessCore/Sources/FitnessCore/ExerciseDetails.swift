@@ -58,8 +58,11 @@ public struct ExerciseDetail: Codable, Equatable, Sendable {
 public enum ExerciseDetails {
     public static func details(for id: String) -> ExerciseDetail? { entries[id] }
     public static func contentSource(for id: String) -> ExerciseContentSource? {
-        ExpandedExerciseCatalog.sources[id] ?? MotionExerciseCatalog.sources[id]
+        ExpandedExerciseCatalog.sources[id] ?? MotionExerciseCatalog.sources[id] ?? FreeExerciseCatalog.sources[id]
     }
+
+    /// Previous attributed Wger media remains available when a newer source becomes the default.
+    public static func legacyMedia(for id: String) -> ExerciseMediaDescriptor? { legacyEntries[id]?.media }
 
     public static func matches(_ exercise: Exercise, query: String) -> Bool {
         let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
@@ -69,7 +72,7 @@ public enum ExerciseDetails {
         return words.allSatisfy { searchable.localizedCaseInsensitiveContains($0) }
     }
 
-    public static let entries: [String: ExerciseDetail] = {
+    private static let legacyEntries: [String: ExerciseDetail] = {
         var result = baseEntries.merging(ExpandedExerciseCatalog.details) { original, _ in original }
         for (id, media) in ExpandedExerciseCatalog.legacyMedia {
             guard let value = result[id], value.media == nil else { continue }
@@ -85,6 +88,19 @@ public enum ExerciseDetails {
                 movementPattern: value.movementPattern, difficulty: value.difficulty,
                 commonMistakes: value.commonMistakes, alternativeIDs: value.alternativeIDs,
                 progressionIDs: value.progressionIDs, media: media)
+        }
+        return result
+    }()
+
+    public static let entries: [String: ExerciseDetail] = {
+        var result = legacyEntries.merging(FreeExerciseCatalog.details) { original, _ in original }
+        for record in FreeExerciseCatalog.records {
+            guard let value = result[record.exerciseID], let media = record.demonstrations.first?.media else { continue }
+            result[record.exerciseID] = ExerciseDetail(
+                aliases: Array(Set(value.aliases + record.aliases + [record.englishName, record.name])).sorted(),
+                secondaryMuscles: value.secondaryMuscles, movementPattern: value.movementPattern,
+                difficulty: value.difficulty, commonMistakes: value.commonMistakes,
+                alternativeIDs: value.alternativeIDs, progressionIDs: value.progressionIDs, media: media)
         }
         return result
     }()

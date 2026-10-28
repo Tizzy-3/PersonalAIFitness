@@ -18,6 +18,7 @@ struct RootView: View {
     @State private var settings = false
     @State private var capturePlanner = false
     @State private var captureInterview = false
+    @State private var captureMedia = false
 
     init(store: TrainingStore) {
         self.store = store
@@ -26,6 +27,7 @@ struct RootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         _capturePlanner = State(initialValue: arguments.contains("--capture-planner"))
         _captureInterview = State(initialValue: arguments.contains("--capture-interview"))
+        _captureMedia = State(initialValue: arguments.contains("--capture-media"))
         _settings = State(initialValue: arguments.contains("--capture-settings"))
         if arguments.contains("--capture-workout"), let active = store.activeSession {
             _workout = State(initialValue: WorkoutRoute(id: active.id))
@@ -63,6 +65,13 @@ struct RootView: View {
         .sheet(isPresented: $settings) { NavigationStack { SettingsView(store: store) } }
         .sheet(isPresented: $capturePlanner) { NavigationStack { PlannerView(store: store) } }
         .sheet(isPresented: $captureInterview) { NavigationStack { CoachInterviewView(store: store) } }
+        .sheet(isPresented: $captureMedia) {
+            NavigationStack {
+                if let exercise = ExerciseCatalog.exercise(id: "builtin.barbell-bench-press") {
+                    ExerciseDetailView(exercise: exercise, store: store)
+                }
+            }
+        }
         .fullScreenCover(item: $workout) { route in
             NavigationStack { WorkoutView(store: store, sessionID: route.id) }
         }

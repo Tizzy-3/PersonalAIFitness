@@ -5,7 +5,7 @@ let package = Package(
     name: "FitnessCore",
     products: [.library(name: "FitnessCore", targets: ["FitnessCore"])],
     targets: [
-        .target(name: "FitnessCore"),
+        .target(name: "FitnessCore", resources: [.process("Resources")]),
         .testTarget(name: "FitnessCoreTests", dependencies: ["FitnessCore"])
     ]
 )

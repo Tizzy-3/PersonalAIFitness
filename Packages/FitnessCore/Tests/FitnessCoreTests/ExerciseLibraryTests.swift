@@ -52,11 +52,15 @@ final class ExerciseLibraryTests: XCTestCase {
         var videos = 0
         for detail in ExerciseDetails.entries.values {
             guard let media = detail.media else { continue }
-            XCTAssertEqual(URL(string: media.sourceURL)?.host, "wger.de")
+            let imported = media.fileName.hasPrefix("fed-")
+            XCTAssertEqual(URL(string: media.sourceURL)?.host, imported ? "pub-585d42eb1aa64a67aedf483ec328d3fe.r2.dev" : "wger.de")
             XCTAssertEqual(URL(string: media.sourceURL)?.scheme, "https")
             XCTAssertFalse(media.author.isEmpty)
             XCTAssertFalse(media.changes.isEmpty)
-            XCTAssertTrue(media.licenseURL.contains("creativecommons.org"))
+            if imported {
+                XCTAssertEqual(media.licenseName, "视频使用由本人确认")
+                XCTAssertEqual(media.licenseURL, "https://github.com/luisaraujoc/free-exercise-db-api#credits")
+            } else { XCTAssertTrue(media.licenseURL.contains("creativecommons.org")) }
             for fileName in [media.fileName, media.posterFileName] {
                 XCTAssertFalse(fileName.contains("/"))
                 XCTAssertFalse(fileName.contains("\\"))
@@ -64,7 +68,10 @@ final class ExerciseLibraryTests: XCTestCase {
             }
             if media.kind == .video {
                 videos += 1
-                XCTAssertGreaterThan(try XCTUnwrap(media.durationSeconds), 0)
+                if imported {
+                    // Exact probed runtime durations are recorded in the bundled source manifest.
+                    XCTAssertNil(media.durationSeconds)
+                } else { XCTAssertGreaterThan(try XCTUnwrap(media.durationSeconds), 0) }
                 XCTAssertTrue(media.fileName.hasSuffix(".mp4"))
             }
         }

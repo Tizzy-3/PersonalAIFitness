@@ -72,7 +72,12 @@ final class ExpandedCatalogQualityTests: XCTestCase {
 
     func testMismatchedTeachingImagesAreNotDisplayedForDifferentVariants() {
         for slug in ["smith-incline-press", "rack-pull", "side-crunch", "decline-barbell-press"] {
-            XCTAssertNil(ExerciseDetails.details(for: "builtin.\(slug)")?.media, slug)
+            XCTAssertNil(ExerciseDetails.legacyMedia(for: "builtin.\(slug)"), slug)
+            if let replacement = ExerciseDetails.details(for: "builtin.\(slug)")?.media {
+                XCTAssertTrue(replacement.fileName.hasPrefix("fed-"), "Only a distinct new video may replace the disabled image")
+                XCTAssertEqual(replacement.kind, .video)
+                XCTAssertFalse(FreeExerciseCatalog.mediaVariants(for: "builtin.\(slug)").isEmpty)
+            }
             // Removing a display binding must not erase the licensed source.
             XCTAssertNotNil(ExerciseDetails.contentSource(for: "builtin.\(slug)"), slug)
         }

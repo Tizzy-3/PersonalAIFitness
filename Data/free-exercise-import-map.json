@@ -1,0 +1,1904 @@
+[
+  {
+    "sourceID": "0489",
+    "exerciseID": "builtin.back-extension",
+    "chineseName": "45度罗马椅背伸展",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-45-degree-bycicle-twisting-crunch",
+    "exerciseID": "free-exercise.drv-45-degree-bycicle-twisting-crunch",
+    "chineseName": "45度自行车转体卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-45-degree-bycicle-twisting-crunch-1",
+    "exerciseID": "free-exercise.drv-45-degree-bycicle-twisting-crunch-1",
+    "chineseName": "45度自行车转体卷腹（来源变式二）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-all-fours-squad-stretch",
+    "exerciseID": "free-exercise.drv-stretching-all-fours-squad-stretch",
+    "chineseName": "四足跪姿腹股沟拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0970",
+    "exerciseID": "free-exercise.0970",
+    "chineseName": "弹力带辅助引体向上",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-band-bent-over-rear-lateral-raise",
+    "exerciseID": "free-exercise.drv-band-bent-over-rear-lateral-raise",
+    "chineseName": "弹力带俯身反向飞鸟",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "3006",
+    "exerciseID": "free-exercise.3006",
+    "chineseName": "弹力带髋外展",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-band-hip-adduction",
+    "exerciseID": "free-exercise.drv-band-hip-adduction",
+    "chineseName": "弹力带髋内收",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0983",
+    "exerciseID": "free-exercise.0983",
+    "chineseName": "跪姿单臂弹力带下拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1017",
+    "exerciseID": "free-exercise.1017",
+    "chineseName": "单臂弹力带前平举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-band-one-leg-kickback-bent-position",
+    "exerciseID": "free-exercise.drv-band-one-leg-kickback-bent-position",
+    "chineseName": "俯身单腿弹力带后踢",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "new-band-overhead-triceps-extension",
+    "exerciseID": "free-exercise.new-band-overhead-triceps-extension",
+    "chineseName": "弹力带过顶臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0976",
+    "exerciseID": "free-exercise.0976",
+    "chineseName": "弹力带俯卧腿弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0991",
+    "exerciseID": "free-exercise.0991",
+    "chineseName": "弹力带胯下拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-band-decline-sit-ups",
+    "exerciseID": "free-exercise.drv-band-decline-sit-ups",
+    "chineseName": "弹力带阻力下斜仰卧起坐",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0980",
+    "exerciseID": "free-exercise.0980",
+    "chineseName": "弹力带坐姿腿屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0990",
+    "exerciseID": "free-exercise.0990",
+    "chineseName": "弹力带坐姿划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-band-warm-up-shoulder-stretch",
+    "exerciseID": "free-exercise.drv-stretching-band-warm-up-shoulder-stretch",
+    "chineseName": "弹力带肩部热身拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0002",
+    "exerciseID": "free-exercise.0002",
+    "chineseName": "弹力带侧屈",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0999",
+    "exerciseID": "free-exercise.0999",
+    "chineseName": "弹力带站姿提踵",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1005",
+    "exerciseID": "free-exercise.1005",
+    "chineseName": "弹力带站姿卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0988",
+    "exerciseID": "free-exercise.0988",
+    "chineseName": "弹力带站姿腿弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1408",
+    "exerciseID": "free-exercise.1408",
+    "chineseName": "弹力带站姿斜向上拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1022",
+    "exerciseID": "free-exercise.1022",
+    "chineseName": "弹力带站姿后束划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "3144",
+    "exerciseID": "free-exercise.3144",
+    "chineseName": "直背弹力带坐姿划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "new-band-triceps-pushdown",
+    "exerciseID": "free-exercise.new-band-triceps-pushdown",
+    "chineseName": "弹力带三头下压",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1435",
+    "exerciseID": "builtin.barbell-back-squat",
+    "chineseName": "杠铃背蹲",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0025",
+    "exerciseID": "builtin.barbell-bench-press",
+    "chineseName": "杠铃卧推",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0028",
+    "exerciseID": "free-exercise.0028",
+    "chineseName": "杠铃翻铃推举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0030",
+    "exerciseID": "builtin.close-grip-barbell-press",
+    "chineseName": "窄握杠铃卧推",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0031",
+    "exerciseID": "builtin.barbell-curl",
+    "chineseName": "杠铃弯举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0033",
+    "exerciseID": "builtin.decline-barbell-press",
+    "chineseName": "下斜杠铃卧推",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0038",
+    "exerciseID": "free-exercise.0038",
+    "chineseName": "杠铃拖拉弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0041",
+    "exerciseID": "free-exercise.0041",
+    "chineseName": "杠铃前平举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0042",
+    "exerciseID": "builtin.barbell-front-squat",
+    "chineseName": "杠铃前蹲",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0047",
+    "exerciseID": "builtin.incline-barbell-press",
+    "chineseName": "上斜杠铃卧推",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0054",
+    "exerciseID": "builtin.barbell-lunge",
+    "chineseName": "杠铃弓步蹲",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0072",
+    "exerciseID": "free-exercise.0072",
+    "chineseName": "俯卧上斜杠铃弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0075",
+    "exerciseID": "free-exercise.0075",
+    "chineseName": "俯身杠铃后束平举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0082",
+    "exerciseID": "builtin.barbell-reverse-wrist-curl",
+    "chineseName": "杠铃反向腕弯举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-barbell-seated-behind-head-military-press",
+    "exerciseID": "free-exercise.drv-barbell-seated-behind-head-military-press",
+    "chineseName": "坐姿杠铃颈后推举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0095",
+    "exerciseID": "builtin.barbell-shrug",
+    "chineseName": "杠铃耸肩",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0104",
+    "exerciseID": "free-exercise.0104",
+    "chineseName": "站姿背后杠铃腕弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0116",
+    "exerciseID": "free-exercise.0116",
+    "chineseName": "杠铃直腿硬拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0027",
+    "exerciseID": "builtin.barbell-reverse-row",
+    "chineseName": "反握杠铃划船",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0123",
+    "exerciseID": "free-exercise.0123",
+    "chineseName": "宽握杠铃直立划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0128",
+    "exerciseID": "builtin.battle-rope",
+    "chineseName": "战绳",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-crunch-on-bench",
+    "exerciseID": "free-exercise.drv-crunch-on-bench",
+    "chineseName": "训练凳卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-bench-dips",
+    "exerciseID": "free-exercise.drv-bench-dips",
+    "chineseName": "凳上臂屈伸（来源变式·drv-bench-dips）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0570",
+    "exerciseID": "free-exercise.0570",
+    "chineseName": "训练凳辅助引体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "3639",
+    "exerciseID": "free-exercise.3639",
+    "chineseName": "瑞士球屈膝仰卧转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-bridge-pose-setu-bandhasana",
+    "exerciseID": "free-exercise.drv-stretching-bridge-pose-setu-bandhasana",
+    "chineseName": "瑜伽桥式",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-bridge-pose-setu-bandhasana-1",
+    "exerciseID": "free-exercise.drv-stretching-bridge-pose-setu-bandhasana-1",
+    "chineseName": "瑜伽桥式（来源变式二）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1160",
+    "exerciseID": "free-exercise.1160",
+    "chineseName": "波比跳",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1494",
+    "exerciseID": "free-exercise.1494",
+    "chineseName": "蝴蝶坐姿",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0974",
+    "exerciseID": "builtin.close-grip-lat-pulldown",
+    "chineseName": "窄握高位下拉",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0154",
+    "exerciseID": "free-exercise.0154",
+    "chineseName": "绳索交叉反向飞鸟",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0175",
+    "exerciseID": "free-exercise.0175",
+    "chineseName": "跪姿绳索卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0178",
+    "exerciseID": "free-exercise.0178",
+    "chineseName": "绳索侧平举（来源双侧变式）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0186",
+    "exerciseID": "free-exercise.0186",
+    "chineseName": "绳索仰卧臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0190",
+    "exerciseID": "free-exercise.0190",
+    "chineseName": "单臂绳索弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0162",
+    "exerciseID": "free-exercise.0162",
+    "chineseName": "单臂绳索前平举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2616",
+    "exerciseID": "free-exercise.2616",
+    "chineseName": "单臂侧向绳索下拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0192",
+    "exerciseID": "builtin.cable-lateral-raise",
+    "chineseName": "单臂绳索侧平举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0861",
+    "exerciseID": "free-exercise.0861",
+    "chineseName": "单臂转体坐姿绳索划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0198",
+    "exerciseID": "builtin.lat-pulldown",
+    "chineseName": "高位下拉",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0203",
+    "exerciseID": "free-exercise.0203",
+    "chineseName": "绳索后束划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0194",
+    "exerciseID": "free-exercise.0194",
+    "chineseName": "绳索绳把过顶臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0200",
+    "exerciseID": "free-exercise.0200",
+    "chineseName": "绳把三头下压",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0213",
+    "exerciseID": "free-exercise.0213",
+    "chineseName": "V把坐姿高位划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0226",
+    "exerciseID": "free-exercise.0226",
+    "chineseName": "站姿绳索卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1269",
+    "exerciseID": "free-exercise.1269",
+    "chineseName": "站姿绳索夹胸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0229",
+    "exerciseID": "free-exercise.0229",
+    "chineseName": "站姿内收绳索弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0230",
+    "exerciseID": "free-exercise.0230",
+    "chineseName": "站姿绳索斜向上拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0231",
+    "exerciseID": "free-exercise.0231",
+    "chineseName": "站姿单臂绳索臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0238",
+    "exerciseID": "builtin.straight-arm-pulldown",
+    "chineseName": "绳索直臂下拉",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1723",
+    "exerciseID": "builtin.triceps-pushdown",
+    "chineseName": "绳索下压",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0862",
+    "exerciseID": "free-exercise.0862",
+    "chineseName": "绳索由上向下转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1378",
+    "exerciseID": "free-exercise.1378",
+    "chineseName": "绳带小腿拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1599",
+    "exerciseID": "free-exercise.1599",
+    "chineseName": "拉伸带小腿拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0248",
+    "exerciseID": "free-exercise.0248",
+    "chineseName": "曲杆俯卧划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-cardio-exercises",
+    "exerciseID": "free-exercise.drv-cardio-exercises",
+    "chineseName": "有氧组合动作（来源示范一）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-cardio-exercises-machine",
+    "exerciseID": "free-exercise.drv-cardio-exercises-machine",
+    "chineseName": "有氧器械动作（来源示范一）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-cardio-exercises-machines",
+    "exerciseID": "free-exercise.drv-cardio-exercises-machines",
+    "chineseName": "有氧器械动作（来源示范二）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-chest-dips",
+    "exerciseID": "free-exercise.drv-chest-dips",
+    "chineseName": "胸部侧重双杠臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-chest-lift-with-rotation",
+    "exerciseID": "free-exercise.drv-chest-lift-with-rotation",
+    "chineseName": "抬胸转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-chin-to-chest-stretch",
+    "exerciseID": "free-exercise.drv-stretching-chin-to-chest-stretch",
+    "chineseName": "低头颈前侧拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0253",
+    "exerciseID": "free-exercise.0253",
+    "chineseName": "窄距中立握引体向上",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-close-feet-leg-press",
+    "exerciseID": "builtin.narrow-leg-press",
+    "chineseName": "窄距器械腿举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "2987",
+    "exerciseID": "free-exercise.2987",
+    "chineseName": "窄握反手引体向上",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0259",
+    "exerciseID": "builtin.diamond-push-up",
+    "chineseName": "窄距俯卧撑",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-commando-pull-up",
+    "exerciseID": "builtin.commando-pull-up",
+    "chineseName": "交错握引体向上",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-stretching-crossover-kneeling-hip-flexor-stretch",
+    "exerciseID": "free-exercise.drv-stretching-crossover-kneeling-hip-flexor-stretch",
+    "chineseName": "交叉跪姿髋屈肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0301",
+    "exerciseID": "builtin.decline-dumbbell-press",
+    "chineseName": "下斜哑铃卧推",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0302",
+    "exerciseID": "free-exercise.0302",
+    "chineseName": "下斜哑铃飞鸟",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1274",
+    "exerciseID": "free-exercise.1274",
+    "chineseName": "加深幅度俯卧撑",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0284",
+    "exerciseID": "free-exercise.0284",
+    "chineseName": "驴式提踵",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0361",
+    "exerciseID": "free-exercise.0361",
+    "chineseName": "哑铃交替肩上推举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2137",
+    "exerciseID": "builtin.arnold-press",
+    "chineseName": "阿诺德哑铃推举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0364",
+    "exerciseID": "free-exercise.0364",
+    "chineseName": "哑铃背后腕弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0293",
+    "exerciseID": "free-exercise.0293",
+    "chineseName": "俯身双哑铃划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0294",
+    "exerciseID": "builtin.dumbbell-curl",
+    "chineseName": "哑铃弯举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0296",
+    "exerciseID": "builtin.dumbbell-close-grip-press",
+    "chineseName": "哑铃窄距卧推",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0297",
+    "exerciseID": "builtin.concentration-curl",
+    "chineseName": "哑铃集中弯举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0298",
+    "exerciseID": "free-exercise.0298",
+    "chineseName": "哑铃交叉锤式弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0300",
+    "exerciseID": "builtin.dumbbell-deadlift",
+    "chineseName": "哑铃硬拉",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0308",
+    "exerciseID": "builtin.dumbbell-fly",
+    "chineseName": "哑铃飞鸟",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1277",
+    "exerciseID": "free-exercise.1277",
+    "chineseName": "瑞士球哑铃飞鸟",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0310",
+    "exerciseID": "builtin.dumbbell-front-raise",
+    "chineseName": "哑铃前平举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1760",
+    "exerciseID": "builtin.goblet-squat",
+    "chineseName": "哑铃高脚杯深蹲",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1330",
+    "exerciseID": "free-exercise.1330",
+    "chineseName": "上斜凳锤式握哑铃划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0314",
+    "exerciseID": "builtin.incline-dumbbell-press",
+    "chineseName": "上斜哑铃卧推",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0322",
+    "exerciseID": "free-exercise.0322",
+    "chineseName": "上斜哑铃二头弯举（来源变式）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0318",
+    "exerciseID": "builtin.incline-dumbbell-curl",
+    "chineseName": "上斜哑铃弯举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0319",
+    "exerciseID": "free-exercise.0319",
+    "chineseName": "上斜哑铃飞鸟",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1278",
+    "exerciseID": "free-exercise.1278",
+    "chineseName": "瑞士球上斜哑铃飞鸟",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0320",
+    "exerciseID": "free-exercise.0320",
+    "chineseName": "上斜哑铃锤式弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0321",
+    "exerciseID": "free-exercise.0321",
+    "chineseName": "上斜哑铃中立握推胸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0326",
+    "exerciseID": "builtin.incline-reverse-fly",
+    "chineseName": "上斜凳哑铃反向飞鸟",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0327",
+    "exerciseID": "free-exercise.0327",
+    "chineseName": "上斜凳哑铃划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0329",
+    "exerciseID": "free-exercise.0329",
+    "chineseName": "上斜凳哑铃耸肩",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0330",
+    "exerciseID": "free-exercise.0330",
+    "chineseName": "上斜哑铃臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0332",
+    "exerciseID": "free-exercise.0332",
+    "chineseName": "哑铃十字平举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0333",
+    "exerciseID": "builtin.triceps-kickback",
+    "chineseName": "哑铃俯身臂屈伸",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0334",
+    "exerciseID": "builtin.lateral-raise",
+    "chineseName": "哑铃侧平举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0336",
+    "exerciseID": "builtin.dumbbell-lunge",
+    "chineseName": "哑铃弓步蹲",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1729",
+    "exerciseID": "free-exercise.1729",
+    "chineseName": "哑铃仰卧交替臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0340",
+    "exerciseID": "free-exercise.0340",
+    "chineseName": "哑铃仰卧中立握推胸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0343",
+    "exerciseID": "free-exercise.0343",
+    "chineseName": "哑铃仰卧腿弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1328",
+    "exerciseID": "free-exercise.1328",
+    "chineseName": "哑铃俯卧后束划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0351",
+    "exerciseID": "builtin.dumbbell-skullcrusher",
+    "chineseName": "哑铃仰卧臂屈伸",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0355",
+    "exerciseID": "free-exercise.0355",
+    "chineseName": "单臂哑铃侧平举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1672",
+    "exerciseID": "free-exercise.1672",
+    "chineseName": "单臂哑铃佐特曼牧师凳弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0306",
+    "exerciseID": "free-exercise.0306",
+    "chineseName": "单臂哑铃过顶臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0369",
+    "exerciseID": "free-exercise.0369",
+    "chineseName": "训练凳支撑哑铃腕弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1329",
+    "exerciseID": "free-exercise.1329",
+    "chineseName": "转腕俯身哑铃划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1673",
+    "exerciseID": "free-exercise.1673",
+    "chineseName": "瑞士球哑铃牧师弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0373",
+    "exerciseID": "free-exercise.0373",
+    "chineseName": "旋前握哑铃臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0374",
+    "exerciseID": "free-exercise.0374",
+    "chineseName": "俯卧上斜哑铃弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0377",
+    "exerciseID": "builtin.dumbbell-rear-delt-row",
+    "chineseName": "哑铃后束划船",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1379",
+    "exerciseID": "free-exercise.1379",
+    "chineseName": "坐姿哑铃提踵",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0392",
+    "exerciseID": "free-exercise.0392",
+    "chineseName": "坐姿哑铃前平举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0394",
+    "exerciseID": "free-exercise.0394",
+    "chineseName": "坐姿哑铃臂屈伸后踢",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0396",
+    "exerciseID": "free-exercise.0396",
+    "chineseName": "坐姿哑铃侧平举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0397",
+    "exerciseID": "free-exercise.0397",
+    "chineseName": "坐姿中立握哑铃腕弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0402",
+    "exerciseID": "free-exercise.0402",
+    "chineseName": "坐姿哑铃牧师凳弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2188",
+    "exerciseID": "free-exercise.2188",
+    "chineseName": "坐姿哑铃过顶臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0406",
+    "exerciseID": "builtin.dumbbell-shrug",
+    "chineseName": "哑铃耸肩",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0407",
+    "exerciseID": "builtin.dumbbell-side-bend",
+    "chineseName": "哑铃侧屈",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0409",
+    "exerciseID": "free-exercise.0409",
+    "chineseName": "哑铃单腿提踵",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0411",
+    "exerciseID": "free-exercise.0411",
+    "chineseName": "哑铃单腿深蹲",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0413",
+    "exerciseID": "free-exercise.0413",
+    "chineseName": "哑铃深蹲",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0417",
+    "exerciseID": "free-exercise.0417",
+    "chineseName": "站姿哑铃提踵",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0432",
+    "exerciseID": "free-exercise.0432",
+    "chineseName": "哑铃直腿硬拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "new-dumbbell-sumo-squat",
+    "exerciseID": "free-exercise.new-dumbbell-sumo-squat",
+    "chineseName": "哑铃相扑深蹲",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0437",
+    "exerciseID": "free-exercise.0437",
+    "chineseName": "哑铃直立划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1167",
+    "exerciseID": "free-exercise.1167",
+    "chineseName": "胸部动态拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2141",
+    "exerciseID": "builtin.elliptical",
+    "chineseName": "椭圆机",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1338",
+    "exerciseID": "free-exercise.1338",
+    "chineseName": "瑞士球仰卧起坐",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1339",
+    "exerciseID": "free-exercise.1339",
+    "chineseName": "瑞士球脊柱拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2407",
+    "exerciseID": "builtin.ez-bar-curl",
+    "chineseName": "EZ杠弯举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0061",
+    "exerciseID": "builtin.ez-skullcrusher",
+    "chineseName": "曲杆仰卧臂屈伸",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0445",
+    "exerciseID": "free-exercise.0445",
+    "chineseName": "EZ杠反重力推举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-feet-and-ankles-rotation-stretch",
+    "exerciseID": "free-exercise.drv-stretching-feet-and-ankles-rotation-stretch",
+    "chineseName": "脚踝绕环拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-feet-and-ankles-stretch",
+    "exerciseID": "free-exercise.drv-stretching-feet-and-ankles-stretch",
+    "chineseName": "脚踝伸展",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0620",
+    "exerciseID": "free-exercise.0620",
+    "chineseName": "平凳绳索飞鸟",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-flexion-leg-sit-up",
+    "exerciseID": "free-exercise.drv-stretching-flexion-leg-sit-up",
+    "chineseName": "屈腿仰卧起坐拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0274",
+    "exerciseID": "builtin.crunch",
+    "chineseName": "地面卷腹",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0464",
+    "exerciseID": "builtin.plank",
+    "chineseName": "前臂平板支撑",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-stretching-front-toe-touch",
+    "exerciseID": "free-exercise.drv-stretching-front-toe-touch",
+    "chineseName": "站姿触脚尖拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-hip-raise-bridge",
+    "exerciseID": "builtin.glute-bridge",
+    "chineseName": "臀桥",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1764",
+    "exerciseID": "free-exercise.1764",
+    "chineseName": "悬垂举腿抬髋",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0474",
+    "exerciseID": "free-exercise.0474",
+    "chineseName": "悬垂直腿举腿",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0257",
+    "exerciseID": "free-exercise.0257",
+    "chineseName": "髋部绕环拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-hip-extension-stretch",
+    "exerciseID": "free-exercise.drv-stretching-hip-extension-stretch",
+    "chineseName": "髋伸展拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1564",
+    "exerciseID": "free-exercise.1564",
+    "chineseName": "髋屈肌与股四头肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0325",
+    "exerciseID": "free-exercise.0325",
+    "chineseName": "上斜凳举腿抬髋",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0493",
+    "exerciseID": "builtin.incline-push-up",
+    "chineseName": "上斜俯卧撑",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0499",
+    "exerciseID": "free-exercise.0499",
+    "chineseName": "双椅间反向划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0498",
+    "exerciseID": "free-exercise.0498",
+    "chineseName": "吊带反向划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1419",
+    "exerciseID": "free-exercise.1419",
+    "chineseName": "十字转体拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-jackknife-pilates",
+    "exerciseID": "free-exercise.drv-jackknife-pilates",
+    "chineseName": "普拉提折刀式",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0981",
+    "exerciseID": "free-exercise.0981",
+    "chineseName": "地面折刀收腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-jack-split-crunches",
+    "exerciseID": "free-exercise.drv-jack-split-crunches",
+    "chineseName": "折刀分腿卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2612",
+    "exerciseID": "builtin.jump-rope",
+    "chineseName": "跳绳",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-jump-step-up",
+    "exerciseID": "free-exercise.drv-jump-step-up",
+    "chineseName": "跳跃登阶",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "new-low-impact-jumping-jack",
+    "exerciseID": "free-exercise.new-low-impact-jumping-jack",
+    "chineseName": "开合跳（来源低冲击变式）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-kettlebell-deadlift",
+    "exerciseID": "builtin.kettlebell-deadlift",
+    "chineseName": "壶铃硬拉",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-stretching-kneeling-back-rotation-stretch",
+    "exerciseID": "free-exercise.drv-stretching-kneeling-back-rotation-stretch",
+    "chineseName": "跪姿背部转体拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1346",
+    "exerciseID": "free-exercise.1346",
+    "chineseName": "跪姿背阔肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1771",
+    "exerciseID": "free-exercise.1771",
+    "chineseName": "跪姿肱三头肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0562",
+    "exerciseID": "free-exercise.0562",
+    "chineseName": "地雷杆180度转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0600",
+    "exerciseID": "free-exercise.0600",
+    "chineseName": "举腿卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-leg-raise-hip-lift",
+    "exerciseID": "free-exercise.drv-leg-raise-hip-lift",
+    "chineseName": "举腿抬髋",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0573",
+    "exerciseID": "free-exercise.0573",
+    "chineseName": "器械背伸展",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0581",
+    "exerciseID": "free-exercise.0581",
+    "chineseName": "器械高位划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2611",
+    "exerciseID": "free-exercise.2611",
+    "chineseName": "水平器械腿举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1299",
+    "exerciseID": "free-exercise.1299",
+    "chineseName": "上斜器械中立握推胸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0582",
+    "exerciseID": "free-exercise.0582",
+    "chineseName": "器械跪姿腿弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0584",
+    "exerciseID": "builtin.machine-lateral-raise",
+    "chineseName": "器械侧平举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0585",
+    "exerciseID": "builtin.leg-extension",
+    "chineseName": "坐姿腿屈伸",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0577",
+    "exerciseID": "free-exercise.0577",
+    "chineseName": "器械仰卧推胸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0586",
+    "exerciseID": "builtin.lying-leg-curl",
+    "chineseName": "俯卧腿弯举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0592",
+    "exerciseID": "free-exercise.0592",
+    "chineseName": "器械牧师凳弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0593",
+    "exerciseID": "free-exercise.0593",
+    "chineseName": "器械反向背伸展",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1349",
+    "exerciseID": "free-exercise.1349",
+    "chineseName": "器械反向T杠划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0594",
+    "exerciseID": "free-exercise.0594",
+    "chineseName": "坐姿器械提踵",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1452",
+    "exerciseID": "builtin.machine-crunch",
+    "chineseName": "器械卷腹",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1451",
+    "exerciseID": "free-exercise.1451",
+    "chineseName": "器械坐姿臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0597",
+    "exerciseID": "free-exercise.0597",
+    "chineseName": "器械坐姿髋外展",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0598",
+    "exerciseID": "free-exercise.0598",
+    "chineseName": "器械坐姿髋内收",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0599",
+    "exerciseID": "builtin.seated-leg-curl",
+    "chineseName": "坐姿腿弯举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0602",
+    "exerciseID": "free-exercise.0602",
+    "chineseName": "器械坐姿反向飞鸟",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0604",
+    "exerciseID": "free-exercise.0604",
+    "chineseName": "器械耸肩",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0605",
+    "exerciseID": "builtin.machine-standing-calf-raise",
+    "chineseName": "器械站姿提踵",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "2286",
+    "exerciseID": "free-exercise.2286",
+    "chineseName": "器械站姿髋伸展",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-lever-standing-rear-kick",
+    "exerciseID": "free-exercise.drv-lever-standing-rear-kick",
+    "chineseName": "器械站姿后踢腿",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-lever-t-bar-row",
+    "exerciseID": "builtin.t-bar-row",
+    "chineseName": "T杠划船",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0607",
+    "exerciseID": "free-exercise.0607",
+    "chineseName": "器械肱三头肌伸展",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-lying-hip-lift-on-stability-ball",
+    "exerciseID": "free-exercise.drv-lying-hip-lift-on-stability-ball",
+    "chineseName": "瑞士球仰卧抬髋",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0865",
+    "exerciseID": "free-exercise.0865",
+    "chineseName": "仰卧举腿（来源变式·0865）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-quadriceps-lying-stretch",
+    "exerciseID": "free-exercise.drv-stretching-quadriceps-lying-stretch",
+    "chineseName": "侧卧股四头肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-lying-scissor-kick-female",
+    "exerciseID": "free-exercise.drv-lying-scissor-kick-female",
+    "chineseName": "仰卧剪刀腿",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1002",
+    "exerciseID": "free-exercise.1002",
+    "chineseName": "仰卧直腿抬腿",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0640",
+    "exerciseID": "free-exercise.0640",
+    "chineseName": "药球靠墙仰卧起坐",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1405",
+    "exerciseID": "free-exercise.1405",
+    "chineseName": "中背部拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0553",
+    "exerciseID": "builtin.standing-barbell-overhead-press",
+    "chineseName": "站姿杠铃推举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1403",
+    "exerciseID": "free-exercise.1403",
+    "chineseName": "颈侧拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-old-school-reverse-extensions",
+    "exerciseID": "free-exercise.drv-old-school-reverse-extensions",
+    "chineseName": "复古反向臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-otis-ups",
+    "exerciseID": "free-exercise.drv-otis-ups",
+    "chineseName": "奥蒂斯负重仰卧起坐",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1259",
+    "exerciseID": "free-exercise.1259",
+    "chineseName": "过顶胸部拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-lever-pec-deck-fly",
+    "exerciseID": "builtin.pec-deck-fly",
+    "chineseName": "蝴蝶机夹胸",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1388",
+    "exerciseID": "free-exercise.1388",
+    "chineseName": "腓骨肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-corkscrew-pilates",
+    "exerciseID": "free-exercise.drv-corkscrew-pilates",
+    "chineseName": "普拉提螺旋式",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-hundred-pilates",
+    "exerciseID": "free-exercise.drv-hundred-pilates",
+    "chineseName": "普拉提百次拍击",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-plyo-side-lunge-stretch",
+    "exerciseID": "free-exercise.drv-stretching-plyo-side-lunge-stretch",
+    "chineseName": "弹动侧弓步拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1429",
+    "exerciseID": "free-exercise.1429",
+    "chineseName": "宽握引体向上",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-chin-ups-pull-ups",
+    "exerciseID": "free-exercise.drv-chin-ups-pull-ups",
+    "chineseName": "引体向上组合（正握与反握）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-push-ups",
+    "exerciseID": "builtin.push-up",
+    "chineseName": "俯卧撑",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0668",
+    "exerciseID": "free-exercise.0668",
+    "chineseName": "后倾下斜桥式",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0669",
+    "exerciseID": "free-exercise.0669",
+    "chineseName": "肩后束拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-hip-flexor-stretch-rear-foot-elevated",
+    "exerciseID": "free-exercise.drv-stretching-hip-flexor-stretch-rear-foot-elevated",
+    "chineseName": "后脚垫高髋屈肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-band-high-fly",
+    "exerciseID": "free-exercise.drv-band-high-fly",
+    "chineseName": "弹力带高位夹胸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0872",
+    "exerciseID": "free-exercise.0872",
+    "chineseName": "反向卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0672",
+    "exerciseID": "free-exercise.0672",
+    "chineseName": "反向臂屈伸位拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0673",
+    "exerciseID": "free-exercise.0673",
+    "chineseName": "反握器械高位下拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2327",
+    "exerciseID": "builtin.chin-up",
+    "chineseName": "反握引体向上",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0207",
+    "exerciseID": "free-exercise.0207",
+    "chineseName": "反握绳索高位下拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-ring-high-row",
+    "exerciseID": "free-exercise.drv-ring-high-row",
+    "chineseName": "吊环高位划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-rotate-push-up-female",
+    "exerciseID": "builtin.rotational-push-up",
+    "chineseName": "转体俯卧撑",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "1585",
+    "exerciseID": "free-exercise.1585",
+    "chineseName": "跑者拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-running",
+    "exerciseID": "builtin.running",
+    "chineseName": "跑步",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0211",
+    "exerciseID": "free-exercise.0211",
+    "chineseName": "瑞士球直臂俄罗斯转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "3012",
+    "exerciseID": "free-exercise.3012",
+    "chineseName": "肩胛双杠下沉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0285",
+    "exerciseID": "free-exercise.0285",
+    "chineseName": "坐姿交替哑铃弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-sitting-bent-over-back-stretch",
+    "exerciseID": "free-exercise.drv-stretching-sitting-bent-over-back-stretch",
+    "chineseName": "坐姿俯身背部拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-boat-stretch",
+    "exerciseID": "free-exercise.drv-stretching-boat-stretch",
+    "chineseName": "坐姿船式拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0208",
+    "exerciseID": "free-exercise.0208",
+    "chineseName": "V把坐姿绳索划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0218",
+    "exerciseID": "free-exercise.0218",
+    "chineseName": "宽握坐姿绳索划船",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1390",
+    "exerciseID": "builtin.seated-calf-stretch",
+    "chineseName": "坐姿小腿拉伸",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0289",
+    "exerciseID": "free-exercise.0289",
+    "chineseName": "坐姿哑铃肩上推举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0690",
+    "exerciseID": "free-exercise.0690",
+    "chineseName": "坐姿下背部拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2203",
+    "exerciseID": "free-exercise.2203",
+    "chineseName": "坐姿肩部屈曲下沉后缩拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1011",
+    "exerciseID": "free-exercise.1011",
+    "chineseName": "坐姿直臂转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0849",
+    "exerciseID": "free-exercise.0849",
+    "chineseName": "瑞士球坐姿转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-seated-twist-straight-arm",
+    "exerciseID": "free-exercise.drv-stretching-seated-twist-straight-arm",
+    "chineseName": "坐姿直臂转体拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1587",
+    "exerciseID": "free-exercise.1587",
+    "chineseName": "坐姿宽角式连续动作",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0651",
+    "exerciseID": "builtin.pull-up",
+    "chineseName": "肩宽握距引体向上",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0850",
+    "exerciseID": "free-exercise.0850",
+    "chineseName": "瑞士球侧屈",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-slopes-towards-stretch",
+    "exerciseID": "free-exercise.drv-stretching-slopes-towards-stretch",
+    "chineseName": "站姿侧屈拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0705",
+    "exerciseID": "builtin.side-plank",
+    "chineseName": "侧平板支撑",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0721",
+    "exerciseID": "free-exercise.0721",
+    "chineseName": "手腕侧向牵拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1757",
+    "exerciseID": "free-exercise.1757",
+    "chineseName": "单哑铃直腿硬拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-single-leg-stretch-bent-knee",
+    "exerciseID": "free-exercise.drv-stretching-single-leg-stretch-bent-knee",
+    "chineseName": "单腿屈膝拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-single-straight-leg-stretch",
+    "exerciseID": "free-exercise.drv-stretching-single-straight-leg-stretch",
+    "chineseName": "单腿直膝拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-sit-ups",
+    "exerciseID": "free-exercise.drv-sit-ups",
+    "chineseName": "仰卧起坐（来源变式一）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-sit-up",
+    "exerciseID": "free-exercise.drv-sit-up",
+    "chineseName": "仰卧起坐（来源变式二）",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0738",
+    "exerciseID": "builtin.leg-press-calf-raise",
+    "chineseName": "45度腿举机提踵",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0740",
+    "exerciseID": "builtin.wide-leg-press",
+    "chineseName": "宽距器械腿举",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0743",
+    "exerciseID": "builtin.hack-squat",
+    "chineseName": "哈克深蹲",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0750",
+    "exerciseID": "free-exercise.0750",
+    "chineseName": "史密斯椅式深蹲",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1393",
+    "exerciseID": "free-exercise.1393",
+    "chineseName": "史密斯提踵",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0752",
+    "exerciseID": "free-exercise.0752",
+    "chineseName": "史密斯硬拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0748",
+    "exerciseID": "free-exercise.0748",
+    "chineseName": "史密斯腿举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0765",
+    "exerciseID": "free-exercise.0765",
+    "chineseName": "史密斯坐姿肩推",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0777",
+    "exerciseID": "free-exercise.0777",
+    "chineseName": "哑铃施法者转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1363",
+    "exerciseID": "free-exercise.1363",
+    "chineseName": "脊柱前屈拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-squat",
+    "exerciseID": "builtin.bodyweight-squat",
+    "chineseName": "徒手深蹲",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "0353",
+    "exerciseID": "free-exercise.0353",
+    "chineseName": "瑞士球腿弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0271",
+    "exerciseID": "free-exercise.0271",
+    "chineseName": "瑞士球垫腿卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-stairs-calf-stretch",
+    "exerciseID": "free-exercise.drv-stretching-stairs-calf-stretch",
+    "chineseName": "台阶小腿拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-adductor-stretch",
+    "exerciseID": "free-exercise.drv-stretching-adductor-stretch",
+    "chineseName": "站姿内收肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-standing-back-rotation-stretch",
+    "exerciseID": "free-exercise.drv-stretching-standing-back-rotation-stretch",
+    "chineseName": "站姿背部转体拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-standing-bench-calf-stretch",
+    "exerciseID": "free-exercise.drv-stretching-standing-bench-calf-stretch",
+    "chineseName": "训练凳辅助小腿拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1511",
+    "exerciseID": "free-exercise.1511",
+    "chineseName": "站姿腘绳肌拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-ceiling-look-stretch",
+    "exerciseID": "free-exercise.drv-stretching-ceiling-look-stretch",
+    "chineseName": "站姿髋屈肌与腹部伸展",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0484",
+    "exerciseID": "free-exercise.0484",
+    "chineseName": "站姿抱膝拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0794",
+    "exerciseID": "free-exercise.0794",
+    "chineseName": "站姿侧向拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-quadriceps-stretch",
+    "exerciseID": "builtin.quadriceps-stretch",
+    "chineseName": "站姿股四头肌拉伸",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-stretching-standing-reach-up-back-rotation-stretch",
+    "exerciseID": "free-exercise.drv-stretching-standing-reach-up-back-rotation-stretch",
+    "chineseName": "站姿上举背部转体拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-stretching-standing-side-bend-bent-arm",
+    "exerciseID": "free-exercise.drv-stretching-standing-side-bend-bent-arm",
+    "chineseName": "屈臂站姿侧屈拉伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0796",
+    "exerciseID": "free-exercise.0796",
+    "chineseName": "站姿健腹轮前滚",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "2138",
+    "exerciseID": "builtin.stationary-cycling",
+    "chineseName": "固定单车",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-crunch-straight-leg-up",
+    "exerciseID": "free-exercise.drv-crunch-straight-leg-up",
+    "chineseName": "直腿上举卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0350",
+    "exerciseID": "free-exercise.0350",
+    "chineseName": "仰卧哑铃弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-treadmill-running",
+    "exerciseID": "builtin.treadmill-running",
+    "chineseName": "跑步机跑步",
+    "mappingReview": "明确同一动作变式；沿用原稳定ID和原教学。"
+  },
+  {
+    "sourceID": "drv-triceps-dips",
+    "exerciseID": "free-exercise.drv-triceps-dips",
+    "chineseName": "三头侧重双杠臂屈伸",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0985",
+    "exerciseID": "free-exercise.0985",
+    "chineseName": "转体卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-v-up",
+    "exerciseID": "free-exercise.drv-v-up",
+    "chineseName": "V字收腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0826",
+    "exerciseID": "free-exercise.0826",
+    "chineseName": "双杠支撑举腿",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-walk-wave-machine",
+    "exerciseID": "free-exercise.drv-walk-wave-machine",
+    "chineseName": "波浪步行机",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0832",
+    "exerciseID": "free-exercise.0832",
+    "chineseName": "负重伸腿卷腹",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0846",
+    "exerciseID": "free-exercise.0846",
+    "chineseName": "负重仰卧转体",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0851",
+    "exerciseID": "free-exercise.0851",
+    "chineseName": "负重西斯深蹲",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "0853",
+    "exerciseID": "free-exercise.0853",
+    "chineseName": "负重站姿弯举",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "drv-cable-bar-lateral-pulldown-wide-shoulder-grip",
+    "exerciseID": "free-exercise.drv-cable-bar-lateral-pulldown-wide-shoulder-grip",
+    "chineseName": "宽握绳索高位下拉",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  },
+  {
+    "sourceID": "1428",
+    "exerciseID": "free-exercise.1428",
+    "chineseName": "手腕绕环",
+    "mappingReview": "独立来源变式；不按相似名称合并，不自动加入AI规则动作池。"
+  }
+]

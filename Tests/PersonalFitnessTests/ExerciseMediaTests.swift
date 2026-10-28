@@ -11,11 +11,12 @@ final class ExerciseMediaTests: XCTestCase {
         let entries = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [[String: Any]])
         let activeIDs = try Set(entries.filter { $0["disabledReason"] == nil }.map { try XCTUnwrap($0["exerciseID"] as? String) })
         let actualIDs = Set(ExerciseCatalog.exercises.filter { ExerciseDetails.details(for: $0.id)?.media != nil }.map(\.id))
-        XCTAssertEqual(actualIDs, activeIDs, "Unused or unreviewed media must not silently enter the catalogue")
+        let importedIDs = Set(ExerciseCatalog.exercises.filter { !FreeExerciseCatalog.mediaVariants(for: $0.id).isEmpty }.map(\.id))
+        XCTAssertEqual(actualIDs, activeIDs.union(importedIDs), "Every media binding requires an original or imported manifest")
         XCTAssertGreaterThanOrEqual(entries.filter { $0["type"] as? String == "video" }.count, 40)
         for entry in entries where entry["disabledReason"] == nil {
             let id = try XCTUnwrap(entry["exerciseID"] as? String)
-            let media = try XCTUnwrap(ExerciseDetails.details(for: id)?.media)
+            let media = try XCTUnwrap(ExerciseDetails.legacyMedia(for: id))
             XCTAssertEqual(media.fileName, entry["fileName"] as? String, id)
             XCTAssertEqual(media.posterFileName, entry["posterFileName"] as? String, id)
             XCTAssertEqual(media.sourceURL, entry["sourceURL"] as? String, id)
@@ -27,7 +28,43 @@ final class ExerciseMediaTests: XCTestCase {
         }
         for entry in entries where entry["disabledReason"] != nil {
             let id = try XCTUnwrap(entry["exerciseID"] as? String)
-            XCTAssertNil(ExerciseDetails.details(for: id)?.media, "A mismatched movement image must remain unavailable: \(id)")
+            XCTAssertNil(ExerciseDetails.legacyMedia(for: id), "A mismatched legacy image must remain unavailable: \(id)")
+            XCTAssertNotEqual(ExerciseDetails.details(for: id)?.media?.fileName, entry["fileName"] as? String)
+        }
+    }
+
+    @MainActor
+    func testAll593ImportedVariantsHaveExactSourceBindingsAndPlayableOfflineVideos() async throws {
+        let url = try XCTUnwrap(ExerciseMediaAsset.url(for: "fed-media-manifest.json"))
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let entries = try XCTUnwrap(manifest["entries"] as? [[String: Any]])
+        XCTAssertEqual(entries.count, 593)
+        var byFile: [String: [String: Any]] = [:]
+        for entry in entries { byFile[try XCTUnwrap(entry["fileName"] as? String)] = entry }
+        let variants = ExerciseCatalog.exercises.flatMap { FreeExerciseCatalog.mediaVariants(for: $0.id) }
+        XCTAssertEqual(variants.count, 593)
+        XCTAssertEqual(Set(variants.map { $0.media.fileName }), Set(byFile.keys))
+        for variant in variants {
+            let media = variant.media
+            let entry = try XCTUnwrap(byFile[media.fileName], variant.id)
+            XCTAssertEqual(media.sourceURL, entry["sourceURL"] as? String, variant.id)
+            XCTAssertEqual(media.posterFileName, entry["posterFileName"] as? String, variant.id)
+            XCTAssertEqual(media.previewGIFFileName, entry["previewGIFFileName"] as? String, variant.id)
+            let movie = try XCTUnwrap(ExerciseMediaAsset.url(for: media.fileName), variant.id)
+            let asset = AVURLAsset(url: movie)
+            let playable = try await asset.load(.isPlayable)
+            let tracks = try await asset.loadTracks(withMediaType: .video)
+            XCTAssertTrue(playable, variant.id)
+            XCTAssertFalse(tracks.isEmpty, variant.id)
+            let duration = try await asset.load(.duration)
+            XCTAssertGreaterThan(duration.seconds, 0, variant.id)
+            XCTAssertNotNil(ExerciseMediaAsset.url(for: media.posterFileName), variant.id)
+            let gif = try XCTUnwrap(media.previewGIFFileName)
+            try autoreleasepool {
+                let animation = try XCTUnwrap(ExerciseAnimatedThumbnail.decode(gif), variant.id)
+                XCTAssertGreaterThan(animation.images?.count ?? 0, 1, variant.id)
+                XCTAssertLessThanOrEqual(animation.duration, 6.2, variant.id)
+            }
         }
     }
 
@@ -40,11 +77,13 @@ final class ExerciseMediaTests: XCTestCase {
             XCTAssertGreaterThan(size, 0)
             XCTAssertNotNil(ExerciseMediaAsset.poster(for: exercise.id), "Poster unavailable: \(exercise.id)")
             if let gif = media.previewGIFFileName {
-                let animation = try XCTUnwrap(ExerciseAnimatedThumbnail.decode(gif), "GIF unavailable: \(exercise.id)")
-                XCTAssertGreaterThan(animation.images?.count ?? 0, 1)
-                XCTAssertLessThanOrEqual(animation.images?.count ?? 0, 80)
-                XCTAssertGreaterThan(animation.duration, 0)
-                XCTAssertLessThanOrEqual(animation.duration, 6.2)
+                try autoreleasepool {
+                    let animation = try XCTUnwrap(ExerciseAnimatedThumbnail.decode(gif), "GIF unavailable: \(exercise.id)")
+                    XCTAssertGreaterThan(animation.images?.count ?? 0, 1)
+                    XCTAssertLessThanOrEqual(animation.images?.count ?? 0, 80)
+                    XCTAssertGreaterThan(animation.duration, 0)
+                    XCTAssertLessThanOrEqual(animation.duration, 6.2)
+                }
             }
         }
         XCTAssertNil(ExerciseMediaAsset.url(for: "../outside.mp4"))
