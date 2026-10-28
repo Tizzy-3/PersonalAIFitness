@@ -60,6 +60,8 @@ enum InterviewProtocol {
         let extractionRows = try array(root["extractions"], at: "$.extractions")
         guard extractionRows.count <= InterviewTopic.allCases.count else { throw failure("$.extractions", "有界的档案抽取数组", "too_many_items") }
         var extractions: [InterviewExtraction] = []
+        var extractionIssues: [InterviewTopic: InterviewExtractionIssue] = [:]
+        var seenTopics = Set<InterviewTopic>()
         for (index, value) in extractionRows.enumerated() {
             let path = "$.extractions[\(index)]"
             guard let row = value as? [String: Any] else { throw failure(path, "抽取对象", "wrong_type") }
@@ -67,18 +69,30 @@ enum InterviewProtocol {
             guard let topic = InterviewTopic(rawValue: try string(row["topic"], at: path + ".topic")) else {
                 throw failure(path + ".topic", "支持的访谈主题", "unknown_topic")
             }
-            let rawValue: String
-            if let text = row["rawValue"] as? String { rawValue = text }
-            else if let value = try number(row["rawValue"], at: path + ".rawValue") { rawValue = value == value.rounded() ? String(format: "%.0f", value) : String(value) }
-            else { throw failure(path + ".rawValue", "该主题合法的文本编码", "missing_field") }
-            let extraction = InterviewExtraction(topic: topic, rawValue: rawValue,
-                rationale: try optionalString(row["rationale"], at: path + ".rationale") ?? "")
-            do { try extraction.validate() }
-            catch { throw failure(path + ".rawValue", "该主题合法的值（动作必须来自真实库）", "invalid_extraction") }
-            extractions.append(extraction)
+            guard seenTopics.insert(topic).inserted else {
+                extractions.removeAll { $0.topic == topic }
+                extractionIssues[topic] = .init(topic: topic, code: .duplicate)
+                continue
+            }
+            if topic == .adultStatus {
+                extractionIssues[topic] = .init(topic: topic, code: .explicitAnswerRequired)
+                continue
+            }
+            do {
+                let rawValue = try InterviewExtractionCodec.canonicalValue(row["rawValue"], topic: topic)
+                let extraction = InterviewExtraction(topic: topic, rawValue: rawValue,
+                    rationale: try optionalString(row["rationale"], at: path + ".rationale") ?? "")
+                try extraction.validate()
+                extractions.append(extraction)
+            } catch {
+                // Optional suggestions do not get to veto valid questions. Nothing invalid is
+                // written as a fact, and the original user narrative remains in the saved session.
+                extractionIssues[topic] = .init(topic: topic, code: .invalidValue)
+            }
         }
         let turn = InterviewTurn(questions: questions, extractions: extractions,
-            note: try optionalString(root["note"], at: "$.note") ?? "", provider: provider)
+            note: try optionalString(root["note"], at: "$.note") ?? "", provider: provider,
+            extractionIssues: extractionIssues.isEmpty ? nil : extractionIssues.values.sorted { $0.topic.rawValue < $1.topic.rawValue })
         do { try turn.validate() }
         catch { throw failure("$", "无重复ID或主题抽取、长度有界的访谈轮次", "invalid_turn") }
         return turn

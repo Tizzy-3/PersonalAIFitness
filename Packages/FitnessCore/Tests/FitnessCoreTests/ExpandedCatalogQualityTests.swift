@@ -44,13 +44,29 @@ final class ExpandedCatalogQualityTests: XCTestCase {
         let added = ExpandedExerciseCatalog.exercises
         XCTAssertEqual(added.count, 151)
         XCTAssertEqual(Set(added.map(\.id)).count, 151)
-        XCTAssertEqual(ExerciseCatalog.exercises.count, 217)
-        XCTAssertEqual(Set(ExerciseCatalog.exercises.map(\.id)).count, 217)
+        XCTAssertGreaterThanOrEqual(ExerciseCatalog.exercises.count, 217)
+        XCTAssertEqual(Set(ExerciseCatalog.exercises.map(\.id)).count, ExerciseCatalog.exercises.count)
         for movement in added {
             XCTAssertFalse(movement.equipment.contains("按实际"), movement.id)
             XCTAssertFalse(movement.equipment.contains("按变式"), movement.id)
             let detail = try XCTUnwrap(ExerciseDetails.details(for: movement.id))
             XCTAssertFalse(detail.secondaryMuscles.contains(movement.muscle), movement.id)
+        }
+    }
+
+    func testAllOriginal217IdentitiesRemainAvailableAndAddedMovementsHaveRealVideo() throws {
+        var root = URL(fileURLWithPath: #filePath)
+        for _ in 0..<5 { root.deleteLastPathComponent() }
+        let old = try JSONDecoder().decode([String].self, from: Data(contentsOf: root.appendingPathComponent("Data/exercise-legacy-ids-217.json")))
+        XCTAssertEqual(old.count, 217)
+        XCTAssertEqual(Set(old).count, 217)
+        XCTAssertTrue(Set(old).isSubset(of: Set(ExerciseCatalog.exercises.map(\.id))))
+        XCTAssertEqual(MotionExerciseCatalog.exercises.count, 5)
+        for exercise in MotionExerciseCatalog.exercises {
+            XCTAssertFalse(old.contains(exercise.id))
+            XCTAssertEqual(ExerciseDetails.details(for: exercise.id)?.media?.kind, .video)
+            XCTAssertNotNil(ExerciseDetails.contentSource(for: exercise.id))
+            XCTAssertGreaterThanOrEqual(exercise.instructions.count, 3)
         }
     }
 

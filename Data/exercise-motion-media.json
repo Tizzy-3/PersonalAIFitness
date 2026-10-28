@@ -1,0 +1,219 @@
+[
+  {
+    "exerciseID": "builtin.barbell-lunge",
+    "videoID": 29,
+    "upstreamExerciseID": 46,
+    "sourceTitle": "Barbell Lunges Standing",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.reverse-fly",
+    "videoID": 7,
+    "upstreamExerciseID": 82,
+    "sourceTitle": "Bent-over Lateral Raises",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.barbell-curl",
+    "videoID": 49,
+    "upstreamExerciseID": 91,
+    "sourceTitle": "Biceps Curls With Barbell",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.cable-curl",
+    "videoID": 50,
+    "upstreamExerciseID": 95,
+    "sourceTitle": "Biceps Curl With Cable",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.parallel-bar-dip",
+    "videoID": 66,
+    "upstreamExerciseID": 194,
+    "sourceTitle": "Dips",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.dumbbell-lunge",
+    "videoID": 31,
+    "upstreamExerciseID": 205,
+    "sourceTitle": "Dumbbell Lunges Standing",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.walking-dumbbell-lunge",
+    "videoID": 33,
+    "upstreamExerciseID": 206,
+    "sourceTitle": "Dumbbell Lunges Walking",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.overhead-triceps-extension",
+    "videoID": 57,
+    "upstreamExerciseID": 211,
+    "sourceTitle": "Dumbbell Triceps Extension",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.barbell-front-squat",
+    "videoID": 27,
+    "upstreamExerciseID": 257,
+    "sourceTitle": "Front Squats",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.cable-hammer-curl",
+    "videoID": 47,
+    "upstreamExerciseID": 275,
+    "sourceTitle": "Hammercurls on Cable",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.hip-thrust",
+    "videoID": 72,
+    "upstreamExerciseID": 294,
+    "sourceTitle": "Hip Thrust",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.smith-squat",
+    "videoID": 42,
+    "upstreamExerciseID": 341,
+    "sourceTitle": "Squats on Multipress",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.cable-lateral-raise",
+    "videoID": 5,
+    "upstreamExerciseID": 349,
+    "sourceTitle": "Lateral Rows on Cable, One Armed",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.seated-leg-curl",
+    "videoID": 37,
+    "upstreamExerciseID": 366,
+    "sourceTitle": "Leg Curls (sitting)",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.standing-leg-curl",
+    "videoID": 39,
+    "upstreamExerciseID": 367,
+    "sourceTitle": "Leg Curls (standing)",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.leg-press",
+    "videoID": 44,
+    "upstreamExerciseID": 371,
+    "sourceTitle": "Leg Press",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.wide-leg-press",
+    "videoID": 43,
+    "upstreamExerciseID": 374,
+    "sourceTitle": "Leg Presses (wide)",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.hack-squat",
+    "videoID": 40,
+    "upstreamExerciseID": 375,
+    "sourceTitle": "Leg Press on Hackenschmidt Machine",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.pull-up",
+    "videoID": 71,
+    "upstreamExerciseID": 475,
+    "sourceTitle": "Pull-ups",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.dumbbell-rdl",
+    "videoID": 2,
+    "upstreamExerciseID": 507,
+    "sourceTitle": "Romanian Deadlift",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.seated-cable-row",
+    "videoID": 1,
+    "upstreamExerciseID": 512,
+    "sourceTitle": "Rowing seated, narrow grip",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.incline-barbell-press",
+    "videoID": 16,
+    "upstreamExerciseID": 538,
+    "sourceTitle": "Incline Bench Press - Barbell",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.machine-shoulder-press",
+    "videoID": 11,
+    "upstreamExerciseID": 543,
+    "sourceTitle": "Shoulder Press, on Machine",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.smith-shrug",
+    "videoID": 68,
+    "upstreamExerciseID": 575,
+    "sourceTitle": "Shrugs on Multipress",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.seated-calf-raise",
+    "videoID": 13,
+    "upstreamExerciseID": 590,
+    "sourceTitle": "Sitting Calf Raises",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.barbell-shrug",
+    "videoID": 69,
+    "upstreamExerciseID": 570,
+    "sourceTitle": "Shoulder Shrug",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.dumbbell-skullcrusher",
+    "videoID": 60,
+    "upstreamExerciseID": 245,
+    "sourceTitle": "Skullcrusher Dumbbells",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.single-arm-dumbbell-preacher-curl",
+    "videoID": 52,
+    "upstreamExerciseID": 584,
+    "sourceTitle": "Single-arm Preacher Curl",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.machine-standing-calf-raise",
+    "videoID": 15,
+    "upstreamExerciseID": 622,
+    "sourceTitle": "Standing Calf Raises",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.walking-barbell-lunge",
+    "videoID": 34,
+    "upstreamExerciseID": 802,
+    "sourceTitle": "Barbell Lunges Walking",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  },
+  {
+    "exerciseID": "builtin.single-arm-cable-overhead-extension",
+    "videoID": 58,
+    "upstreamExerciseID": 803,
+    "sourceTitle": "One Arm Triceps Extensions on Cable",
+    "mappingReview": "Reviewed source midpoint and equipment against the movement definition; binding uses the demonstrated variant, not a fuzzy title match."
+  }
+]

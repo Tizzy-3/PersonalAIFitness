@@ -24,3 +24,26 @@ Display review on 2026-10-28 disabled four ambiguous or mismatched variant bindi
 Only images explicitly attributed to Everkinetic by the wger image API, licensed CC BY-SA 3.0, are included in this expansion. Images were visually reviewed; nominally CC uploads bearing other commercial artwork watermarks were excluded. Files are resized/re-encoded as JPEG, not GIF or video. Every frame, author, source URL, source image ID, derivative SHA256 and transformation is listed in media-manifest.json; source metadata is retained in wger-image-license-metadata.json. These derivatives retain CC BY-SA 3.0 (not upgraded to 4.0). License: https://creativecommons.org/licenses/by-sa/3.0/
 
 Exercise text/name source attribution is separate in Data/exercise-catalog-sources.json; upstream text uses the per-entry CC license shown there. Chinese notes are conservative movement-family guidance adapted/authored for the catalogue, not a full translated lesson or individual clearance. Original descriptions are available from each movement source. Original 11 Goulart CC BY-SA 4.0 clips are unchanged.
+# Continuous video expansion reviewed 2026-10-28
+
+The current public wger video API snapshot contains 78 videos for 46 exercise bases,
+all attributed to Goulart under CC BY-SA 4.0. Historical documentation mentioning
+150 contributions is not a claim that 150 are currently downloadable.
+The explicit reviewed map in Data/exercise-motion-media.json adds 31 continuous
+demonstrations and five distinct movements, retaining the original 217 identities.
+Equipment and visible movement are reviewed individually: generic upstream names
+do not override the demonstrated variant (for example, the dumbbell Romanian
+deadlift and barbell shrug). An overhead barbell lunge and a machine preacher curl
+were excluded from the existing differently defined movement bindings.
+
+Each added video has its original URL, source video ID, exercise base ID, author,
+license, original byte count and SHA-256 in media-manifest.json, and API metadata in
+wger-video-license-metadata.json. MP4s are silent H.264, at most 480px. GIF previews
+are genuine centered continuous segments up to 6 seconds, at most 160px and 6fps;
+they are not alternating static illustrations. All derivatives retain the source
+CC BY-SA 4.0 license: https://creativecommons.org/licenses/by-sa/4.0/deed.en
+
+Superseded static sources remain bundled, licensed and checksummed under each
+video's replacedStaticSource history, with no active duplicate binding. The four
+previously disabled mismatched images remain disabled. No source video cache is
+included in the application bundle or public source tree.

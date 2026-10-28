@@ -200,6 +200,13 @@ public struct InterviewAnswer: Codable, Equatable, Sendable {
 
 /// One AI turn: up to three questions plus any values it extracted, which stay provisional until
 /// the user confirms them one by one.
+public struct InterviewExtractionIssue: Codable, Equatable, Sendable {
+    public enum Code: String, Codable, Sendable { case invalidValue, duplicate, explicitAnswerRequired }
+    public var topic: InterviewTopic
+    public var code: Code
+    public init(topic: InterviewTopic, code: Code) { self.topic = topic; self.code = code }
+}
+
 public struct InterviewTurn: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
     public var createdAt: Date
@@ -212,15 +219,20 @@ public struct InterviewTurn: Identifiable, Codable, Equatable, Sendable {
     public var provider: InterviewProvider?
     public var formatRepairUsed: Bool?
     public var jsonModeFallbackUsed: Bool?
+    /// A rejected optional extraction is not a fact and must not discard valid interview questions.
+    /// Store only the supported topic and fixed reason; never persist the rejected raw model value.
+    public var extractionIssues: [InterviewExtractionIssue]?
 
     public init(id: UUID = UUID(), createdAt: Date = Date(), questions: [InterviewQuestion] = [],
                 answers: [InterviewAnswer] = [], extractions: [InterviewExtraction] = [],
                 note: String = "", provider: InterviewProvider? = nil,
-                formatRepairUsed: Bool? = nil, jsonModeFallbackUsed: Bool? = nil) {
+                formatRepairUsed: Bool? = nil, jsonModeFallbackUsed: Bool? = nil,
+                extractionIssues: [InterviewExtractionIssue]? = nil) {
         self.id = id; self.createdAt = createdAt; self.questions = questions
         self.answers = answers; self.extractions = extractions; self.note = note
         self.provider = provider
         self.formatRepairUsed = formatRepairUsed; self.jsonModeFallbackUsed = jsonModeFallbackUsed
+        self.extractionIssues = extractionIssues
     }
 
     public var isAnswered: Bool {
@@ -244,6 +256,10 @@ public struct InterviewTurn: Identifiable, Codable, Equatable, Sendable {
         }
         try CoreValidation.unique(extractions.map(\.topic), name: "同一主题的抽取结果")
         for extraction in extractions { try extraction.validate() }
+        if let extractionIssues {
+            guard extractionIssues.count <= InterviewTopic.allCases.count else { throw CoreError.invalidInput("待澄清抽取项目过多。") }
+            try CoreValidation.unique(extractionIssues.map(\.topic), name: "待澄清抽取主题")
+        }
         guard note.count <= 2_000 else { throw CoreError.invalidInput("说明过长。") }
     }
 }
@@ -384,7 +400,7 @@ public struct InterviewProvider: Codable, Equatable, Sendable {
 }
 
 public enum InterviewRules {
-    public static let rulesVersion = "interview-2"
+    public static let rulesVersion = "interview-3"
     public static let compatibleRulesVersions = ["interview-1", "interview-2"]
     public static let maximumArchivedTurns = 2_000
     public static let maximumNarratives = 32

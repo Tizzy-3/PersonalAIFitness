@@ -93,6 +93,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "9B42A773224D44DAA1BE0F88";
 		};
+		"4B421C33A59A4FC97E8B84B9" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "InterviewExtractionCodec.swift";
+			"path" = "Sources/PersonalFitness/Coach/InterviewExtractionCodec.swift";
+			"sourceTree" = "<group>";
+		};
+		"410F5A53C142D1525A1E4DAE" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4B421C33A59A4FC97E8B84B9";
+		};
 		"84B136824BA796785766C2AF" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -621,6 +632,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "B00E02665249C53DDC995CBB";
 		};
+		"9685C25086463BEE265E9DD2" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "InterviewExtractionRecoveryTests.swift";
+			"path" = "Tests/PersonalFitnessTests/InterviewExtractionRecoveryTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"AE535D19EE21136F3CE72A4C" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "9685C25086463BEE265E9DD2";
+		};
 		"5D8D56372BB39F6FC3F9A820" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -857,6 +879,7 @@
 				"E1D9B1C4CD7F8D88D4C490D9",
 				"8E92A37FA7D4C9BB4EECA656",
 				"98E83A580817B301044EBEBF",
+				"410F5A53C142D1525A1E4DAE",
 				"35BE0DE60526646C911EC1F0",
 				"74CED60AB44B00D1B024E12B",
 				"7B0A2906A69338CDF6362E13",
@@ -912,6 +935,7 @@
 				"BE078E1C3A4916553F576277",
 				"ABDB682496AFCAEB4A7E4594",
 				"CF2DE9EF9C69F45396A28D4B",
+				"AE535D19EE21136F3CE72A4C",
 				"684ED55DA70D15CF5B761E5D",
 				"F39F22AFBF3E7E2610D8F269",
 				"DBE7428544DF68064B0F983A",
@@ -939,6 +963,7 @@
 				"1BA84DCB2A03119290CB23EA",
 				"EA8C02338053428AAB1CA6C3",
 				"9B42A773224D44DAA1BE0F88",
+				"4B421C33A59A4FC97E8B84B9",
 				"84B136824BA796785766C2AF",
 				"8D9692CE55029F252404034A",
 				"00EEB50CEB93BA0D7A4BFF36",
@@ -994,6 +1019,7 @@
 				"1E8646941255227C2FCABB27",
 				"97D48FF1D49B5FADF24CFEA2",
 				"B00E02665249C53DDC995CBB",
+				"9685C25086463BEE265E9DD2",
 				"5D8D56372BB39F6FC3F9A820",
 				"FAAEAC79467603CB7D38BF12",
 				"80EDF6019EC2ECCD9F5BA75F",
@@ -1088,8 +1114,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.6.0";
-				"CURRENT_PROJECT_VERSION" = "35";
+				"MARKETING_VERSION" = "0.6.1";
+				"CURRENT_PROJECT_VERSION" = "40";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";
@@ -1117,8 +1143,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.6.0";
-				"CURRENT_PROJECT_VERSION" = "35";
+				"MARKETING_VERSION" = "0.6.1";
+				"CURRENT_PROJECT_VERSION" = "40";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";

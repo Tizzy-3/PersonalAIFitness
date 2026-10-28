@@ -12,6 +12,19 @@ final class ExerciseMediaTests: XCTestCase {
         let activeIDs = try Set(entries.filter { $0["disabledReason"] == nil }.map { try XCTUnwrap($0["exerciseID"] as? String) })
         let actualIDs = Set(ExerciseCatalog.exercises.filter { ExerciseDetails.details(for: $0.id)?.media != nil }.map(\.id))
         XCTAssertEqual(actualIDs, activeIDs, "Unused or unreviewed media must not silently enter the catalogue")
+        XCTAssertGreaterThanOrEqual(entries.filter { $0["type"] as? String == "video" }.count, 40)
+        for entry in entries where entry["disabledReason"] == nil {
+            let id = try XCTUnwrap(entry["exerciseID"] as? String)
+            let media = try XCTUnwrap(ExerciseDetails.details(for: id)?.media)
+            XCTAssertEqual(media.fileName, entry["fileName"] as? String, id)
+            XCTAssertEqual(media.posterFileName, entry["posterFileName"] as? String, id)
+            XCTAssertEqual(media.sourceURL, entry["sourceURL"] as? String, id)
+            XCTAssertEqual(media.author, entry["author"] as? String, id)
+            XCTAssertEqual(media.licenseURL, entry["licenseURL"] as? String, id)
+            if media.kind == .video {
+                XCTAssertEqual(media.previewGIFFileName, entry["previewGIFFileName"] as? String, id)
+            }
+        }
         for entry in entries where entry["disabledReason"] != nil {
             let id = try XCTUnwrap(entry["exerciseID"] as? String)
             XCTAssertNil(ExerciseDetails.details(for: id)?.media, "A mismatched movement image must remain unavailable: \(id)")

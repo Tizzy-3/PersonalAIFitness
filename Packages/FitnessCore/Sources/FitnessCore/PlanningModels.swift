@@ -28,11 +28,11 @@ public enum PlanningSafety: String, CaseIterable, Codable, Sendable {
 }
 
 public enum PlanningEquipment: String, CaseIterable, Codable, Hashable, Sendable {
-    case bodyweight, dumbbells, bench, adjustableBench, barbell, squatRack, cableMachine, latPulldown
+    case bodyweight, dumbbells, kettlebells, bench, adjustableBench, barbell, squatRack, cableMachine, latPulldown
     case legPress, legCurl, pullupBar, stationaryBike, rowingErgometer, elliptical, resistanceBand, stableSupport, walkingSpace, runningSpace
     public var title: String {
         switch self {
-        case .bodyweight: return "徒手/地面空间"; case .dumbbells: return "哑铃"; case .bench: return "平板训练凳"
+        case .bodyweight: return "徒手/地面空间"; case .dumbbells: return "哑铃"; case .kettlebells: return "壶铃"; case .bench: return "平板训练凳"
         case .adjustableBench: return "可调训练凳"; case .barbell: return "杠铃"; case .squatRack: return "深蹲架"
         case .cableMachine: return "绳索器械"; case .latPulldown: return "高位下拉器械"; case .legPress: return "腿举器械"
         case .legCurl: return "腿弯举器械"; case .pullupBar: return "单杠"; case .stationaryBike: return "固定单车"

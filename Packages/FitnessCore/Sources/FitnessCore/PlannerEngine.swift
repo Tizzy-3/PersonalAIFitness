@@ -15,7 +15,8 @@ public enum PlannerEngine {
     }
     static let movements: [Movement] = [
         Movement(id: "builtin.bodyweight-squat", pattern: .squat, requirements: [[.bodyweight]]),
-        Movement(id: "builtin.goblet-squat", pattern: .squat, requirements: [[.dumbbells]]),
+        Movement(id: "builtin.goblet-squat", pattern: .squat, requirements: [[.dumbbells], [.kettlebells]]),
+        Movement(id: "builtin.kettlebell-deadlift", pattern: .hinge, requirements: [[.kettlebells]]),
         Movement(id: "builtin.leg-press", pattern: .squat, requirements: [[.legPress]]),
         Movement(id: "builtin.box-squat", pattern: .squat, requirements: [[.stableSupport]]),
         Movement(id: "builtin.glute-bridge", pattern: .hinge, requirements: [[.bodyweight]]),
@@ -253,6 +254,7 @@ public enum PlannerEngine {
         }
         switch pattern {
         case .squat: ranks += ["step-up", "dumbbell-front-squat"]
+        case .hinge: ranks += ["kettlebell-deadlift"]
         case .push: ranks += ["dumbbell-floor-press"]
         case .core: ranks += ["high-plank", "pallof-press"]
         default: break

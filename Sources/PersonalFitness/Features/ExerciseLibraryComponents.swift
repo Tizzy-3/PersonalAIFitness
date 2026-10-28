@@ -6,6 +6,8 @@ struct ExerciseLibraryCard: View {
     let exercise: Exercise
     let favorite: Bool
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     private var media: ExerciseMediaDescriptor? { ExerciseDetails.details(for: exercise.id)?.media }
     private var hasVideo: Bool {
@@ -18,8 +20,11 @@ struct ExerciseLibraryCard: View {
             ZStack(alignment: .bottomTrailing) {
                 Group {
                     if let poster = ExerciseMediaAsset.poster(for: exercise.id) {
-                        Image(uiImage: poster).resizable().scaledToFit().frame(maxWidth: .infinity)
-                            .background(Color.white)
+                        if !reduceMotion, scenePhase == .active, let gif = media?.previewGIFFileName {
+                            ExerciseAnimatedThumbnail(fileName: gif, poster: poster).frame(maxWidth: .infinity).background(Color.white)
+                        } else {
+                            Image(uiImage: poster).resizable().scaledToFit().frame(maxWidth: .infinity).background(Color.white)
+                        }
                     } else {
                         VStack(spacing: 8) {
                             Image(systemName: exercise.kind == .cardio ? "figure.walk" : exercise.kind == .bodyweight ? "figure.strengthtraining.functional" : "dumbbell")

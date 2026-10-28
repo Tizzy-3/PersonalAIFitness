@@ -57,7 +57,9 @@ public struct ExerciseDetail: Codable, Equatable, Sendable {
 /// Licensed media is attributed individually and is never labelled full instruction.
 public enum ExerciseDetails {
     public static func details(for id: String) -> ExerciseDetail? { entries[id] }
-    public static func contentSource(for id: String) -> ExerciseContentSource? { ExpandedExerciseCatalog.sources[id] }
+    public static func contentSource(for id: String) -> ExerciseContentSource? {
+        ExpandedExerciseCatalog.sources[id] ?? MotionExerciseCatalog.sources[id]
+    }
 
     public static func matches(_ exercise: Exercise, query: String) -> Bool {
         let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
@@ -71,6 +73,14 @@ public enum ExerciseDetails {
         var result = baseEntries.merging(ExpandedExerciseCatalog.details) { original, _ in original }
         for (id, media) in ExpandedExerciseCatalog.legacyMedia {
             guard let value = result[id], value.media == nil else { continue }
+            result[id] = ExerciseDetail(aliases: value.aliases, secondaryMuscles: value.secondaryMuscles,
+                movementPattern: value.movementPattern, difficulty: value.difficulty,
+                commonMistakes: value.commonMistakes, alternativeIDs: value.alternativeIDs,
+                progressionIDs: value.progressionIDs, media: media)
+        }
+        result.merge(MotionExerciseCatalog.details) { original, _ in original }
+        for (id, media) in MotionMediaCatalog.entries {
+            guard let value = result[id] else { continue }
             result[id] = ExerciseDetail(aliases: value.aliases, secondaryMuscles: value.secondaryMuscles,
                 movementPattern: value.movementPattern, difficulty: value.difficulty,
                 commonMistakes: value.commonMistakes, alternativeIDs: value.alternativeIDs,

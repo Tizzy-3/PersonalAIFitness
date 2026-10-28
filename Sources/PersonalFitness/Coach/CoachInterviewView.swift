@@ -38,6 +38,17 @@ struct CoachInterviewView: View {
                     }
                 }
                 if let session {
+                    if let issues = session.latestTurn?.extractionIssues, !issues.isEmpty {
+                        CoachPanel {
+                            Label("有资料需要进一步澄清，访谈可以继续", systemImage: "text.bubble")
+                                .font(.headline).foregroundStyle(FitnessTheme.orange)
+                            Text("\(issues.map { $0.topic.title }.joined(separator: "、"))：本轮未写成档案事实。你的原话仍保留，可以继续回答问题，或到档案页核对。")
+                                .font(.footnote).foregroundStyle(.secondary)
+                            NavigationLink { CoachProfileReviewView(store: store) } label: {
+                                Label("核对待澄清资料", systemImage: "person.crop.rectangle")
+                            }.frame(minHeight: 44)
+                        }
+                    }
                     progressSection(session)
                     if !session.unansweredQuestions.isEmpty { answerSection(session) }
                     if !session.pendingInferences.isEmpty { inferenceSection(session) }

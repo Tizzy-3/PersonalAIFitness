@@ -105,18 +105,23 @@ final class InterviewClientTests: XCTestCase {
         XCTAssertThrowsError(try InterviewAPI.decodeTurn(json, session: session(), provider: nil))
     }
 
-    func testUnparseableExtractionIsRefused() {
+    func testUnparseableOptionalExtractionDoesNotDiscardValidQuestions() throws {
         let json = """
-        {"questions":[],"extractions":[{"topic":"minutes","rawValue":"一会儿"}],"note":""}
+        {"questions":[{"topic":"capability","kind":"text","prompt":"目前走路的耐受情况如何？"}],"extractions":[{"topic":"minutes","rawValue":"一会儿"}],"note":""}
         """
-        XCTAssertThrowsError(try InterviewAPI.decodeTurn(json, session: session(), provider: nil))
+        let turn = try InterviewAPI.decodeTurn(json, session: session(), provider: nil)
+        XCTAssertEqual(turn.questions.count, 1)
+        XCTAssertTrue(turn.extractions.isEmpty)
+        XCTAssertEqual(turn.extractionIssues?.first?.topic, .minutes)
     }
 
-    func testExtractionWithInventedExerciseIsRefused() {
+    func testExtractionWithInventedExerciseIsRefusedAsFact() throws {
         let json = """
         {"questions":[],"extractions":[{"topic":"exclusions","rawValue":"builtin.magic-press"}],"note":""}
         """
-        XCTAssertThrowsError(try InterviewAPI.decodeTurn(json, session: session(), provider: nil))
+        let turn = try InterviewAPI.decodeTurn(json, session: session(), provider: nil)
+        XCTAssertTrue(turn.extractions.isEmpty)
+        XCTAssertEqual(turn.extractionIssues?.first?.topic, .exclusions)
     }
 
     func testMalformedJSONIsRefused() {

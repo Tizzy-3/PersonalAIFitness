@@ -18,6 +18,7 @@ struct InterviewAPI: Sendable {
     同一个细节不能换key反复追问。declinedTopics是本人不愿继续的主题，不追问，除非本人重新开放。全部基础字段已知时仍可以提出有价值的新细节，用户自己决定暂停或先核对计划。
     自然回答不得当作枚举rawValue直接写入：用户说减脂/塑形/器械名称时，保留其原话，可在extractions中提出规范映射，等待本人确认。
     已确认字段不能被新推断覆盖。pendingInferences不是事实，避免重复抽取。成年必须本人明确回答boolean基础问题，不从年龄猜成年。限制由本人明确描述/确认，不把未知猜成无。
+    extractionClarifications列出之前未能采用的可选抽取主题；请结合用户原话澄清，不要反复输出同一非法值。这不表示原话被遗忘，不要为了填完字段强迫用户接受假设。壶铃使用kettlebells；数字抽取不要附单位，器械数组或规范逗号列表均可。
     每个问题包含topic/kind/prompt，选择题提供字符串options；number给unit和有限minimum/maximum；非数值题数值字段为null；不需要的options为[]。
     可用topic：\(InterviewTopic.allCases.map(\.rawValue).joined(separator: ","))
     kind仅为singleChoice,multiChoice,number,text,boolean；age用整数岁，height用厘米，weight用公斤。年龄1..120，身高50..250，体重15..400只是输入边界，不是健康目标。
@@ -42,6 +43,7 @@ struct InterviewAPI: Sendable {
         let pendingInferences: [String: String]
         let declinedTopics: [String]
         let closedQuestionKeys: [String]
+        let extractionClarifications: [InterviewExtractionIssue]
         let userNarratives: [InterviewNarrative]
         let savedConversation: [InterviewTurn]
         let candidateExercises: [ExerciseReference]
@@ -58,7 +60,9 @@ struct InterviewAPI: Sendable {
         let request = Request(rulesVersion: InterviewRules.rulesVersion, phase: session.phase.rawValue,
             openTopics: session.openTopics.map(\.rawValue), answeredProfile: Dictionary(uniqueKeysWithValues: answered),
             pendingInferences: Dictionary(uniqueKeysWithValues: pending), declinedTopics: session.declinedTopics.map(\.rawValue).sorted(),
-            closedQuestionKeys: session.closedQuestionKeys, userNarratives: session.narratives ?? [], savedConversation: session.allTurns,
+            closedQuestionKeys: session.closedQuestionKeys,
+            extractionClarifications: session.allTurns.suffix(3).flatMap { $0.extractionIssues ?? [] }.filter { !session.profile.isUsable($0.topic) && !session.declinedTopics.contains($0.topic) },
+            userNarratives: session.narratives ?? [], savedConversation: session.allTurns,
             candidateExercises: ExerciseCatalog.exercises.map { ExerciseReference(id: $0.id, name: $0.name, englishName: $0.englishName, equipment: $0.equipment, muscle: $0.muscle) })
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -150,6 +154,9 @@ struct InterviewAPI: Sendable {
 
     static func decodeTurn(_ content: String, session: InterviewSession, provider: InterviewProvider?) throws -> InterviewTurn {
         try session.validate()
-        return try InterviewProtocol.decode(content, provider: provider)
+        var turn = try InterviewProtocol.decode(content, provider: provider)
+        turn.extractionIssues = turn.extractionIssues?.filter { !session.profile.isUsable($0.topic) }
+        if turn.extractionIssues?.isEmpty == true { turn.extractionIssues = nil }
+        return turn
     }
 }
