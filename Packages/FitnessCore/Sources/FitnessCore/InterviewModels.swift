@@ -401,7 +401,7 @@ public struct InterviewProvider: Codable, Equatable, Sendable {
 
 public enum InterviewRules {
     public static let rulesVersion = "interview-3"
-    public static let compatibleRulesVersions = ["interview-1", "interview-2"]
+    public static let compatibleRulesVersions = ["interview-1", "interview-2", rulesVersion]
     public static let maximumArchivedTurns = 2_000
     public static let maximumNarratives = 32
     public static let maximumQuestionsPerTurn = 3

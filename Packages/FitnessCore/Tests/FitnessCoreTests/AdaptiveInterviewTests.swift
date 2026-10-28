@@ -3,6 +3,16 @@ import XCTest
 @testable import FitnessCore
 
 final class AdaptiveInterviewTests: XCTestCase {
+    func testCurrentAndHistoricalRuleVersionsRemainLoadableButUnknownVersionsFail() throws {
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        for version in ["interview-1", "interview-2", InterviewRules.rulesVersion] {
+            let session = InterviewSession(createdAt: date, rulesVersion: version)
+            let restored = try JSONDecoder().decode(InterviewSession.self, from: JSONEncoder().encode(session))
+            try restored.validate()
+            XCTAssertEqual(restored.rulesVersion, version)
+        }
+        XCTAssertThrowsError(try InterviewSession(createdAt: date, rulesVersion: "interview-future").validate())
+    }
     private let start = Date(timeIntervalSince1970: 1_790_000_000)
     private func ready() -> StructuredProfile {
         var value = StructuredProfile()
