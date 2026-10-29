@@ -296,6 +296,9 @@ struct CoachInterviewView: View {
                 Button { generatePlan(session) } label: { Label(request == nil ? "看看我的计划" : "正在安排…", systemImage: "calendar.badge.plus") }
                     .buttonStyle(FitnessPrimaryButtonStyle())
                     .disabled(request != nil || configuration == nil || unsavedPlan != nil)
+                Button("还想聊细一点") { Task { await askNext() } }
+                    .frame(minHeight: 44)
+                    .disabled(request != nil || configuration == nil || !session.canContinueInterview)
             } else if eligibility.needsConstraintReview {
                 NavigationLink { SimpleConstraintChatView(store: store) } label: { Label("继续和教练聊", systemImage: "bubble.left.and.bubble.right") }
                     .buttonStyle(FitnessPrimaryButtonStyle())
