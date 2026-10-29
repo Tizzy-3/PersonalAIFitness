@@ -64,7 +64,9 @@ struct SimpleConstraintChatView: View {
             .onChange(of: chat?.messages.count) { _, _ in
                 withAnimation { proxy.scrollTo("chat-bottom", anchor: .bottom) }
             }
-            .safeAreaInset(edge: .bottom) { composer }
+            .safeAreaInset(edge: .bottom) {
+                if !mayReadBack { composer }
+            }
         }
         .navigationTitle("训练注意事项").navigationBarTitleDisplayMode(.inline)
         .toolbar {

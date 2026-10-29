@@ -20,7 +20,7 @@ final class SimpleCoachPersistenceTests: XCTestCase {
     }
 
     @MainActor func testUnfinishedChatSurvivesBackupWithoutConfirmingOrReplacingManualPlan() throws {
-        let date = Date()
+        let date = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
         let store = try TrainingStore(inMemory: true)
         let manual = try store.confirmPlan(name: "现有手动计划", items: [PlannedExercise(exercise: XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.walking")))])
         let expected = try conversation(store, at: date)
@@ -34,7 +34,7 @@ final class SimpleCoachPersistenceTests: XCTestCase {
     }
 
     @MainActor func testExplicitReadbackConfirmationSavesBoundariesButDoesNotActivatePlan() throws {
-        let date = Date()
+        let date = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
         let store = try TrainingStore(inMemory: true)
         var session = try conversation(store, at: date)
         var chat = try XCTUnwrap(session.constraintChat)
@@ -53,7 +53,7 @@ final class SimpleCoachPersistenceTests: XCTestCase {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("SimpleCoach-" + UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }
         let url = folder.appendingPathComponent("fitness.store")
-        let date = Date()
+        let date = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
         let expected: InterviewSession
         do {
             let store = try TrainingStore(storageURL: url)
