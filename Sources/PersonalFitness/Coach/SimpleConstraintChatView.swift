@@ -30,9 +30,13 @@ struct SimpleConstraintChatView: View {
         chat?.mode == .professionalBoundaries && ((chat?.professionalNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
             || latestCandidate?.allowedExerciseIDs?.isEmpty != false)
     }
+    private var hasFreshPainAnswer: Bool {
+        guard let date = chat?.painFreeAnsweredAt else { return false }
+        return date <= Date() && Calendar.current.isDateInToday(date)
+    }
     private var mayReadBack: Bool {
         latestCandidate != nil && openQuestions.isEmpty && chat?.mode != nil && chat?.painFree == true
-            && !needsProfessionalDetails && !editing && request == nil
+            && hasFreshPainAnswer && !needsProfessionalDetails && !editing && request == nil
     }
     private var trimmedInput: String { input.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var hasSavedEvidence: Bool {
@@ -142,7 +146,7 @@ struct SimpleConstraintChatView: View {
                 Text("一句“可以运动”还不足以安排动作。这里记录你的转述，不会由AI给出医疗许可。")
                     .font(.footnote).foregroundStyle(.secondary)
             }.chatCard()
-        } else if latestCandidate != nil, chat?.painFree == nil {
+        } else if latestCandidate != nil, chat?.painFree == nil || !hasFreshPainAnswer {
             VStack(alignment: .leading, spacing: 14) {
                 Text("现在有疼痛或其他不舒服吗？").font(.headline)
                 HStack {
