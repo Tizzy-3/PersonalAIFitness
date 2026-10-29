@@ -37,7 +37,7 @@ struct CoachInterviewView: View {
                         selfDescriptionSection
                         progressSection(session)
                     }
-                    if !session.narratives.isEmpty || !session.unansweredQuestions.isEmpty || !session.pendingInferences.isEmpty || session.profile.isReadyForPlanning {
+                    if !(session.narratives ?? []).isEmpty || !session.unansweredQuestions.isEmpty || !session.pendingInferences.isEmpty || session.profile.isReadyForPlanning {
                         DisclosureGroup("还有想补充的？") { selfDescriptionSection }
                     }
                 }
