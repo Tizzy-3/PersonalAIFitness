@@ -16,6 +16,7 @@ struct SimpleConstraintChatView: View {
     @State private var loaded = false
     @State private var editing = false
     @State private var automaticInquiryStarted = false
+    @State private var restDate = Date()
 
     private var chat: ConstraintChatSession? { store.interview?.constraintChat }
     private var latestCandidate: ConstraintChatCandidate? {
@@ -36,7 +37,7 @@ struct SimpleConstraintChatView: View {
         return date <= Date() && Calendar.current.isDateInToday(date)
     }
     private var mayReadBack: Bool {
-        latestCandidate != nil && openQuestions.isEmpty && chat?.mode != nil && chat?.painFree == true
+        latestCandidate != nil && (openQuestions.isEmpty || (chat?.mode == .affectedDaysRest && chat?.restScopeConfirmed == true)) && chat?.mode != nil && chat?.painFree == true
             && hasFreshPainAnswer && !needsProfessionalDetails && !editing && request == nil
     }
     private var trimmedInput: String { input.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -66,13 +67,17 @@ struct SimpleConstraintChatView: View {
                 withAnimation { proxy.scrollTo("chat-bottom", anchor: .bottom) }
             }
             .safeAreaInset(edge: .bottom) {
-                if !mayReadBack { composer }
+                if !mayReadBack && (chat?.mode != .affectedDaysRest || latestCandidate == nil) { composer }
             }
         }
         .navigationTitle("训练注意事项").navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink("详细编辑") { ConstraintReviewView(store: store) }
+                if chat?.mode == .affectedDaysRest {
+                    Button("修改休息日") { editRestScope { $0.restScopeConfirmed = nil } }
+                } else {
+                    NavigationLink("详细编辑") { ConstraintReviewView(store: store) }
+                }
             }
         }
         .onAppear { load() }
@@ -116,10 +121,14 @@ struct SimpleConstraintChatView: View {
                 Text("连接你自己的AI教练后，就能从这里继续聊。原话会先保存在手机上。")
                 NavigationLink("连接我的教练") { AISettingsView() }.buttonStyle(.bordered)
             }.chatCard()
-        } else if !openQuestions.isEmpty {
+        } else if latestCandidate != nil && chat?.mode == .affectedDaysRest && chat?.restScopeConfirmed != true {
+            restScopeCard
+        } else if !openQuestions.isEmpty && chat?.mode != .affectedDaysRest {
             VStack(alignment: .leading, spacing: 10) {
                 Text("先回答这一件就好").font(.headline)
-                Text(openQuestions[0])
+                if chat?.messages.last(where: { $0.role == .coach })?.text != openQuestions[0] {
+                    Text(openQuestions[0])
+                }
                 if openQuestions.count > 1 {
                     DisclosureGroup("还有需要慢慢聊清楚的事") {
                         ForEach(Array(openQuestions.dropFirst().enumerated()), id: \.offset) { _, question in
@@ -129,6 +138,7 @@ struct SimpleConstraintChatView: View {
                 }
                 Text("知道多少说多少；不确定就告诉教练。回答后点“发给教练”，继续聊。")
                     .font(.footnote).foregroundStyle(.secondary)
+                restAlternative
             }.chatCard()
         } else if latestCandidate != nil, chat?.mode == nil {
             VStack(alignment: .leading, spacing: 14) {
@@ -148,6 +158,7 @@ struct SimpleConstraintChatView: View {
                 Text("把允许的具体动作、需要避开的情况和其他要求告诉教练。还没问清楚也可以直接说；教练会继续追问。")
                 Text("一句“可以运动”还不足以安排动作。这里记录你的转述，不会由AI给出医疗许可。")
                     .font(.footnote).foregroundStyle(.secondary)
+                restAlternative
             }.chatCard()
         } else if latestCandidate != nil, chat?.painFree == nil || !hasFreshPainAnswer {
             VStack(alignment: .leading, spacing: 14) {
@@ -171,7 +182,7 @@ struct SimpleConstraintChatView: View {
                 ForEach(Array(conversation.readbackLines.enumerated()), id: \.offset) { _, line in
                     Label(line, systemImage: "checkmark").labelStyle(.titleAndIcon)
                 }
-                Text(chat?.mode == .professionalBoundaries ? "按你记录的专业指导范围安排。" : "这些是你说明的习惯、能力、偏好和时间安排。")
+                Text(chat?.mode == .affectedDaysRest ? "这些未明确事项继续保留；所选时段只休息。其他日期仍按你已确认的条件核对。" : (chat?.mode == .professionalBoundaries ? "按你记录的专业指导范围安排。" : "这些是你说明的习惯、能力、偏好和时间安排。"))
                     .font(.callout).foregroundStyle(.secondary)
                 if chat?.mode == .professionalBoundaries, let note = chat?.professionalNote {
                     Text("你记录的具体指导：\(note)").font(.callout)
@@ -207,6 +218,82 @@ struct SimpleConstraintChatView: View {
                     .disabled(configuration == nil || (!hasSavedEvidence && trimmedInput.isEmpty))
             }
         }.padding(16).background(FitnessTheme.surface)
+    }
+
+    private var restAlternative: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("暂时说不清这些时段能做哪些动作？可以先留作休息，不必反复让专业人士点名动作。")
+                .font(.callout).foregroundStyle(.secondary)
+            Button("受影响的日子先休息") {
+                editRestScope { conversation in
+                    conversation.setMode(.affectedDaysRest)
+                    if conversation.candidate?.questions.isEmpty == true && conversation.candidate?.unresolved.isEmpty == true {
+                        conversation.candidate?.unresolved = ["专业活动范围尚未明确，受影响时段暂不安排运动"]
+                    }
+                }
+            }.buttonStyle(.bordered).frame(minHeight: 44)
+        }
+    }
+
+    private var restScopeCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("先把这些日子留作休息").font(.title3.bold())
+            Text("下面这些要求仍未明确，不会当成运动许可。请选出全部受影响时段；其他日子也不确定时，先不要确认。")
+                .font(.callout).foregroundStyle(.secondary)
+            ForEach(Array(Array(Set(openQuestions)).sorted().enumerated()), id: \.offset) { _, text in
+                Text("• " + text).font(.callout)
+            }
+            Text("每周固定休息（每周都会生效）").font(.headline)
+            ForEach(1...7, id: \.self) { day in
+                Toggle(PlanningDisplay.weekday(day), isOn: Binding(get: {
+                    latestCandidate?.excludedWeekdays.contains(day) == true
+                }, set: { selected in
+                    editRestScope { conversation in
+                        var days = Set(conversation.candidate?.excludedWeekdays ?? [])
+                        if selected { days.insert(day) } else { days.remove(day) }
+                        conversation.candidate?.excludedWeekdays = days.sorted()
+                    }
+                }))
+            }
+            Text("隔周或单次安排，请添加具体日期；不会猜测治疗间隔。")
+                .font(.caption).foregroundStyle(.secondary)
+            DatePicker("具体休息日", selection: $restDate, displayedComponents: .date)
+            Button("添加这个休息日") {
+                let key = TrainingConstraintReview.dateKey(restDate)
+                editRestScope { conversation in
+                    let dates = (conversation.candidate?.restDateKeys ?? []) + [key]
+                    conversation.candidate?.restDateKeys = Array(Set(dates)).sorted()
+                }
+            }.frame(minHeight: 44)
+            ForEach(latestCandidate?.restDateKeys ?? [], id: \.self) { key in
+                HStack { Text(key); Spacer(); Button("移除") {
+                    editRestScope { $0.candidate?.restDateKeys.removeAll { $0 == key } }
+                }.frame(minHeight: 44) }
+            }
+            Text("以上未明确事项，是否只影响所选休息日？其他训练日还有额外未说明的身体限制吗？").font(.headline)
+            Button("仅影响这些休息日，其他日期没有额外未说明限制") {
+                editRestScope(confirming: true) { $0.restScopeConfirmed = true }
+            }.buttonStyle(FitnessPrimaryButtonStyle())
+                .disabled((latestCandidate?.excludedWeekdays.isEmpty ?? true) && (latestCandidate?.restDateKeys.isEmpty ?? true))
+            Button("其他日子也有限制／还不能确定") {
+                editRestScope { $0.setMode(.professionalBoundaries) }
+                notice = "原资料已保留。其他日期也不确定时，不会据此安排训练；请继续说明还受哪些限制。"
+            }.frame(minHeight: 44)
+        }.chatCard()
+    }
+
+    private func editRestScope(confirming: Bool = false, _ mutation: (inout ConstraintChatSession) -> Void) {
+        do {
+            guard var session = store.interview, var conversation = session.constraintChat,
+                  sourcesMatch(conversation), conversation.candidateEvidenceCount == conversation.userMessageCount else {
+                throw CoreError.invalidState("资料有更新，请先让教练重新整理。")
+            }
+            if !confirming { conversation.restScopeConfirmed = nil; conversation.setPainFree(nil) }
+            mutation(&conversation)
+            try conversation.validate()
+            session.constraintChat = conversation
+            try store.saveInterview(session)
+        } catch { issue = error.localizedDescription }
     }
 
     private func sourcesMatch(_ chat: ConstraintChatSession) -> Bool {
@@ -341,7 +428,7 @@ struct SimpleConstraintChatView: View {
 
     private var isIsolatedReadbackCapture: Bool {
         #if DEBUG
-        return ProcessInfo.processInfo.arguments.contains("--capture-constraint-readback")
+        return (ProcessInfo.processInfo.arguments.contains("--capture-constraint-readback") || ProcessInfo.processInfo.arguments.contains("--capture-constraint-deferred-readback"))
             && ConstraintValidationData.isActive && store.storageURL == nil
         #else
         return false

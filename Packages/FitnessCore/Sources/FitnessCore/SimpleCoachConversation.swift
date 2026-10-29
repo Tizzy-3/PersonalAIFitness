@@ -74,6 +74,7 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
     public var confirmedAt: Date?
     /// Optional for decoding saved conversations made before this explicit answer timestamp existed.
     public var painFreeAnsweredAt: Date?
+    public var restScopeConfirmed: Bool?
 
     public init(sourceText: String, legacySourceText: String = "", messages: [ConstraintChatMessage] = [],
                 candidate: ConstraintChatCandidate? = nil, candidateEvidenceCount: Int? = nil,
@@ -83,6 +84,7 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         self.candidate = candidate; self.candidateEvidenceCount = candidateEvidenceCount
         self.mode = mode; self.painFree = painFree; self.professionalNote = professionalNote
         self.confirmedAt = confirmedAt; self.painFreeAnsweredAt = painFreeAnsweredAt
+        self.restScopeConfirmed = nil
     }
 
     public var userMessageCount: Int { messages.filter { $0.role == .user }.count }
@@ -106,16 +108,17 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         try value.validate()
         var draft = self
         draft.candidate = value; draft.candidateEvidenceCount = evidenceCount; draft.confirmedAt = nil
+        draft.restScopeConfirmed = nil
         try draft.validate(); self = draft
     }
     public mutating func setMode(_ value: ConstraintReviewMode?) {
-        mode = value; confirmedAt = nil
+        mode = value; confirmedAt = nil; restScopeConfirmed = nil
     }
     public mutating func setPainFree(_ value: Bool?, at date: Date = Date()) {
         painFree = value; painFreeAnsweredAt = value == nil ? nil : date; confirmedAt = nil
     }
     private mutating func invalidateReadback() {
-        candidateEvidenceCount = nil; painFree = nil; painFreeAnsweredAt = nil; confirmedAt = nil
+        candidateEvidenceCount = nil; painFree = nil; painFreeAnsweredAt = nil; confirmedAt = nil; restScopeConfirmed = nil
     }
 
     public func validate() throws {
@@ -138,11 +141,13 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
     public func makeReview(at date: Date = Date()) throws -> TrainingConstraintReview {
         try validate()
         guard let candidate, candidateEvidenceCount == userMessageCount,
-              candidate.questions.isEmpty, candidate.unresolved.isEmpty,
               let mode, painFree == true, let answeredAt = painFreeAnsweredAt,
               answeredAt <= date, Calendar.current.isDate(answeredAt, inSameDayAs: date),
               messages.allSatisfy({ $0.createdAt <= date }) else {
             throw CoreError.invalidState("先把当前问题聊清楚，并由你回答今天是否不适，再核对安排。")
+        }
+        if mode != .affectedDaysRest && (!candidate.questions.isEmpty || !candidate.unresolved.isEmpty) {
+            throw CoreError.invalidState("还有事项未明确。可以继续说明，或由本人选择全部受影响时段先休息；不能把未知当作活动许可。")
         }
         if mode == .professionalBoundaries {
             try CoreValidation.nonempty(professionalNote, name: "本人记录的明确活动指导", maxLength: 2_000)
@@ -155,7 +160,9 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
             excludedExerciseIDs: candidate.excludedExerciseIDs, avoidedPositions: candidate.avoidedPositions,
             allowedExerciseIDs: candidate.allowedExerciseIDs, maxSessionMinutes: candidate.maxSessionMinutes,
             painFreeConfirmed: true, allLimitsRepresentedConfirmed: true,
-            professionalGuidanceNote: professionalNote, confirmedAt: date)
+            professionalGuidanceNote: professionalNote, confirmedAt: date,
+            restScopeConfirmed: restScopeConfirmed,
+            deferredClinicalQuestions: mode == .affectedDaysRest ? candidate.questions + candidate.unresolved : nil)
         try review.validate()
         return review
     }
@@ -180,8 +187,14 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         if let mode { lines.append("限制依据：" + mode.title + "。") }
         if !professionalNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { lines.append("你记录的专业指导：" + professionalNote) }
         lines.append(painFree == true ? "你本轮回答：当前没有疼痛或异常不适。" : "还需你回答今天当前是否有疼痛或异常不适。")
-        lines += candidate.questions.map { "还需了解：" + $0 }
-        lines += candidate.unresolved.map { "尚未明确：" + $0 }
+        if mode == .affectedDaysRest {
+            lines.append("所选休息日不安排任何正式训练，不推定这些时段可以做某个动作。")
+            lines.append(restScopeConfirmed == true ? "本人确认：以下未明确事项仅影响所选休息时段，其他日期没有额外未说明限制。" : "尚未由本人确认未明确事项的影响范围。")
+            lines += (candidate.questions + candidate.unresolved).map { "仅限休息时段、继续保留待确认：" + $0 }
+        } else {
+            lines += candidate.questions.map { "还需了解：" + $0 }
+            lines += candidate.unresolved.map { "尚未明确：" + $0 }
+        }
         return lines
     }
 }

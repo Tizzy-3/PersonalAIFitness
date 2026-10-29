@@ -16,6 +16,7 @@ struct SimpleConstraintChatAPI: Sendable {
     maxSessionMinutes仅提取本人明确的15至120分钟单次上限，否则null；不猜恢复天数、训练强度、负重或医学结论。
     allowedExerciseIDs通常为null。仅当本人记录的具体专业指导明确允许supportedExercises中的具体动作时，可复制对应ID；泛称“可以运动”“轻度活动”“遵医嘱”不足以产生允许动作名单。需要但没有明确允许范围时，继续问具体指导，不能自行扩大范围。
     无法由本对象表达的次数、负重、强度或治疗恢复边界必须留在unresolved，不能藏在自由总结后声明完成。
+    用户已说不知道、没有具体动作指导或需要你安排时，不要反复追问同一个“专业人士点名哪些动作”问题。保留为unresolved，说明可以由本人在App中选择全部受影响时段先休息，并询问影响哪些时段；不能替本人确认范围、删掉未知或声称其余日期安全。
     mode、painFree、painFreeConfirmed、medicalClearance、allLimitsRepresentedConfirmed均由本人和程序处理，禁止输出，也禁止生成任何计划或宣布确认成功。
     仅返回JSON，字段必须恰好为以下八项，所有列表即便为空也要返回：
     {"excludedExerciseIDs":[],"avoidedPositions":[],"excludedWeekdays":[],"restDateKeys":[],"maxSessionMinutes":null,"allowedExerciseIDs":null,"questions":[],"unresolved":[]}

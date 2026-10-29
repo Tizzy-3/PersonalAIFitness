@@ -11,7 +11,12 @@ struct PlanningConstraintSummary: View {
             if !review.legacySourceText.isEmpty, review.legacySourceText != review.sourceText {
                 Text("原个人档案：\(review.legacySourceText)").font(.footnote).foregroundStyle(.secondary)
             }
-            LabeledContent("核对方式", value: review.mode == .practicalOnly ? "本人确认的时间、能力与偏好约束" : "按本人记录的专业指导边界")
+            LabeledContent("核对方式", value: review.mode.title)
+            if let deferred = review.deferredClinicalQuestions, !deferred.isEmpty {
+                Text("以下未明确事项仅限所选休息时段，仍保留待确认；这些时段不安排训练。")
+                    .font(.footnote).foregroundStyle(.secondary)
+                ForEach(Array(deferred.enumerated()), id: \.offset) { _, text in Text(text).font(.footnote) }
+            }
             if !review.excludedWeekdays.isEmpty {
                 LabeledContent("每周休息", value: review.excludedWeekdays.map(PlanningDisplay.weekday).joined(separator: "、"))
             }

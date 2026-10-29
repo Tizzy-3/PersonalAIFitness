@@ -4,6 +4,24 @@ import FitnessCore
 
 /// Synthetic conversations: no private health statements or provider requests.
 final class SimpleCoachPersistenceTests: XCTestCase {
+    @MainActor func testRestScopeBackupPreservesUnknownsAndDoesNotActivateOrReplacePlan() throws {
+        let date = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        let store = try TrainingStore(inMemory: true)
+        let manual = try store.confirmPlan(name: "原手动安排", items: [PlannedExercise(exercise: XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.walking")))])
+        var session = try conversation(store, at: date)
+        var chat = try XCTUnwrap(session.constraintChat)
+        chat.candidate?.unresolved = ["合成休息时段的活动范围未明确"]
+        chat.setMode(.affectedDaysRest); chat.restScopeConfirmed = true
+        session.constraintChat = chat
+        try session.confirmConstraintReview(chat.makeReview(at: date), at: date)
+        try store.saveInterview(session)
+        let restored = try TrainingStore(inMemory: true)
+        try restored.restore(SnapshotCodec.decode(SnapshotCodec.encode(store.snapshot())))
+        XCTAssertEqual(restored.interview?.profile.constraintReview?.restScopeConfirmed, true)
+        XCTAssertEqual(restored.interview?.profile.constraintReview?.deferredClinicalQuestions?.count, 1)
+        XCTAssertEqual(restored.currentPlan?.id, manual.id)
+        XCTAssertTrue(restored.weeklyPrograms.isEmpty)
+    }
     @MainActor private func conversation(_ store: TrainingStore, at date: Date) throws -> InterviewSession {
         var session = try store.startInterview(at: date.addingTimeInterval(-10))
         session.profile.restrictions = .init(value: "不喜欢跪姿，周五另有安排", provenance: .stated,

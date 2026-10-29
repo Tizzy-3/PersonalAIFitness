@@ -1,8 +1,14 @@
 import Foundation
 
 public enum ConstraintReviewMode: String, Codable, CaseIterable, Sendable {
-    case practicalOnly, professionalBoundaries
-    public var title: String { self == .practicalOnly ? "时间、能力或偏好限制" : "已明确的专业活动指导" }
+    case practicalOnly, professionalBoundaries, affectedDaysRest
+    public var title: String {
+        switch self {
+        case .practicalOnly: return "时间、能力或偏好限制"
+        case .professionalBoundaries: return "已明确的专业活动指导"
+        case .affectedDaysRest: return "受影响时段休息，未确定事项保留"
+        }
+    }
 }
 
 public enum ConstraintAvoidance: String, Codable, CaseIterable, Hashable, Sendable {
@@ -34,22 +40,26 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
     public var allLimitsRepresentedConfirmed: Bool
     public var professionalGuidanceNote: String
     public var confirmedAt: Date
+    public var restScopeConfirmed: Bool?
+    public var deferredClinicalQuestions: [String]?
 
     public init(sourceText: String, legacySourceText: String = "", mode: ConstraintReviewMode = .practicalOnly,
                 excludedWeekdays: [Int] = [], restDateKeys: [String] = [], excludedExerciseIDs: [String] = [],
                 avoidedPositions: [ConstraintAvoidance] = [], allowedExerciseIDs: [String]? = nil,
                 maxSessionMinutes: Int? = nil, painFreeConfirmed: Bool = false,
                 allLimitsRepresentedConfirmed: Bool = false, professionalGuidanceNote: String = "",
-                confirmedAt: Date = Date(), rulesVersion: String = TrainingConstraintReview.currentRulesVersion) {
+                confirmedAt: Date = Date(), rulesVersion: String = TrainingConstraintReview.currentRulesVersion,
+                restScopeConfirmed: Bool? = nil, deferredClinicalQuestions: [String]? = nil) {
         self.rulesVersion = rulesVersion; self.sourceText = sourceText; self.legacySourceText = legacySourceText; self.mode = mode
         self.excludedWeekdays = excludedWeekdays.sorted(); self.restDateKeys = restDateKeys.sorted()
         self.excludedExerciseIDs = excludedExerciseIDs.sorted(); self.avoidedPositions = avoidedPositions
         self.allowedExerciseIDs = allowedExerciseIDs?.sorted(); self.maxSessionMinutes = maxSessionMinutes
         self.painFreeConfirmed = painFreeConfirmed; self.allLimitsRepresentedConfirmed = allLimitsRepresentedConfirmed
         self.professionalGuidanceNote = professionalGuidanceNote; self.confirmedAt = confirmedAt
+        self.restScopeConfirmed = restScopeConfirmed; self.deferredClinicalQuestions = deferredClinicalQuestions
     }
 
-    public static let currentRulesVersion = "training-constraints-1"
+    public static let currentRulesVersion = "training-constraints-2"
     public var effectiveExcludedExerciseIDs: [String] {
         Array(Set(excludedExerciseIDs + avoidedPositions.flatMap(\.exerciseIDs))).sorted()
     }
@@ -59,7 +69,15 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
 
     public func validate() throws {
         try CoreValidation.date(confirmedAt, name: "训练约束确认时间")
-        guard rulesVersion == Self.currentRulesVersion else { throw CoreError.invalidInput("训练约束规则版本不受支持。") }
+        guard ["training-constraints-1", Self.currentRulesVersion].contains(rulesVersion) else { throw CoreError.invalidInput("训练约束规则版本不受支持。") }
+        if mode == .affectedDaysRest {
+            guard rulesVersion == Self.currentRulesVersion, restScopeConfirmed == true,
+                  !excludedWeekdays.isEmpty || !restDateKeys.isEmpty,
+                  let pending = deferredClinicalQuestions, !pending.isEmpty, pending.count <= 25 else {
+                throw CoreError.invalidInput("请先选择全部受影响的休息日，并本人确认未明确事项仅限这些时段；其他日期也不确定时不能继续。")
+            }
+            for question in pending { try CoreValidation.nonempty(question, name: "休息日内保留的待确认事项", maxLength: 1_000) }
+        }
         guard sourceText.count <= 2_000, legacySourceText.count <= 2_000,
               professionalGuidanceNote.count <= 2_000 else { throw CoreError.invalidInput("训练约束原文或说明过长。") }
         guard painFreeConfirmed else { throw CoreError.invalidInput("请本人确认当前没有疼痛或异常不适；有或不确定时先继续澄清。") }

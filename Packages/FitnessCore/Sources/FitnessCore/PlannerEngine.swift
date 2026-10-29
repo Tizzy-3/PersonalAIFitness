@@ -272,6 +272,7 @@ public enum PlannerEngine {
         var result = ["训练约束规则：\(review.rulesVersion)；本人确认的原限制保留，AI不能覆盖。"]
         if !review.restDateKeys.isEmpty { result.append("明确休息日期：" + review.restDateKeys.joined(separator: "、") + "；这些日期覆盖每周排程，不补课。") }
         if review.mode == .professionalBoundaries { result.append("只在本人记录的专业指导允许动作白名单内组合；App没有独立核实医学许可。") }
+        if review.mode == .affectedDaysRest { result.append("未明确事项仅限本人确认的休息时段，这些时段不安排训练；其他日期仍受全部已确认限制约束，不推定医学许可。") }
         return result
     }
 

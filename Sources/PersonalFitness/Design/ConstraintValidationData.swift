@@ -21,6 +21,16 @@ import FitnessCore
         session.profile.equipment = .init(value: [.bodyweight, .dumbbells, .bench, .walkingSpace], provenance: .stated, confirmedAt: evidence)
         session.profile.restrictions = .init(value: "周五有固定事务，训练时避开跪姿动作。", provenance: .stated, confirmedAt: evidence)
         session.phase = .awaitingReview
+        if ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("--capture-constraint-deferred") }) {
+            var chat = ConstraintChatSession(sourceText: session.profile.restrictions.value!, legacySourceText: store.profile.restrictions)
+            try chat.receiveCandidate(.init(avoidedPositions: [.kneeling], excludedWeekdays: [3, 4],
+                questions: ["特定时段具体允许活动尚未明确"], unresolved: ["该时段强度要求尚未明确"]), evidenceCount: 0, at: date)
+            chat.setMode(.affectedDaysRest)
+            if ProcessInfo.processInfo.arguments.contains("--capture-constraint-deferred-readback") {
+                chat.restScopeConfirmed = true; chat.setPainFree(true, at: date)
+            }
+            session.constraintChat = chat
+        }
         if ProcessInfo.processInfo.arguments.contains("--capture-constraint-readback") {
             var chat = ConstraintChatSession(sourceText: session.profile.restrictions.value!, legacySourceText: store.profile.restrictions)
             try chat.appendUser("周五休息，避开跪姿，每次最多25分钟。", at: evidence)
