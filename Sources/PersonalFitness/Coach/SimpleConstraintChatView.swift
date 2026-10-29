@@ -67,7 +67,7 @@ struct SimpleConstraintChatView: View {
                 withAnimation { proxy.scrollTo("chat-bottom", anchor: .bottom) }
             }
             .safeAreaInset(edge: .bottom) {
-                if !mayReadBack && (chat?.mode != .affectedDaysRest || latestCandidate == nil) { composer }
+                if !mayReadBack && (chat?.mode != .affectedDaysRest || latestCandidate == nil || editing) { composer }
             }
         }
         .navigationTitle("训练注意事项").navigationBarTitleDisplayMode(.inline)
