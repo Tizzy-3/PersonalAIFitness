@@ -30,7 +30,7 @@ struct RootView: View {
         _capturePlanner = State(initialValue: arguments.contains("--capture-planner"))
         _captureInterview = State(initialValue: arguments.contains("--capture-interview"))
         if arguments.contains("--capture-constraint-interview") { _captureInterview = State(initialValue: true) }
-        _captureConstraintReview = State(initialValue: arguments.contains("--capture-constraint-review"))
+        _captureConstraintReview = State(initialValue: arguments.contains("--capture-constraint-review") || arguments.contains("--capture-constraint-readback"))
         _captureConstraintDraft = State(initialValue: arguments.contains("--capture-constraint-draft"))
         _captureMedia = State(initialValue: arguments.contains("--capture-media"))
         _settings = State(initialValue: arguments.contains("--capture-settings"))
@@ -81,7 +81,7 @@ struct RootView: View {
         }
         .sheet(isPresented: $captureConstraintReview) {
             NavigationStack {
-                ConstraintReviewView(store: store)
+                SimpleConstraintChatView(store: store)
                     .safeAreaInset(edge: .top) { validationLabel }
             }
         }

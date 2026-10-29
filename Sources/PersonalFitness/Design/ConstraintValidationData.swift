@@ -21,6 +21,15 @@ import FitnessCore
         session.profile.equipment = .init(value: [.bodyweight, .dumbbells, .bench, .walkingSpace], provenance: .stated, confirmedAt: evidence)
         session.profile.restrictions = .init(value: "周五有固定事务，训练时避开跪姿动作。", provenance: .stated, confirmedAt: evidence)
         session.phase = .awaitingReview
+        if ProcessInfo.processInfo.arguments.contains("--capture-constraint-readback") {
+            var chat = ConstraintChatSession(sourceText: session.profile.restrictions.value!, legacySourceText: store.profile.restrictions)
+            try chat.appendUser("周五休息，避开跪姿，每次最多25分钟。", at: evidence)
+            try chat.receiveCandidate(.init(avoidedPositions: [.kneeling], excludedWeekdays: [5], maxSessionMinutes: 25),
+                                      evidenceCount: 1, at: date)
+            chat.setMode(.practicalOnly)
+            chat.setPainFree(true, at: date)
+            session.constraintChat = chat
+        }
         if ProcessInfo.processInfo.arguments.contains("--capture-constraint-draft") {
             let review = TrainingConstraintReview(sourceText: session.profile.restrictions.value!,
                 legacySourceText: store.profile.restrictions, mode: .practicalOnly,
@@ -32,7 +41,12 @@ import FitnessCore
         }
         try store.saveInterview(session)
         if ProcessInfo.processInfo.arguments.contains("--capture-constraint-draft"), let committed = store.interview {
-            let draft = try PlanningDraft.make(input: committed.profile.planningInput(at: date), snapshot: store.snapshot(), at: date)
+            let input = try committed.profile.planningInput(at: date)
+            let pool = try PlannerEngine.candidatePool(input: input)
+            let reply = PersonalizedPlanReply(choices: pool.mapValues { $0[0] },
+                explanation: "合成界面验证：仅用于检查七天安排布局，未请求AI。", limitations: [])
+            let draft = try PlanningDraft.makePersonalized(profile: committed.profile, reply: reply,
+                snapshot: store.snapshot(), providerHost: "example.test", model: "isolated-ui-fixture", at: date)
             try store.savePlanningDraft(draft)
         }
         return store

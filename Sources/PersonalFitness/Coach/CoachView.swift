@@ -74,7 +74,7 @@ struct CoachView: View {
                 }
             }
             NavigationLink { CoachInterviewView(store: store) } label: {
-                Label(store.interview == nil ? "开始建档访谈" : "继续了解我的情况", systemImage: "bubble.left.and.bubble.right")
+                Label(store.interview == nil ? "和教练聊聊" : "继续和教练聊", systemImage: "bubble.left.and.bubble.right")
             }.buttonStyle(FitnessPrimaryButtonStyle())
             NavigationLink { CoachProfileReviewView(store: store) } label: {
                 HStack {

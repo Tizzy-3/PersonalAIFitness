@@ -14,7 +14,6 @@ struct CoachInterviewView: View {
     @State private var draft: AnswerDraft = AnswerDraft()
     @State private var configuration: AIConfiguration?
     @State private var draftRoute: InterviewDraftRoute?
-    @State private var preparedPlan: PreparedPersonalizedPlan?
     @State private var unsavedPlan: PlanningDraft?
     @State private var ownWords = ""
     @State private var formatDiagnostic: String?
@@ -23,8 +22,25 @@ struct CoachInterviewView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 18) {
-                availabilitySection
-                selfDescriptionSection
+                if configuration == nil { availabilitySection }
+                if let session {
+                    if let note = session.latestTurn?.note, !note.isEmpty {
+                        Text(note).font(.title3.weight(.medium)).padding(.vertical, 4)
+                    }
+                    if !session.pendingInferences.isEmpty {
+                        inferenceSection(session)
+                    } else if !session.unansweredQuestions.isEmpty {
+                        answerSection(session)
+                    } else if session.profile.isReadyForPlanning {
+                        planSection(session)
+                    } else {
+                        selfDescriptionSection
+                        progressSection(session)
+                    }
+                    if !session.narratives.isEmpty || !session.unansweredQuestions.isEmpty || !session.pendingInferences.isEmpty || session.profile.isReadyForPlanning {
+                        DisclosureGroup("还有想补充的？") { selfDescriptionSection }
+                    }
+                }
                 if let formatDiagnostic { diagnosticSection(formatDiagnostic) }
                 if let unsavedPlan {
                     CoachPanel {
@@ -49,12 +65,8 @@ struct CoachInterviewView: View {
                             }.frame(minHeight: 44)
                         }
                     }
-                    progressSection(session)
-                    if !session.unansweredQuestions.isEmpty { answerSection(session) }
-                    if !session.pendingInferences.isEmpty { inferenceSection(session) }
-                    if session.profile.isReadyForPlanning { planSection(session) }
                     conversationSection(session)
-                    syncSection(session)
+                    DisclosureGroup("资料与聊天管理") { syncSection(session) }
                 }
                 if let status {
                     CoachPanel { Label(status, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary) }
@@ -63,7 +75,7 @@ struct CoachInterviewView: View {
         }
         .background(FitnessTheme.canvas)
         .tint(FitnessTheme.accent)
-        .navigationTitle("教练建档")
+        .navigationTitle("和教练聊聊")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $draftRoute) { route in
             PlanningDraftDetailView(store: store, draftID: route.id)
@@ -77,9 +89,6 @@ struct CoachInterviewView: View {
         }
         .task { await prepare() }
         .onChange(of: store.interview) { _, value in session = value }
-        .sheet(item: $preparedPlan) { prepared in
-            NavigationStack { PersonalizedPlanConsentView(prepared: prepared) { sendPlan(prepared) } }
-        }
         .onDisappear { request?.cancel() }
         .confirmationDialog("先跳过本轮未回答问题并核对计划？", isPresented: $reviewingEarly, titleVisibility: .visible) {
             Button("跳过本轮，先核对") { skipForReview() }
@@ -99,10 +108,12 @@ struct CoachInterviewView: View {
             HStack {
                 Text("\(ownWords.count) / 6000").font(.caption2).foregroundStyle(.secondary)
                 Spacer()
-                Button("保存我的补充") { saveOwnWords() }
+                Button(request == nil ? "发给教练" : "正在回复…") { saveOwnWords() }
                     .disabled(request != nil || ownWords.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || ownWords.count > 6000)
                     .frame(minHeight: 44)
             }
+            Text("发送给你设置的 AI：你的回答、已保存资料与聊天记录。不自动发送 Apple 健康原始数据。")
+                .font(.caption).foregroundStyle(.secondary)
             if !(session?.narratives ?? []).isEmpty {
                 DisclosureGroup("已保存的本人叙述（\((session?.narratives ?? []).count)）") {
                     ForEach(session?.narratives ?? []) { entry in
@@ -115,10 +126,10 @@ struct CoachInterviewView: View {
 
     private func diagnosticSection(_ value: String) -> some View {
         CoachPanel {
-            Label("访谈格式未通过校验", systemImage: "exclamationmark.circle").font(.headline).foregroundStyle(FitnessTheme.orange)
-            Text("已保留你的资料。本轮最多进行一次格式纠正，不会无限重试，也不会采用格式不合法的内容。")
+            Label("这次回复没整理好", systemImage: "exclamationmark.circle").font(.headline).foregroundStyle(FitnessTheme.orange)
+            Text("你的回答已经保存。可以重新问一次；详细原因收在下面。")
                 .font(.footnote).foregroundStyle(.secondary)
-            DisclosureGroup("查看脱敏格式诊断") { Text(value).font(.caption.monospaced()).textSelection(.enabled) }
+            DisclosureGroup("查看详细原因") { Text(value).font(.caption.monospaced()).textSelection(.enabled) }
             Button("复制格式诊断") { UIPasteboard.general.string = value }.frame(minHeight: 44)
             Button("重新询问") { Task { await askNext() } }.disabled(request != nil || configuration == nil || session?.canContinueInterview != true)
         }
@@ -130,7 +141,8 @@ struct CoachInterviewView: View {
             try current.addNarrative(ownWords)
             try store.saveInterview(current)
             session = store.interview; ownWords = ""
-            status = "你的原话已保存。点继续访谈，教练会结合这些情况追问；不会直接猜成已确认档案。"
+            status = nil
+            Task { await askNext() }
         } catch { issue = error.localizedDescription }
     }
 
@@ -178,54 +190,20 @@ struct CoachInterviewView: View {
     }
 
     private func progressSection(_ session: InterviewSession) -> some View {
-        let eligibility = displayEligibility(for: session)
-        return CoachPanel {
-            HStack(alignment: .firstTextBaseline) {
-                Text("正在了解你的情况").font(.headline)
-                Spacer(minLength: 8)
-                CoachStatusPill(text: eligibility.title, color: eligibility.canGenerate ? FitnessTheme.teal : FitnessTheme.orange)
-            }
-            Text("已确认 \(session.profile.answeredTopics.count) 项资料 · 已聊 \(session.allTurns.count) 轮")
-                .font(.subheadline).foregroundStyle(.secondary)
-            Text(eligibility.message)
-                .font(.footnote).foregroundStyle(.secondary)
-            if eligibility.needsConstraintReview {
-                NavigationLink { ConstraintReviewView(store: store) } label: {
-                    Label("先把运动限制核对成具体约束", systemImage: "slider.horizontal.3")
-                }.frame(minHeight: 44)
-            }
+        CoachPanel {
             if session.pausedAt != nil {
-                Label("已暂停，回答和补充都已保留", systemImage: "pause.circle").font(.footnote).foregroundStyle(FitnessTheme.orange)
-                Button("恢复访谈") { setPaused(false) }.frame(minHeight: 44)
+                Text("聊天已暂停，你说过的都保留着。")
+                Button("继续和教练聊") { setPaused(false) }
+                    .buttonStyle(FitnessPrimaryButtonStyle())
+            } else {
+                Button { Task { await askNext() } } label: {
+                    Label(request == nil ? "让教练接着问" : "教练正在回复…", systemImage: "bubble.left.and.bubble.right")
+                }.buttonStyle(FitnessPrimaryButtonStyle())
+                    .disabled(configuration == nil || request != nil || !session.canContinueInterview)
             }
-            if !session.pendingInferences.isEmpty {
-                Label("\(session.pendingInferences.count) 项推断等待你核对", systemImage: "person.crop.circle.badge.questionmark")
-                    .font(.footnote).foregroundStyle(FitnessTheme.orange)
-            }
-            if !session.profile.missingRequiredTopics.isEmpty {
-                DisclosureGroup("制定计划前还需要的资料") {
-                    Text(session.profile.missingRequiredTopics.map(\.title).joined(separator: "、"))
-                        .font(.footnote).foregroundStyle(.secondary).padding(.top, 6)
-                }.font(.footnote)
-            }
-            Button { Task { await askNext() } } label: {
-                Label(request == nil ? "继续访谈" : "正在询问…", systemImage: "bubble.left.and.bubble.right")
-            }
-            .buttonStyle(FitnessPrimaryButtonStyle())
-            .disabled(configuration == nil || request != nil || !session.canContinueInterview)
             if request != nil {
-                HStack {
-                    ProgressView()
-                    Text("等待教练回应").font(.footnote).foregroundStyle(.secondary)
-                    Spacer()
-                    Button("取消请求") { request?.cancel() }.font(.footnote).frame(minHeight: 44)
-                }
-            } else if !session.unansweredQuestions.isEmpty {
-                Text("先回答下面的问题。不清楚时，可以明确选择不知道或跳过。")
-                    .font(.caption).foregroundStyle(.secondary)
-            } else if eligibility.canGenerate, session.canContinueInterview {
-                Text("已经可以制定保守首版计划，也能继续补充能力、偏好和坚持困难。")
-                    .font(.caption).foregroundStyle(.secondary)
+                HStack { ProgressView(); Text("正在整理你的回答").font(.footnote); Spacer()
+                    Button("取消") { request?.cancel() }.frame(minHeight: 44) }
             }
         }
     }
@@ -259,41 +237,46 @@ struct CoachInterviewView: View {
 
     private func answerSection(_ session: InterviewSession) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            CoachSectionHeading(title: "告诉教练", detail: "\(session.unansweredQuestions.count) 个待回答问题")
+            CoachSectionHeading(title: "教练想问问", detail: "按你的实际情况说就好")
             CoachPanel {
                 ForEach(session.unansweredQuestions) { question in
                     QuestionAnswerRow(question: question, draft: $draft)
                     if question.id != session.unansweredQuestions.last?.id { Divider() }
                 }
-                Button("提交这些回答") { submitAnswers() }
+                Button("发给教练") { submitAnswers() }
                     .buttonStyle(FitnessPrimaryButtonStyle()).disabled(request != nil)
             }
         }
     }
 
     private func inferenceSection(_ session: InterviewSession) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            CoachSectionHeading(title: "这些理解，对吗？", detail: "待你确认")
-            CoachPanel {
-                ForEach(session.pendingInferences, id: \.self) { topic in
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text(topic.title).font(.subheadline.weight(.semibold))
-                            Spacer()
-                            CoachStatusPill(text: "推断", color: FitnessTheme.orange)
-                        }
-                        Text(InterviewAPI.describe(topic, profile: session.profile))
-                            .font(.footnote).foregroundStyle(.secondary)
-                        HStack(spacing: 12) {
-                            Button("对，是这样") { confirm(topic, accept: true) }.tint(FitnessTheme.accent)
-                            Button("不对，删掉", role: .destructive) { confirm(topic, accept: false) }
-                        }.buttonStyle(.bordered).controlSize(.large)
-                    }.padding(.vertical, 4)
-                }
-                Text("推断还不算事实。只有你确认的资料，才会用于安排训练。")
-                    .font(.caption).foregroundStyle(.secondary)
+        CoachPanel {
+            Text("我理解得对吗？").font(.title3.bold())
+            ForEach(session.pendingInferences, id: \.self) { topic in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(topic.title).font(.caption).foregroundStyle(.secondary)
+                    Text(InterviewAPI.describe(topic, profile: session.profile)).font(.body)
+                }.padding(.vertical, 4)
             }
+            Button("对，是这些") { confirmVisible(session.pendingInferences) }
+                .buttonStyle(FitnessPrimaryButtonStyle()).disabled(request != nil)
+            NavigationLink { CoachProfileReviewView(store: store) } label: { Text("改一下") }
+                .frame(minHeight: 44)
+            Text("确认后才会用于安排训练。还想补充的，可以继续聊。")
+                .font(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    private func confirmVisible(_ topics: [InterviewTopic]) {
+        guard var current = store.interview else { return }
+        do {
+            try current.confirmVisibleInferences(topics, at: Date())
+            try store.saveInterview(current)
+            session = store.interview
+            if !current.profile.isReadyForPlanning && current.unansweredQuestions.isEmpty {
+                Task { await askNext() }
+            }
+        } catch { issue = error.localizedDescription }
     }
 
     private func planSection(_ session: InterviewSession) -> some View {
@@ -302,17 +285,19 @@ struct CoachInterviewView: View {
             HStack(spacing: 12) {
                 CoachIconBadge(symbol: "calendar.badge.plus", color: FitnessTheme.teal)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(eligibility.canGenerate ? "可以制定第一份计划了" : "制定前还有情况需要核对").font(.headline)
+                    Text(eligibility.canGenerate ? "看看你的第一周" : "有几件事，再聊清楚").font(.headline)
                     Text(eligibility.canGenerate ? "先看完整七天安排，你确认后才生效。" : eligibility.message)
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
             if eligibility.canGenerate {
-                Button { generatePlan(session) } label: { Label("生成第一版计划", systemImage: "calendar.badge.plus") }
+                Text("点下面按钮，会把已确认档案、你的原话和本地训练摘要发给你设置的 AI。计划需你最后确认。")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button { generatePlan(session) } label: { Label(request == nil ? "看看我的计划" : "正在安排…", systemImage: "calendar.badge.plus") }
                     .buttonStyle(FitnessPrimaryButtonStyle())
                     .disabled(request != nil || configuration == nil || unsavedPlan != nil)
             } else if eligibility.needsConstraintReview {
-                NavigationLink { ConstraintReviewView(store: store) } label: { Label("核对约束后继续", systemImage: "checklist") }
+                NavigationLink { SimpleConstraintChatView(store: store) } label: { Label("继续和教练聊", systemImage: "bubble.left.and.bubble.right") }
                     .buttonStyle(FitnessPrimaryButtonStyle())
             }
         }
@@ -381,8 +366,7 @@ struct CoachInterviewView: View {
                 try store.saveInterview(updated)
                 session = store.interview
                 draft = AnswerDraft()
-                if turn.formatRepairUsed == true { status = "本轮回复格式已自动纠正一次并通过校验。你的原话保留，尚未改变计划。" }
-                else if turn.jsonModeFallbackUsed == true { status = "服务不支持JSON模式，已使用兼容模式并完成结构校验。" }
+                status = nil
                 if turn.questions.isEmpty, !updated.profile.isReadyForPlanning {
                     status = "教练这次没有提出新问题。可以再点“继续访谈”，或先在档案页手动补充。"
                 }
@@ -406,6 +390,9 @@ struct CoachInterviewView: View {
             try store.saveInterview(current)
             session = store.interview
             draft = AnswerDraft()
+            if current.unansweredQuestions.isEmpty && current.pendingInferences.isEmpty && !current.profile.isReadyForPlanning {
+                Task { await askNext() }
+            }
         } catch {
             issue = error.localizedDescription
         }
@@ -431,8 +418,9 @@ struct CoachInterviewView: View {
             }
             guard let configuration else { throw CoachClientError.configuration("请先配置AI接口，再让教练制定计划。") }
             let context = try PersonalizedPlanRequest.make(session: session, snapshot: store.snapshot())
-            preparedPlan = PreparedPersonalizedPlan(configuration: configuration, session: session, context: context,
+            let prepared = PreparedPersonalizedPlan(configuration: configuration, session: session, context: context,
                                                     preview: try PersonalizedPlannerAPI.requestJSON(context))
+            sendPlan(prepared)
         } catch {
             issue = error.localizedDescription
         }
@@ -461,7 +449,6 @@ struct CoachInterviewView: View {
     }
 
     private func sendPlan(_ prepared: PreparedPersonalizedPlan) {
-        preparedPlan = nil
         guard request == nil else { return }
         request = Task {
             defer { request = nil }

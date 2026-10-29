@@ -20,6 +20,7 @@ struct PlanningDraftDetailView: View {
     @State private var confirming = false
     @State private var issue: String?
     @State private var status: String?
+    @State private var showingDetails = false
 
     private var draft: PlanningDraft? { unsavedDraft ?? store.planningDrafts.first { $0.id == draftID } }
     private var selectedID: String? { chosenOptionID ?? draft?.selection?.optionID }
@@ -27,7 +28,7 @@ struct PlanningDraftDetailView: View {
     var body: some View {
         List {
             if let draft {
-                overview(draft)
+                if draft.personalization != nil { plainWeek(draft) }
                 if unsavedDraft != nil {
                     Section("AI 回答尚未保存") {
                         Text("模型已返回选择和解释，但本地保存失败。先重试保存，不需要再次请求模型。离开页面可能丢失这次未保存回答。")
@@ -37,8 +38,7 @@ struct PlanningDraftDetailView: View {
                     }
                 }
                 if draft.decision == .pending, draft.personalization == nil { requestActions(draft) }
-                if let selection = draft.selection { modelSelection(selection, draft: draft) }
-                candidateSections(draft)
+                if draft.personalization == nil { candidateSections(draft) }
                 if draft.decision == .pending { confirmationSection(draft) }
                 else if let programID = draft.appliedProgramID {
                     Section {
@@ -48,11 +48,18 @@ struct PlanningDraftDetailView: View {
                 } else {
                     Section { Text("这份草案已拒绝，没有因它修改当前安排。需要新方案时重新填写并生成草案。") }
                 }
+                Section {
+                    Button(showingDetails ? "收起安排依据" : "看看为什么这样安排") { showingDetails.toggle() }
+                }
+                if showingDetails {
+                    overview(draft)
+                    if let selection = draft.selection { modelSelection(selection, draft: draft) }
+                }
             } else {
                 ContentUnavailableView("找不到这份计划草案", systemImage: "doc.questionmark")
             }
         }
-        .navigationTitle(draft?.decision == .pending ? "制定计划 · 待你决定" : "制定计划记录").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(draft?.decision == .pending ? "你的第一周" : "计划记录").navigationBarTitleDisplayMode(.inline)
         .sheet(item: $prepared) { prepared in
             NavigationStack { PlannerConsentView(prepared: prepared, send: { send(prepared) }) }
         }
@@ -64,6 +71,47 @@ struct PlanningDraftDetailView: View {
         }
         .onDisappear { request?.cancel() }
         .fitnessError($issue)
+    }
+
+    @ViewBuilder private func plainWeek(_ draft: PlanningDraft) -> some View {
+        if let option = draft.options.first(where: { $0.id == selectedID }) ?? draft.options.first {
+            Section {
+                Text(option.title).font(.title3.bold())
+                Text("先看看这一周。你点确认以后，才会成为当前计划。")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            ForEach(option.days) { day in
+                Section("\(PlanningDisplay.weekday(day.weekday)) · \(day.isRestDay ? "休息" : day.title)") {
+                    if day.isRestDay {
+                        Label("今天不安排正式训练", systemImage: "moon.zzz").foregroundStyle(.secondary)
+                    } else {
+                        Text("约 \(day.estimatedMinutesLower)–\(day.estimatedMinutesUpper) 分钟")
+                            .font(.caption).foregroundStyle(.secondary)
+                        ForEach(Array(day.items.enumerated()), id: \.offset) { _, item in
+                            if let exercise = ExerciseCatalog.exercise(id: item.exerciseID) {
+                                NavigationLink { ExerciseDetailView(exercise: exercise, store: store) } label: {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        ExerciseListLabel(exercise: exercise)
+                                        Text("\(PlanningDisplay.target(item)) · 休息 \(UIInput.number(item.restSeconds)) 秒")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                        ForEach(Array(item.notes.enumerated()), id: \.offset) { _, note in
+                                            Text(note).font(.caption).foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ForEach(Array(day.notes.enumerated()), id: \.offset) { _, note in
+                        Text(note).font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Section {
+                Text("初次重量从能控制动作的轻重量开始。")
+                ForEach(Array(option.limitations.enumerated()), id: \.offset) { _, text in Text(text) }
+            }.font(.footnote).foregroundStyle(.secondary)
+        }
     }
 
     @ViewBuilder private func overview(_ draft: PlanningDraft) -> some View {
@@ -136,7 +184,7 @@ struct PlanningDraftDetailView: View {
     }
 
     private func confirmationSection(_ draft: PlanningDraft) -> some View {
-        Section("对比后确认生效") {
+        Section("按这份开始吗？") {
             if let current = store.currentWeeklyProgram, let option = current.selectedOption {
                 Text("原安排：\(option.title)，每周 \(option.days.filter { !$0.isRestDay }.count) 个训练日。")
             } else if let plan = store.currentPlan {
@@ -160,7 +208,7 @@ struct PlanningDraftDetailView: View {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
-                Button("我已核对，确认启用这份周计划") { confirming = true }
+                Button("确认开始这份计划") { confirming = true }
                     .font(.headline).disabled(!mayConfirm(draft))
             } else {
                 Text("先请求AI选择，或明确进入离线本地规则模式；不会自动将第一个候选作为AI结果。")

@@ -92,8 +92,8 @@ struct CoachProfileReviewView: View {
             if topic == .restrictions {
                 Text("用自然语言描述也可以。制定成人计划前，请本人明确确认当前状态；这不会由AI从句子猜成没有限制。")
                     .font(.caption).foregroundStyle(.secondary)
-                NavigationLink { ConstraintReviewView(store: store) } label: {
-                    Label("保留原话，核对具体训练约束", systemImage: "checklist")
+                NavigationLink { SimpleConstraintChatView(store: store) } label: {
+                    Label("这些情况，和教练聊清楚", systemImage: "checklist")
                 }.buttonStyle(.bordered).controlSize(.large)
                 Button("有或不确定，重新说明") { reopening = topic }.frame(minHeight: 44)
             }

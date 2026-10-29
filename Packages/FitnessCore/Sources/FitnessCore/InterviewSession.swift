@@ -9,7 +9,14 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     public var createdAt: Date
     public var updatedAt: Date
     public var phase: InterviewPhase
-    public var profile: StructuredProfile
+    public var profile: StructuredProfile {
+        didSet {
+            if profile.restrictions.value != oldValue.restrictions.value {
+                constraintChat?.candidateEvidenceCount = nil
+                constraintChat?.setPainFree(nil)
+            }
+        }
+    }
     public var turns: [InterviewTurn]
     /// Topics the user chose to skip. Only an explicit reopen action makes them eligible again.
     public var declinedTopics: Set<InterviewTopic>
@@ -20,6 +27,8 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     public var archivedTurns: [InterviewTurn]?
     public var pausedAt: Date?
     public var reopenedTopicOffsets: [String: Int]?
+    /// Unfinished attention-to-training dialogue survives closing the screen and app relaunch.
+    public var constraintChat: ConstraintChatSession?
 
     public init(id: UUID = UUID(), createdAt: Date = Date(), updatedAt: Date? = nil,
                 phase: InterviewPhase = .inProgress, profile: StructuredProfile = StructuredProfile(),
@@ -27,13 +36,14 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
                 rulesVersion: String = InterviewRules.rulesVersion,
                 appliedPlanVersionID: UUID? = nil, narratives: [InterviewNarrative]? = nil,
                 archivedTurns: [InterviewTurn]? = nil, pausedAt: Date? = nil,
-                reopenedTopicOffsets: [String: Int]? = nil) {
+                reopenedTopicOffsets: [String: Int]? = nil, constraintChat: ConstraintChatSession? = nil) {
         self.id = id; self.createdAt = createdAt; self.updatedAt = updatedAt ?? createdAt
         self.phase = phase; self.profile = profile; self.turns = turns
         self.declinedTopics = declinedTopics; self.rulesVersion = rulesVersion
         self.appliedPlanVersionID = appliedPlanVersionID
         self.narratives = narratives; self.archivedTurns = archivedTurns; self.pausedAt = pausedAt
         self.reopenedTopicOffsets = reopenedTopicOffsets
+        self.constraintChat = constraintChat
     }
 
     // MARK: - Queries
@@ -246,6 +256,18 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         draft.phase = draft.derivedPhase
         try draft.validate()
         self = draft
+    }
+
+    /// Confirms exactly the facts the user has just read. An async new inference invalidates that view.
+    public mutating func confirmVisibleInferences(_ topics: [InterviewTopic], at date: Date = Date()) throws {
+        try CoreValidation.date(date, name: "核对资料时间")
+        try CoreValidation.unique(topics, name: "本次可见的待核对资料")
+        guard Set(topics) == Set(pendingInferences), date >= updatedAt else {
+            throw CoreError.invalidState("待核对资料已更新，请查看最新内容后再确认。")
+        }
+        var draft = self
+        for topic in topics { try draft.confirmInference(topic, accept: true, at: date) }
+        try draft.validate(); self = draft
     }
 
     /// The user edits one field directly. Editing always yields a confirmed value.
@@ -563,6 +585,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         }
         try profile.validate()
         if let pausedAt { try CoreValidation.date(pausedAt, name: "暂停时间") }
+        try constraintChat?.validate()
         guard (archivedTurns ?? []).count <= InterviewRules.maximumArchivedTurns,
               (narratives ?? []).count <= InterviewRules.maximumNarratives else { throw CoreError.invalidInput("访谈归档或叙述数量超出上限。") }
         for entry in narratives ?? [] { try entry.validate() }
