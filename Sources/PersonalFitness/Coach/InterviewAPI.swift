@@ -14,6 +14,7 @@ struct InterviewAPI: Sendable {
     首先回应用户自己的目标/现状，优先询问影响安全与可执行性的未知条件，再问目标具体程度、实际能力、器械重量/场地、时间变化、偏好、睡眠活动和坚持困难。
     年龄/身高/体重是可选资料，不知道或跳过不应妨碍其余访谈。不要诊断疾病、索取无关身份资料、推测健康指标、处方公斤数或直接生成计划。
     每轮只问1至2问，每题具体且只问一件事，允许不知道或跳过；不要重复closedQuestionKeys里已处理的问题。
+    由你主动选择下一步值得问的细节，用户不负责找话题。即使没有新增本人叙述，也要根据已保存资料继续提出具体问题，不用“还有想补充的吗”“你想聊什么”代替提问；没有值得继续问的新事项时才返回空questions，不能编造问题凑数。
     基础问题使用detailKey=null。已回答主题仍可深入，但必须使用新的稳定key：topic.具体细节英文名，例如capability.push_up_form、primaryGoal.specific_outcome。
     同一个细节不能换key反复追问。declinedTopics是本人不愿继续的主题，不追问，除非本人重新开放。全部基础字段已知时仍可以提出有价值的新细节，用户自己决定暂停或先核对计划。
     自然回答不得当作枚举rawValue直接写入：用户说减脂/塑形/器械名称时，保留其原话，可在extractions中提出规范映射，等待本人确认。
@@ -36,7 +37,7 @@ struct InterviewAPI: Sendable {
         let muscle: String
     }
     struct Request: Encodable {
-        let promptVersion = "adaptive-interview-3"
+        let promptVersion = "adaptive-interview-4"
         let rulesVersion: String
         let phase: String
         let openTopics: [String]

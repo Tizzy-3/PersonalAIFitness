@@ -38,6 +38,29 @@ final class InterviewRepairClientTests: XCTestCase {
         return InterviewAPI(client: CoachHTTPClient(session: URLSession(configuration: configuration)))
     }
     @MainActor
+    func testAIAsksARealFirstQuestionWithoutAnyUserIntroduction() async throws {
+        InterviewRepairProtocol.fixture.reset([#"{"questions":[{"topic":"capability","kind":"text","prompt":"你现在能连续步行多久？"}],"extractions":[],"note":"我先来问，你只需回答。"}"#])
+        let session = InterviewSession()
+        let turn = try await api().nextTurn(session: session, configuration: .init(endpoint: "https://fixture.example/chat/completions", model: "fixture"), key: "fixture-token")
+        XCTAssertEqual(turn.questions.first?.prompt, "你现在能连续步行多久？")
+        XCTAssertTrue((session.narratives ?? []).isEmpty)
+        XCTAssertEqual(InterviewRepairProtocol.fixture.requests().count, 1)
+    }
+    @MainActor
+    func testAIReceivesExistingFactsAndProactivelyDeepensWithoutNewNarrative() async throws {
+        InterviewRepairProtocol.fixture.reset([#"{"questions":[{"topic":"capability","kind":"text","prompt":"你刚才说能走20分钟，最后几分钟感觉怎样？","detailKey":"capability.walking_effort"}],"extractions":[],"note":"我继续问一个具体细节。"}"#])
+        var session = InterviewSession()
+        let first = InterviewQuestion(topic: .capability, kind: .text, prompt: "能连续步行多久？")
+        try session.appendTurn(.init(questions: [first]))
+        try session.answer([.init(questionID: first.id, text: "SYNTHETIC-WALK-20-MINUTES", answeredAt: Date())])
+        let turn = try await api().nextTurn(session: session, configuration: .init(endpoint: "https://fixture.example/chat/completions", model: "fixture"), key: "fixture-token")
+        XCTAssertEqual(turn.questions.first?.detailKey, "capability.walking_effort")
+        let body = try XCTUnwrap(InterviewRepairProtocol.fixture.requests().first)
+        XCTAssertTrue(String(decoding: body, as: UTF8.self).contains("SYNTHETIC-WALK-20-MINUTES"))
+        XCTAssertTrue((session.narratives ?? []).isEmpty)
+        XCTAssertEqual(InterviewRepairProtocol.fixture.requests().count, 1)
+    }
+    @MainActor
     func testMalformedReplyGetsOneCorrectionWithoutForwardingPrivateRawReply() async throws {
         InterviewRepairProtocol.fixture.reset(["PRIVATE_BAD_REPLY", #"{"questions":[],"note":"继续了解"}"#])
         let turn = try await api().nextTurn(session: InterviewSession(), configuration: .init(endpoint: "https://fixture.example/chat/completions", model: "fixture"), key: "fixture-token")

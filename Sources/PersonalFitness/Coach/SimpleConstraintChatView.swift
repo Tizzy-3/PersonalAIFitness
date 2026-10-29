@@ -15,6 +15,7 @@ struct SimpleConstraintChatView: View {
     @State private var notice: String?
     @State private var loaded = false
     @State private var editing = false
+    @State private var automaticInquiryStarted = false
 
     private var chat: ConstraintChatSession? { store.interview?.constraintChat }
     private var latestCandidate: ConstraintChatCandidate? {
@@ -183,7 +184,7 @@ struct SimpleConstraintChatView: View {
         } else if editing {
             Text("还想改哪一点？直接在下面告诉教练。").font(.headline)
         } else if chat?.messages.isEmpty == false {
-            Text("你的话已保存。点“发给教练”可以接着聊。").foregroundStyle(.secondary)
+            Text("你的话已保存。不用再想话题，可以请教练根据已有资料继续问。").foregroundStyle(.secondary)
         }
     }
 
@@ -202,7 +203,7 @@ struct SimpleConstraintChatView: View {
                 Button("先停一下") { cancelRequest(); notice = "原话已保存，下次可以接着聊。" }
                     .frame(maxWidth: .infinity, minHeight: 44)
             } else {
-                Button("发给教练") { send() }.buttonStyle(FitnessPrimaryButtonStyle())
+                Button(trimmedInput.isEmpty ? "请教练根据已有资料继续问" : "发给教练") { send() }.buttonStyle(FitnessPrimaryButtonStyle())
                     .disabled(configuration == nil || (!hasSavedEvidence && trimmedInput.isEmpty))
             }
         }.padding(16).background(FitnessTheme.surface)
@@ -229,6 +230,11 @@ struct SimpleConstraintChatView: View {
             session.constraintChat = conversation
             try store.saveInterview(session)
             loaded = true
+            if !automaticInquiryStarted && !isIsolatedReadbackCapture && configuration != nil
+                && latestCandidate == nil && hasSavedEvidence {
+                automaticInquiryStarted = true
+                send()
+            }
         } catch { issue = error.localizedDescription }
     }
 

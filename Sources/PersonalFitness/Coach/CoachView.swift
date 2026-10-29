@@ -82,8 +82,13 @@ struct CoachView: View {
                 }
             }
             NavigationLink { CoachInterviewView(store: store) } label: {
-                Label(store.interview == nil ? "和教练聊聊" : "继续和教练聊", systemImage: "bubble.left.and.bubble.right")
+                Label("生成训练计划", systemImage: "calendar.badge.plus")
             }.buttonStyle(FitnessPrimaryButtonStyle())
+            Text("需要补资料时，AI会主动问你。你只需回答，不用自己想话题。进入后会把已存档案和对话发给你配置的AI。")
+                .font(.caption).foregroundStyle(.secondary)
+            NavigationLink { CoachInterviewView(store: store, continueInDepth: true) } label: {
+                Label("让教练继续问我", systemImage: "bubble.left.and.bubble.right")
+            }.frame(minHeight: 44)
             NavigationLink { CoachProfileReviewView(store: store) } label: {
                 HStack {
                     Text("核对我的训练档案").font(.subheadline.weight(.medium))

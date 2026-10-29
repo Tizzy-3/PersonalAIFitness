@@ -18,11 +18,24 @@ struct CoachInterviewView: View {
     @State private var ownWords = ""
     @State private var formatDiagnostic: String?
     @State private var reviewingEarly = false
+    @State private var deepeningInterview = false
+    @State private var guidanceStarted = false
+    @State private var clarifyingLimits = false
+    @State private var planAfterSkipping = false
+
+    init(store: TrainingStore, continueInDepth: Bool = false) {
+        self.store = store
+        _deepeningInterview = State(initialValue: continueInDepth)
+    }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 18) {
                 if configuration == nil { availabilitySection }
+                if request != nil {
+                    HStack { ProgressView(); Text("教练正在根据已有资料思考…").font(.footnote)
+                        Spacer(); Button("取消") { request?.cancel() }.frame(minHeight: 44) }
+                }
                 if let session {
                     if let note = session.latestTurn?.note, !note.isEmpty {
                         Text(note).font(.title3.weight(.medium)).padding(.vertical, 4)
@@ -34,12 +47,9 @@ struct CoachInterviewView: View {
                     } else if session.profile.isReadyForPlanning {
                         planSection(session)
                     } else {
-                        selfDescriptionSection
                         progressSection(session)
                     }
-                    if !(session.narratives ?? []).isEmpty || !session.unansweredQuestions.isEmpty || !session.pendingInferences.isEmpty || session.profile.isReadyForPlanning {
-                        DisclosureGroup("还有想补充的？") { selfDescriptionSection }
-                    }
+                    DisclosureGroup("我也想主动补充一些情况") { selfDescriptionSection }
                 }
                 if let formatDiagnostic { diagnosticSection(formatDiagnostic) }
                 if let unsavedPlan {
@@ -80,6 +90,17 @@ struct CoachInterviewView: View {
         .navigationDestination(item: $draftRoute) { route in
             PlanningDraftDetailView(store: store, draftID: route.id)
         }
+        .navigationDestination(isPresented: $clarifyingLimits) { SimpleConstraintChatView(store: store) }
+        .safeAreaInset(edge: .bottom) {
+            if let session {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(planHint(session)).font(.caption).foregroundStyle(.secondary)
+                    Button(request == nil ? "生成训练计划" : "教练正在处理…") { requestPlan() }
+                        .buttonStyle(FitnessPrimaryButtonStyle())
+                        .disabled(request != nil || configuration == nil || unsavedPlan != nil)
+                }.padding(16).background(FitnessTheme.surface)
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { CoachProfileReviewView(store: store) } label: {
@@ -92,7 +113,7 @@ struct CoachInterviewView: View {
         .onDisappear { request?.cancel() }
         .confirmationDialog("先跳过本轮未回答问题并核对计划？", isPresented: $reviewingEarly, titleVisibility: .visible) {
             Button("跳过本轮，先核对") { skipForReview() }
-            Button("继续回答", role: .cancel) { }
+            Button("继续回答", role: .cancel) { planAfterSkipping = false }
         } message: { Text("这些问题会明确记录为跳过，不猜测答案。关键安全资料或待确认推断仍须本人核对，计划不会自动生效。") }
         .fitnessError($issue)
     }
@@ -160,6 +181,7 @@ struct CoachInterviewView: View {
             try current.skipUnansweredForReview(); try store.saveInterview(current)
             session = store.interview; draft = AnswerDraft()
             status = "本轮剩余问题已明确记为跳过。可先核对档案；基础条件齐备且无待确认项后，可制定保守首版计划。"
+            if planAfterSkipping { planAfterSkipping = false; requestPlan() }
         } catch { issue = error.localizedDescription }
     }
 
@@ -193,11 +215,11 @@ struct CoachInterviewView: View {
         CoachPanel {
             if session.pausedAt != nil {
                 Text("聊天已暂停，你说过的都保留着。")
-                Button("继续和教练聊") { setPaused(false) }
+                Button("恢复教练提问") { setPaused(false); advanceAfterReply() }
                     .buttonStyle(FitnessPrimaryButtonStyle())
             } else {
                 Button { Task { await askNext() } } label: {
-                    Label(request == nil ? "让教练接着问" : "教练正在回复…", systemImage: "bubble.left.and.bubble.right")
+                    Label(request == nil ? "请教练根据已有资料提问" : "教练正在回复…", systemImage: "bubble.left.and.bubble.right")
                 }.buttonStyle(FitnessPrimaryButtonStyle())
                     .disabled(configuration == nil || request != nil || !session.canContinueInterview)
             }
@@ -273,9 +295,7 @@ struct CoachInterviewView: View {
             try current.confirmVisibleInferences(topics, at: Date())
             try store.saveInterview(current)
             session = store.interview
-            if !current.profile.isReadyForPlanning && current.unansweredQuestions.isEmpty {
-                Task { await askNext() }
-            }
+            advanceAfterReply()
         } catch { issue = error.localizedDescription }
     }
 
@@ -293,14 +313,13 @@ struct CoachInterviewView: View {
             if eligibility.canGenerate {
                 Text("点下面按钮，会把已确认档案、你的原话和本地训练摘要发给你设置的 AI。计划需你最后确认。")
                     .font(.caption).foregroundStyle(.secondary)
-                Button { generatePlan(session) } label: { Label(request == nil ? "看看我的计划" : "正在安排…", systemImage: "calendar.badge.plus") }
-                    .buttonStyle(FitnessPrimaryButtonStyle())
-                    .disabled(request != nil || configuration == nil || unsavedPlan != nil)
-                Button("还想聊细一点") { Task { await askNext() } }
+                Text("点下方“生成训练计划”即可，不用再自己补话题。")
+                    .font(.subheadline)
+                Button("让教练继续问得更细") { deepeningInterview = true; Task { await askNext() } }
                     .frame(minHeight: 44)
                     .disabled(request != nil || configuration == nil || !session.canContinueInterview)
             } else if eligibility.needsConstraintReview {
-                NavigationLink { SimpleConstraintChatView(store: store) } label: { Label("继续和教练聊", systemImage: "bubble.left.and.bubble.right") }
+                NavigationLink { SimpleConstraintChatView(store: store) } label: { Label("让教练主动问清注意事项", systemImage: "bubble.left.and.bubble.right") }
                     .buttonStyle(FitnessPrimaryButtonStyle())
             }
         }
@@ -325,6 +344,53 @@ struct CoachInterviewView: View {
 
     // MARK: - Actions
 
+    private func nextStep() -> InterviewGuidanceStep {
+        guard let current = store.interview ?? session else { return .askCoach }
+        do {
+            return current.nextGuidanceStep(legacyRestrictions: store.profile.restrictions, snapshot: try store.snapshot())
+        } catch { return .blocked("暂时无法读取已有资料，请稍后重试。") }
+    }
+
+    private func planHint(_ session: InterviewSession) -> String {
+        switch nextStep() {
+        case .readyForPlan: return "使用已确认资料和训练摘要，请你配置的AI安排；你最后确认后才生效。"
+        case .reviewFacts: return "先核对教练整理的重点，再生成。"
+        case .answerQuestions: return session.profile.isReadyForPlanning
+            ? "可继续回答，也可先按已确认资料安排第一版。"
+            : "回答教练的问题后会自动继续，不需要你自己想话题。"
+        case .clarifyLimits: return "教练还需主动问清训练注意事项，核对后即可继续。"
+        case .askCoach: return "资料还不够时，由教练主动问你。"
+        case .resume: return "聊天已暂停；恢复后继续已保存的问题。"
+        case .blocked(let reason): return reason
+        }
+    }
+
+    private func requestPlan() {
+        guard request == nil, let current = store.interview else { return }
+        deepeningInterview = false
+        planAfterSkipping = false
+        switch nextStep() {
+        case .readyForPlan: generatePlan(current)
+        case .clarifyLimits: clarifyingLimits = true
+        case .askCoach: Task { await askNext() }
+        case .reviewFacts: status = "请先核对上方“我理解得对吗？”中的重点。"
+        case .answerQuestions:
+            if current.profile.isReadyForPlanning { planAfterSkipping = true; reviewingEarly = true }
+            else { status = "先回答教练正在问的具体问题。回答后会自动继续。" }
+        case .resume: setPaused(false); advanceAfterReply()
+        case .blocked(let reason): issue = reason
+        }
+    }
+
+    private func advanceAfterReply() {
+        switch nextStep() {
+        case .askCoach: Task { await askNext() }
+        case .readyForPlan where deepeningInterview: Task { await askNext() }
+        case .clarifyLimits: clarifyingLimits = true
+        default: break
+        }
+    }
+
     private func prepare() async {
         do {
             configuration = try AIConfigurationStorage.load()
@@ -333,6 +399,12 @@ struct CoachInterviewView: View {
         }
         do {
             session = try store.startInterview()
+            if configuration != nil && !guidanceStarted {
+                guidanceStarted = true
+                let step = nextStep()
+                if step == .clarifyLimits { clarifyingLimits = true }
+                else if step.shouldAskOnEntry(continueInDepth: deepeningInterview) { await askNext() }
+            }
         } catch {
             issue = error.localizedDescription
         }
@@ -393,9 +465,7 @@ struct CoachInterviewView: View {
             try store.saveInterview(current)
             session = store.interview
             draft = AnswerDraft()
-            if current.unansweredQuestions.isEmpty && current.pendingInferences.isEmpty && !current.profile.isReadyForPlanning {
-                Task { await askNext() }
-            }
+            advanceAfterReply()
         } catch {
             issue = error.localizedDescription
         }
