@@ -39,6 +39,12 @@ final class SimpleCoachPersistenceTests: XCTestCase {
         var session = try conversation(store, at: date)
         var chat = try XCTUnwrap(session.constraintChat)
         let original = session.profile.restrictions.value
+        // Match the UI's specific visible classification/health replies. General new narratives
+        // invalidate the candidate; only these human answers reattach the same reviewed content.
+        try session.addNarrative("本人选择偏好和时间原因", at: date)
+        session.constraintChat = chat
+        try session.addNarrative("本人回答当前没有疼痛或异常不适", at: date)
+        session.constraintChat = chat
         try session.confirmConstraintReview(chat.makeReview(at: date), at: date)
         chat.confirmedAt = date; session.constraintChat = chat
         try store.saveInterview(session)
@@ -46,6 +52,22 @@ final class SimpleCoachPersistenceTests: XCTestCase {
         XCTAssertEqual(store.interview?.profile.constraintReview?.excludedWeekdays, [5])
         XCTAssertEqual(store.interview?.profile.constraintReview?.maxSessionMinutes, 25)
         XCTAssertTrue(store.planVersions.isEmpty)
+        XCTAssertTrue(store.weeklyPrograms.isEmpty)
+    }
+
+    @MainActor func testAnOutsideIntroductionInvalidatesPersistedReadbackWithoutLosingConversation() throws {
+        let date = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        let store = try TrainingStore(inMemory: true)
+        let session = try conversation(store, at: date)
+        try store.saveInterview(session)
+        var changed = try XCTUnwrap(store.interview)
+        try changed.addNarrative("补充：周六也另有安排", at: date.addingTimeInterval(1))
+        try store.saveInterview(changed)
+        let saved = try XCTUnwrap(store.interview?.constraintChat)
+        XCTAssertEqual(saved.messages, session.constraintChat?.messages)
+        XCTAssertNil(saved.candidateEvidenceCount)
+        XCTAssertNil(saved.painFree)
+        XCTAssertThrowsError(try saved.makeReview(at: date.addingTimeInterval(2)))
         XCTAssertTrue(store.weeklyPrograms.isEmpty)
     }
 

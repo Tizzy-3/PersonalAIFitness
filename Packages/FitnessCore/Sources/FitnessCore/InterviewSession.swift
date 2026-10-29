@@ -127,6 +127,10 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         var entries = draft.narratives ?? []
         guard entries.count < InterviewRules.maximumNarratives else { throw CoreError.invalidState("补充叙述已达本次保存上限，原记录仍保留。") }
         entries.append(entry); draft.narratives = entries
+        // A new explanation elsewhere in the app is new evidence too. Keep the conversation,
+        // but never let its earlier interpretation silently cover the additional information.
+        draft.constraintChat?.candidateEvidenceCount = nil
+        draft.constraintChat?.setPainFree(nil)
         draft.updatedAt = date; draft.rulesVersion = InterviewRules.rulesVersion
         try draft.validate(); self = draft
     }

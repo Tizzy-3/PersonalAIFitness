@@ -237,8 +237,9 @@ struct SimpleConstraintChatView: View {
             guard var session = store.interview, var conversation = session.constraintChat,
                   sourcesMatch(conversation) else { throw CoreError.invalidState("注意事项有更新，请返回后重新打开。") }
             conversation.setMode(mode)
-            session.constraintChat = conversation
             try session.addNarrative(text)
+            // This exact, visible human classification applies to the current readback.
+            session.constraintChat = conversation
             try store.saveInterview(session)
         } catch { issue = error.localizedDescription }
     }
@@ -249,8 +250,8 @@ struct SimpleConstraintChatView: View {
                   sourcesMatch(conversation) else { throw CoreError.invalidState("注意事项有更新，请返回后重新打开。") }
             let date = Date()
             conversation.setPainFree(value, at: date)
-            session.constraintChat = conversation
             try session.addNarrative(value ? "本人确认现在没有疼痛或异常不适。" : "本人表示现在有疼痛、其他不适或不能确定。", at: date)
+            session.constraintChat = conversation
             try store.saveInterview(session)
         } catch { issue = error.localizedDescription }
     }

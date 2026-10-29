@@ -26,6 +26,19 @@ final class SimpleCoachConversationTests: XCTestCase {
         XCTAssertEqual(try restored.constraintChat?.makeReview(at: now).sourceText, chat.sourceText)
     }
 
+    func testAdditionalNarrativeOutsideThisChatInvalidatesItsOldReadback() throws {
+        var session = InterviewSession(createdAt: now.addingTimeInterval(-60))
+        let chat = try ready()
+        session.profile.restrictions = .init(value: chat.sourceText, provenance: .stated, confirmedAt: now)
+        session.constraintChat = chat
+        try session.addNarrative("另一个页面补充：周六也需要休息", at: now.addingTimeInterval(1))
+        XCTAssertEqual(session.constraintChat?.messages, chat.messages)
+        XCTAssertEqual(session.constraintChat?.candidate, chat.candidate)
+        XCTAssertNil(session.constraintChat?.candidateEvidenceCount)
+        XCTAssertNil(session.constraintChat?.painFree)
+        XCTAssertThrowsError(try XCTUnwrap(session.constraintChat).makeReview(at: now.addingTimeInterval(2)))
+    }
+
     func testClosingWithoutConfirmationLeavesOnlyDraftAndNoActiveReview() throws {
         let chat = try ready()
         let session = InterviewSession(createdAt: now, constraintChat: chat)
