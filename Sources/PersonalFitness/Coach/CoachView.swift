@@ -19,23 +19,39 @@ struct CoachView: View {
     @State private var unsavedTurn: CoachTurn?
     @State private var issue: String?
     @State private var status: String?
+    @State private var askingQuestions = false
 
     init(store: TrainingStore, initialQuestion: String = "") {
         self.store = store
         _question = State(initialValue: initialQuestion)
+        _askingQuestions = State(initialValue: !initialQuestion.isEmpty)
     }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 22) {
                 onboardingCard
-                dailyCard
-                planningCard
-                questionCard
-                if request == nil && unsavedTurn == nil { promptsCard }
+                if let program = store.currentWeeklyProgram {
+                    NavigationLink { WeeklyProgramDetailView(store: store, programID: program.id) } label: {
+                        CoachNavigationLabel(title: "我的训练计划", subtitle: "看看这周怎么练", symbol: "calendar", color: FitnessTheme.accent)
+                    }.buttonStyle(.plain)
+                }
+                if store.pendingAdjustment != nil {
+                    NavigationLink { AdjustmentReviewView(store: store) } label: {
+                        CoachNavigationLabel(title: "教练有个调整建议", subtitle: "看看原因，再由你决定", symbol: "arrow.triangle.2.circlepath", color: FitnessTheme.violet)
+                    }.buttonStyle(.plain)
+                }
+                DisclosureGroup("今天的状态与复盘") { dailyCard.padding(.top, 12) }
+                DisclosureGroup("想单独问教练", isExpanded: $askingQuestions) {
+                    questionCard.padding(.top, 12)
+                    if request == nil && unsavedTurn == nil { promptsCard }
+                }
                 if let turn = unsavedTurn { unsavedCard(turn) }
-                historyCard
-                scopeCard
+                DisclosureGroup("更多：手动安排与聊天记录") {
+                    planningCard.padding(.top, 12)
+                    historyCard
+                    scopeCard
+                }
             }.padding(.horizontal, 18).padding(.vertical, 16)
         }
         .background(FitnessTheme.canvas)
@@ -63,14 +79,6 @@ struct CoachView: View {
                     Text("先了解你，再安排训练").font(.title3.weight(.semibold))
                     Text("从目标、身体情况与实际条件开始，一起建立适合你的计划。")
                         .font(.subheadline).foregroundStyle(.secondary)
-                }
-            }
-            if let interview = store.interview {
-                HStack {
-                    CoachStatusPill(text: interview.phase.title, color: FitnessTheme.violet)
-                    Spacer(minLength: 8)
-                    Text("已确认 \(interview.profile.answeredTopics.count) 项资料")
-                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
             NavigationLink { CoachInterviewView(store: store) } label: {
