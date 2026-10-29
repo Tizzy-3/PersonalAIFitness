@@ -21,9 +21,9 @@ public enum PlanningExperience: String, CaseIterable, Codable, Sendable {
 }
 
 public enum PlanningSafety: String, CaseIterable, Codable, Sendable {
-    case unknown, noKnownRestrictions, hasRestrictions, acuteSymptoms
+    case unknown, noKnownRestrictions, hasRestrictions, acuteSymptoms, reviewedConstraints
     public var title: String {
-        switch self { case .unknown: return "尚未确认"; case .noKnownRestrictions: return "无已知运动限制"; case .hasRestrictions: return "存在伤病或运动限制"; case .acuteSymptoms: return "存在急性或异常不适" }
+        switch self { case .reviewedConstraints: return "已核对可执行训练约束"; case .unknown: return "尚未确认"; case .noKnownRestrictions: return "无已知运动限制"; case .hasRestrictions: return "存在伤病或运动限制"; case .acuteSymptoms: return "存在急性或异常不适" }
     }
 }
 
@@ -54,19 +54,30 @@ public struct PlanningInput: Codable, Equatable, Sendable {
     public var excludedExerciseIDs: [String]
     public var completedSessionsLast28Days: Int
     public var daysSinceLastTraining: Int?
+    public var constraintReview: TrainingConstraintReview?
 
     public init(goal: PlanningGoal, experience: PlanningExperience, weekdays: [Int], minutesPerSession: Int,
                 equipment: Set<PlanningEquipment>, adultConfirmed: Bool, safety: PlanningSafety, painToday: Bool?,
-                excludedExerciseIDs: [String] = [], completedSessionsLast28Days: Int = 0, daysSinceLastTraining: Int? = nil) {
+                excludedExerciseIDs: [String] = [], completedSessionsLast28Days: Int = 0, daysSinceLastTraining: Int? = nil,
+                constraintReview: TrainingConstraintReview? = nil) {
         self.goal = goal; self.experience = experience; self.weekdays = weekdays.sorted()
         self.minutesPerSession = minutesPerSession; self.equipment = equipment; self.adultConfirmed = adultConfirmed
         self.safety = safety; self.painToday = painToday; self.excludedExerciseIDs = excludedExerciseIDs.sorted()
         self.completedSessionsLast28Days = completedSessionsLast28Days; self.daysSinceLastTraining = daysSinceLastTraining
+        self.constraintReview = constraintReview
     }
 
     public func validate() throws {
         guard adultConfirmed else { throw CoreError.invalidInput("本批自动计划仅面向已明确确认年满18岁的健康成人。未确认时仍可手动记录。") }
-        guard safety == .noKnownRestrictions else {
+        if let review = constraintReview {
+            try review.validate()
+            guard safety == .reviewedConstraints, Set(weekdays).isDisjoint(with: review.excludedWeekdays),
+                  Set(review.effectiveExcludedExerciseIDs).isSubset(of: Set(excludedExerciseIDs)),
+                  minutesPerSession <= (review.maxSessionMinutes ?? 120) else {
+                throw CoreError.invalidInput("计划输入未执行已确认的动作、休息日或时长约束。")
+            }
+        }
+        guard safety == .noKnownRestrictions || (safety == .reviewedConstraints && constraintReview != nil) else {
             throw CoreError.invalidInput(safety == .acuteSymptoms ? "存在急性或异常不适时不生成训练处方，请先停止相关活动并寻求适当专业帮助。" : "请先明确运动限制；存在伤病/限制时，本批不自动安排，仍可按专业建议手动编辑。")
         }
         guard painToday == false else { throw CoreError.invalidInput("请明确今日没有疼痛或异常不适；未知或有不适时不自动制定训练计划。") }
@@ -179,6 +190,7 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
     public static func make(input: PlanningInput, snapshot: AppSnapshot, at: Date = Date()) throws -> PlanningDraft {
         try CoreValidation.date(at, name: "计划草案时间")
         try snapshot.validate()
+        try input.validateCurrentSafety(snapshot: snapshot, at: at)
         try validateProfile(snapshot.profile, input: input, at: at)
         let normalized = normalizedHistory(input: input, snapshot: snapshot, at: at)
         try normalized.validate()
@@ -199,6 +211,7 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
                             at: Date = Date()) throws -> PlanningDraft {
         try CoreValidation.date(at, name: "计划草案时间")
         try snapshot.validate()
+        try input.validateCurrentSafety(snapshot: snapshot, at: at)
         try validateProfile(snapshot.profile, input: input, at: at)
         let normalized = normalizedHistory(input: input, snapshot: snapshot, at: at)
         try normalized.validate()
@@ -244,7 +257,7 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
         if isProfileFitted { try options[0].validate(input: input) }
         if let personalization {
             try personalization.profile.validate()
-            var expected = try personalization.profile.planningInput()
+            var expected = try personalization.profile.planningInput(at: createdAt)
             expected.completedSessionsLast28Days = input.completedSessionsLast28Days
             expected.daysSinceLastTraining = input.daysSinceLastTraining
             guard personalization.promptVersion == "personalized-plan-1", isProfileFitted,
@@ -280,14 +293,10 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
         return result
     }
 
-    private static func validateProfile(_ profile: PersonalProfile, input: PlanningInput, at: Date) throws {
+    static func validateProfile(_ profile: PersonalProfile, input: PlanningInput, at: Date) throws {
         try profile.validate()
         try input.validate()
-        let restrictions = profile.restrictions.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let noRestrictionDeclarations = Set(["", "无", "无已知限制", "无运动限制", "没有已知限制", "none"])
-        guard noRestrictionDeclarations.contains(restrictions) else {
-            throw CoreError.invalidInput("档案仍记有运动限制，不能用本次无已知限制声明覆盖。请先核对档案，或按专业建议手动创建。")
-        }
+        try input.validateLegacyRestrictions(profile.restrictions, at: at)
         if let year = profile.birthYear {
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(secondsFromGMT: 0)!

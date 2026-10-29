@@ -98,6 +98,7 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
     public var preferredExerciseIDs: ProfileField<[String]>
     public var excludedExerciseIDs: ProfileField<[String]>
     public var restrictions: ProfileField<String>
+    public var constraintReview: TrainingConstraintReview?
     public var sleepNote: ProfileField<String>
     public var dailyActivityNote: ProfileField<String>
     public var adherenceBarriers: ProfileField<String>
@@ -191,11 +192,13 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
         }
     }
 
+    /// Compatibility query for complete essential facts. Generation eligibility also needs the
+    /// restriction review, original-profile checks and current safety evidence; use the session query.
     public var isReadyForPlanning: Bool { missingRequiredTopics.isEmpty }
 
     /// Converts only user-backed values into the existing deterministic planning input. An unknown
     /// or unconfirmed value is reported, never filled in.
-    public func planningInput() throws -> PlanningInput {
+    public func planningInput(at date: Date = Date()) throws -> PlanningInput {
         try validate()
         let missing = missingRequiredTopics
         guard missing.isEmpty else {
@@ -215,24 +218,31 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
         if ageYears.isUsable, let age = ageYears.value, age < 18 {
             throw CoreError.invalidState("已记录的年龄未满18岁，不能自动制定成人训练计划。")
         }
-        let input = PlanningInput(goal: goal, experience: experience, weekdays: days.sorted(),
-                                  minutesPerSession: minutes, equipment: Set(gear),
-                                  adultConfirmed: adult, safety: .noKnownRestrictions,
+        if let review = constraintReview {
+            try review.validate()
+            guard review.sourceText == restrictionText, review.isFresh(at: date) else {
+                throw CoreError.invalidInput("限制原文或今日状态已变化，请重新核对训练约束。")
+            }
+        }
+        let input = PlanningInput(goal: goal, experience: experience, weekdays: days.filter { !(constraintReview?.excludedWeekdays.contains($0) ?? false) }.sorted(),
+                                  minutesPerSession: min(minutes, constraintReview?.maxSessionMinutes ?? minutes), equipment: Set(gear),
+                                  adultConfirmed: adult, safety: constraintReview == nil ? .noKnownRestrictions : .reviewedConstraints,
                                   painToday: false,
-                                  excludedExerciseIDs: excludedExerciseIDs.value ?? [],
-                                  completedSessionsLast28Days: 0, daysSinceLastTraining: nil)
+                                  excludedExerciseIDs: Array(Set((excludedExerciseIDs.value ?? []) + (constraintReview?.effectiveExcludedExerciseIDs ?? []))).sorted(),
+                                  completedSessionsLast28Days: 0, daysSinceLastTraining: nil, constraintReview: constraintReview)
         try input.validate()
         // The deterministic engine already refuses a profile that records restrictions; surface the
         // same rule here so the caller gets one clear message instead of two different ones.
         let normalized = restrictionText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let noRestriction = Set(["无", "无已知限制", "无运动限制", "没有已知限制", "none"])
-        guard noRestriction.contains(normalized) else {
-            throw CoreError.invalidInput("档案里记有运动限制，不能自动生成计划。请按专业建议手动创建。")
+        guard constraintReview != nil || noRestriction.contains(normalized) else {
+            throw CoreError.invalidInput("资料已齐全，还需核对限制：请保留原文，明确动作、日期和当前状态后再生成。")
         }
         return input
     }
 
     public func validate() throws {
+        try constraintReview?.validate()
         try ageYears.validate(name: "年龄")
         try heightCM.validate(name: "身高")
         try weightKG.validate(name: "体重")
@@ -289,12 +299,13 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case ageYears, heightCM, weightKG
+        case ageYears, heightCM, weightKG, constraintReview
         case adultStatus, primaryGoal, secondaryGoals, experience, capabilityNote, weekdays, minutesPerSession, equipment, equipmentLoads, venue, preferredExerciseIDs, excludedExerciseIDs, restrictions, sleepNote, dailyActivityNote, adherenceBarriers
     }
     public init(from decoder: Decoder) throws {
         self.init()
         let values = try decoder.container(keyedBy: CodingKeys.self)
+        constraintReview = try values.decodeIfPresent(TrainingConstraintReview.self, forKey: .constraintReview)
         ageYears = try values.decodeIfPresent(ProfileField<Int>.self, forKey: .ageYears) ?? .unknown
         heightCM = try values.decodeIfPresent(ProfileField<Double>.self, forKey: .heightCM) ?? .unknown
         weightKG = try values.decodeIfPresent(ProfileField<Double>.self, forKey: .weightKG) ?? .unknown

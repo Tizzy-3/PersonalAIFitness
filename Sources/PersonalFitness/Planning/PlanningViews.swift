@@ -71,6 +71,9 @@ struct WeeklyProgramDetailView: View {
     var body: some View {
         List {
             if let program, let option = program.selectedOption {
+                if let review = program.draft.input.constraintReview {
+                    PlanningConstraintSummary(review: review)
+                }
                 Section("已确认周计划") {
                     Text(option.title).font(.headline)
                     Text(program.confirmedAt, format: .dateTime.year().month().day().hour().minute())

@@ -27,7 +27,9 @@ struct PersonalFitnessApp: App {
                 UserDefaults.standard.set(false, forKey: "fitness.separateStoreChosen")
             }
             #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("--capture-workout") {
+            if ConstraintValidationData.isActive {
+                _store = State(initialValue: try ConstraintValidationData.makeStore())
+            } else if ProcessInfo.processInfo.arguments.contains("--capture-workout") {
                 let isolated = try TrainingStore(inMemory: true)
                 if let exercise = isolated.allExercises.first(where: { $0.id == "builtin.barbell-bench-press" }) {
                     let plan = try isolated.confirmPlan(name: "界面验证 · 不保存", items: [.init(exercise: exercise)])

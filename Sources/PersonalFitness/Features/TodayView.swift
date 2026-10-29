@@ -126,8 +126,8 @@ struct TodayView: View {
                 Button("开始今天的训练") { start(plan) }.buttonStyle(FitnessPrimaryButtonStyle())
                 if store.currentWeeklyProgram == nil { Button("编辑计划") { editPlan(plan) }.font(.subheadline).frame(minHeight: 44) }
             } else if store.currentWeeklyProgram != nil {
-                Label("今天按计划休息", systemImage: "moon.zzz").font(.title3.weight(.semibold)).foregroundStyle(FitnessTheme.teal)
-                Text("让身体喘口气，其他训练日的安排仍在周计划里。")
+                Label(store.isConstraintRestDay() ? "今天按已确认的限制休息" : "今天按计划休息", systemImage: "moon.zzz").font(.title3.weight(.semibold)).foregroundStyle(FitnessTheme.teal)
+                Text(store.isConstraintRestDay() ? "这一天已明确排除训练。日期例外和每周休息日可在已确认周计划的约束里查看。" : "让身体喘口气，其他训练日的安排仍在周计划里。")
                     .font(.subheadline).foregroundStyle(FitnessTheme.muted)
                 Button("开始自由训练") { start(nil) }.buttonStyle(.bordered).frame(minHeight: 44)
             } else {

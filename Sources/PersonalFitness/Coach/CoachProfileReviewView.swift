@@ -92,8 +92,9 @@ struct CoachProfileReviewView: View {
             if topic == .restrictions {
                 Text("用自然语言描述也可以。制定成人计划前，请本人明确确认当前状态；这不会由AI从句子猜成没有限制。")
                     .font(.caption).foregroundStyle(.secondary)
-                Button("本人确认：目前无已知运动限制且无疼痛或异常不适") { confirmNoRestrictions() }
-                    .buttonStyle(.bordered).controlSize(.large)
+                NavigationLink { ConstraintReviewView(store: store) } label: {
+                    Label("保留原话，核对具体训练约束", systemImage: "checklist")
+                }.buttonStyle(.bordered).controlSize(.large)
                 Button("有或不确定，重新说明") { reopening = topic }.frame(minHeight: 44)
             }
             if provenance == .inferred {
@@ -120,15 +121,6 @@ struct CoachProfileReviewView: View {
         case .inferred: return FitnessTheme.orange
         case .unknown: return .secondary
         }
-    }
-
-    private func confirmNoRestrictions() {
-        guard var session = store.interview else { return }
-        do {
-            try session.setValue(.text("无"), for: .restrictions)
-            try store.saveInterview(session)
-            status = "已记录本人对当前运动限制和不适的明确确认。"
-        } catch { issue = error.localizedDescription }
     }
 
     private func confirm(_ topic: InterviewTopic, accept: Bool) {

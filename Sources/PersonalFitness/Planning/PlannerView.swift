@@ -53,7 +53,8 @@ struct PlannerView: View {
             safetySection
             Section("不安排的动作") {
                 Button("选择排除动作（\(excluded.count) 项）") { pickingExclusions = true }
-                Text("从真实动作库选择不喜欢或明确不做的动作。排除不等于已完成伤病适配；存在运动限制时，本批不自动生成。")
+                Text("从真实动作库选择不喜欢或明确不做的动作。有其他运动限制时，先到教练里核对具体动作、休息日期和适用边界，再制定受约束的安排。")
+                NavigationLink("让教练核对具体训练限制") { CoachInterviewView(store: store) }
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Section {
@@ -163,7 +164,7 @@ struct PlannerView: View {
         Section("生成前确认") {
             Toggle("我确认已年满18岁", isOn: $adultConfirmed)
             Picker("已知运动限制", selection: $safety) {
-                ForEach(PlanningSafety.allCases, id: \.self) { Text($0.title).tag($0) }
+                ForEach(PlanningSafety.allCases.filter { $0 != .reviewedConstraints }, id: \.self) { Text($0.title).tag($0) }
             }
             Picker("今天有疼痛或异常不适吗", selection: $painToday) {
                 Text("尚未确认").tag(nil as Bool?)

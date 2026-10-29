@@ -66,7 +66,7 @@ struct PlanningDraftDetailView: View {
         .fitnessError($issue)
     }
 
-    private func overview(_ draft: PlanningDraft) -> some View {
+    @ViewBuilder private func overview(_ draft: PlanningDraft) -> some View {
         Section("本次安排条件") {
             LabeledContent("目标", value: draft.input.goal.title)
             LabeledContent("经验", value: draft.input.experience.title)
@@ -78,6 +78,7 @@ struct PlanningDraftDetailView: View {
                 .font(.caption).foregroundStyle(.secondary)
             LabeledContent("草案状态", value: PlanningDisplay.decision(draft.decision))
         }
+        if let review = draft.input.constraintReview { PlanningConstraintSummary(review: review) }
     }
 
     private func requestActions(_ draft: PlanningDraft) -> some View {

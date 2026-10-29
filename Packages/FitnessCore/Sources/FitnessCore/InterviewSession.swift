@@ -57,7 +57,10 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     public var derivedPhase: InterviewPhase {
         if appliedPlanVersionID != nil { return .planConfirmed }
         if !pendingInferences.isEmpty { return .awaitingReview }
-        if profile.isReadyForPlanning { return .ready }
+        if profile.isReadyForPlanning {
+            if !needsSafetyReview, (try? profile.planningInput(at: updatedAt)) != nil { return .ready }
+            return .awaitingReview
+        }
         return .inProgress
     }
 

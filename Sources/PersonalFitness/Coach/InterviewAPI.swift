@@ -18,6 +18,7 @@ struct InterviewAPI: Sendable {
     同一个细节不能换key反复追问。declinedTopics是本人不愿继续的主题，不追问，除非本人重新开放。全部基础字段已知时仍可以提出有价值的新细节，用户自己决定暂停或先核对计划。
     自然回答不得当作枚举rawValue直接写入：用户说减脂/塑形/器械名称时，保留其原话，可在extractions中提出规范映射，等待本人确认。
     已确认字段不能被新推断覆盖。pendingInferences不是事实，避免重复抽取。成年必须本人明确回答boolean基础问题，不从年龄猜成年。限制由本人明确描述/确认，不把未知猜成无。
+    confirmedConstraintReview是本人核对过的动作/时间边界，不是你发出的医疗许可。constraintReviewNeeded为true时优先澄清哪些动作/姿势、每周哪天或具体哪天需要避免、已有指导是否明确；不要叫本人把真实限制改成“无”，也不要因为资料填齐就宣布可以生成。需要核对的结论仍由本人在约束核对页逐项确认。
     extractionClarifications列出之前未能采用的可选抽取主题；请结合用户原话澄清，不要反复输出同一非法值。这不表示原话被遗忘，不要为了填完字段强迫用户接受假设。壶铃使用kettlebells；数字抽取不要附单位，器械数组或规范逗号列表均可。
     每个问题包含topic/kind/prompt，选择题提供字符串options；number给unit和有限minimum/maximum；非数值题数值字段为null；不需要的options为[]。
     可用topic：\(InterviewTopic.allCases.map(\.rawValue).joined(separator: ","))
@@ -35,7 +36,7 @@ struct InterviewAPI: Sendable {
         let muscle: String
     }
     struct Request: Encodable {
-        let promptVersion = "adaptive-interview-2"
+        let promptVersion = "adaptive-interview-3"
         let rulesVersion: String
         let phase: String
         let openTopics: [String]
@@ -47,11 +48,14 @@ struct InterviewAPI: Sendable {
         let userNarratives: [InterviewNarrative]
         let savedConversation: [InterviewTurn]
         let candidateExercises: [ExerciseReference]
+        let confirmedConstraintReview: TrainingConstraintReview?
+        let constraintReviewNeeded: Bool
+        let legacyRestrictions: String
     }
 
     /// Full saved dialogue is explicit, not a suffix(4) that loses personal context. Oversize
     /// requests stop before network rather than silently dropping old goals or safety details.
-    static func requestJSON(session: InterviewSession, model: String) throws -> String {
+    static func requestJSON(session: InterviewSession, model: String, legacyRestrictions: String = "") throws -> String {
         try session.validate()
         let answered = InterviewTopic.allCases.filter { session.profile.isUsable($0) }
             .map { ($0.rawValue, describe($0, profile: session.profile)) }
@@ -63,7 +67,10 @@ struct InterviewAPI: Sendable {
             closedQuestionKeys: session.closedQuestionKeys,
             extractionClarifications: session.allTurns.suffix(3).flatMap { $0.extractionIssues ?? [] }.filter { !session.profile.isUsable($0.topic) && !session.declinedTopics.contains($0.topic) },
             userNarratives: session.narratives ?? [], savedConversation: session.allTurns,
-            candidateExercises: ExerciseCatalog.exercises.map { ExerciseReference(id: $0.id, name: $0.name, englishName: $0.englishName, equipment: $0.equipment, muscle: $0.muscle) })
+            candidateExercises: ExerciseCatalog.exercises.map { ExerciseReference(id: $0.id, name: $0.name, englishName: $0.englishName, equipment: $0.equipment, muscle: $0.muscle) },
+            confirmedConstraintReview: session.profile.constraintReview,
+            constraintReviewNeeded: session.planningEligibility(legacyRestrictions: legacyRestrictions).needsConstraintReview,
+            legacyRestrictions: legacyRestrictions)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
@@ -111,9 +118,9 @@ struct InterviewAPI: Sendable {
         }
     }
 
-    func nextTurn(session: InterviewSession, configuration: AIConfiguration, key: String) async throws -> InterviewTurn {
+    func nextTurn(session: InterviewSession, configuration: AIConfiguration, key: String, legacyRestrictions: String = "") async throws -> InterviewTurn {
         try Task.checkCancellation()
-        let json = try Self.requestJSON(session: session, model: configuration.model)
+        let json = try Self.requestJSON(session: session, model: configuration.model, legacyRestrictions: legacyRestrictions)
         let messages = [CoachMessage(role: "system", content: Self.systemPrompt), CoachMessage(role: "user", content: json)]
         let host = try configuration.validatedURL().host ?? "unknown"
         let provider = InterviewProvider(host: host, model: configuration.model)

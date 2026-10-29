@@ -43,6 +43,8 @@ public enum PlannerEngine {
         Movement(id: "builtin.pallof-press", pattern: .core, requirements: [[.cableMachine]])
     ]
 
+    public static var supportedMovementIDs: [String] { movements.map(\.id) }
+
     public static func options(for input: PlanningInput) throws -> [WeeklyPlanOption] {
         try input.validate()
         let first = try build(input: input, simple: false)
@@ -82,7 +84,7 @@ public enum PlannerEngine {
             var hasStrength = false
             var hasCardio = false
             for item in day.items {
-                guard !input.excludedExerciseIDs.contains(item.exerciseID), isAvailable(exerciseID: item.exerciseID, equipment: input.equipment),
+                guard input.allowsExercise(item.exerciseID), isAvailable(exerciseID: item.exerciseID, equipment: input.equipment),
                       let exercise = ExerciseCatalog.exercise(id: item.exerciseID) else {
                     throw CoreError.invalidInput("计划包含未知、已排除或器械不满足的动作。")
                 }
@@ -153,10 +155,11 @@ public enum PlannerEngine {
             if strength.allSatisfy({ cyclicDistance($0, weekday) >= 2 }) { strength.append(weekday) }
         }
         var limitations = [
-            "这是健康成人的第一阶段保守校准，不是精确最佳训练量或长期周期。每周复核实际表现后再提出新草案。",
+            input.constraintReview == nil ? "这是健康成人的第一阶段保守校准，不是精确最佳训练量或长期周期。每周复核实际表现后再提出新草案。" : "这是本人明确活动范围内的保守安排，不推断医疗许可或治疗恢复间隔。",
             "尚无完整睡眠、HRV、个人恢复基线或动作能力实测；本方案不生成恢复分数，也不预测最优公斤数。",
             "次数、组数、估时和不相邻策略属于版本化产品模板，不是所有人通用的医学阈值。"
         ]
+        limitations += constraintLimitations(input: input)
         if strength.count < 2 { limitations.append("本次安排少于每周2次抗阻，没有伪装为达到一般指南方向；可在时间允许后逐步增加。") }
         if strength.count < desired { limitations.append("部分可训练日相邻，为避免连续抗阻校准，改安排轻有氧；若想增加抗阻频率，请调整可训练日。") }
         let hasPull = candidates(pattern: .pull, input: input, simple: simple).first != nil
@@ -260,8 +263,16 @@ public enum PlannerEngine {
         default: break
         }
         return ranks.compactMap { slug in movements.first { $0.id == "builtin.\(slug)" && $0.pattern == pattern } }
-            .filter { !input.excludedExerciseIDs.contains($0.id) && isAvailable(exerciseID: $0.id, equipment: input.equipment)
+            .filter { input.allowsExercise($0.id) && isAvailable(exerciseID: $0.id, equipment: input.equipment)
                 && (input.experience == .regular || $0.id != "builtin.rowing-ergometer") }
+    }
+
+    static func constraintLimitations(input: PlanningInput) -> [String] {
+        guard let review = input.constraintReview else { return [] }
+        var result = ["训练约束规则：\(review.rulesVersion)；本人确认的原限制保留，AI不能覆盖。"]
+        if !review.restDateKeys.isEmpty { result.append("明确休息日期：" + review.restDateKeys.joined(separator: "、") + "；这些日期覆盖每周排程，不补课。") }
+        if review.mode == .professionalBoundaries { result.append("只在本人记录的专业指导允许动作白名单内组合；App没有独立核实医学许可。") }
+        return result
     }
 
     static func cyclicDistance(_ first: Int, _ second: Int) -> Int {

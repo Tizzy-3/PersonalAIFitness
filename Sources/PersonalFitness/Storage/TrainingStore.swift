@@ -53,9 +53,14 @@ final class TrainingStore {
 
     func scheduledPlan(on date: Date = Date()) -> PlanVersion? {
         guard let program = currentWeeklyProgram else { return currentPlan }
+        guard program.draft.input.constraintReview?.isRestDate(date, calendar: .current) != true else { return nil }
         let weekday = ((Calendar.current.component(.weekday, from: date) + 5) % 7) + 1
         guard let id = program.dayPlanVersionIDs[weekday] else { return nil }
         return planVersions.first { $0.id == id && !deletedPlanIDs.contains($0.planID) }
+    }
+
+    func isConstraintRestDay(on date: Date = Date()) -> Bool {
+        currentWeeklyProgram?.draft.input.constraintReview?.isRestDate(date, calendar: .current) == true
     }
 
     convenience init(inMemory: Bool = false, explicitlyStartSeparate: Bool = false) throws {
@@ -216,6 +221,10 @@ final class TrainingStore {
         var consuming: Int?
         if let plan {
             guard planVersions.contains(plan), !deletedPlanIDs.contains(plan.planID) else { throw StorageError.stalePlan }
+            if let program = weeklyPrograms.first(where: { $0.dayPlanVersionIDs.values.contains(plan.id) }),
+               program.draft.input.constraintReview?.isRestDate(date, calendar: .current) == true {
+                throw CoreError.invalidState("这一天在已确认的训练约束中需要休息，不能启动这份周计划的训练。请先核对约束，重新制定并确认安排。")
+            }
             var executionPlan = plan
             if scheduledPlan(on: date)?.id == plan.id {
                 let current = try adjustmentFingerprint(now: date)
@@ -611,7 +620,7 @@ final class TrainingStore {
     }
 
     @discardableResult
-    func confirmWeeklyProgram(draftID: UUID, optionID: String) throws -> WeeklyProgram {
+    func confirmWeeklyProgram(draftID: UUID, optionID: String, at date: Date = Date()) throws -> WeeklyProgram {
         guard activeSession == nil else { throw StorageError.activeSessionExists }
         guard let index = planningDrafts.firstIndex(where: { $0.id == draftID }), planningDrafts[index].decision == .pending else {
             throw CoreError.invalidState("草案已处理或不存在，不能重复确认。")
@@ -621,7 +630,11 @@ final class TrainingStore {
         guard draft.matches(snapshot: try snapshot()), let option = draft.options.first(where: { $0.id == optionID }) else {
             throw CoreError.invalidState("制定依据或生效安排已经变化，请按最新资料重新制定。")
         }
-        let now = Date()
+        let now = date
+        try draft.input.validateCurrentSafety(snapshot: snapshot(), at: now, calendar: .current)
+        if let review = draft.input.constraintReview, !review.isFresh(at: now, calendar: .current) {
+            throw CoreError.invalidState("这份草案的当前状态确认已过期，请先核对今天的状态，再重新制定并确认。原计划保持不变。")
+        }
         var plans: [PlanVersion] = []
         var dayIDs: [Int: UUID] = [:]
         for day in option.days where !day.isRestDay {

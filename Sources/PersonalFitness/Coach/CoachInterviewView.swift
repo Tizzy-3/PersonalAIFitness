@@ -178,16 +178,22 @@ struct CoachInterviewView: View {
     }
 
     private func progressSection(_ session: InterviewSession) -> some View {
-        CoachPanel {
+        let eligibility = displayEligibility(for: session)
+        return CoachPanel {
             HStack(alignment: .firstTextBaseline) {
                 Text("正在了解你的情况").font(.headline)
                 Spacer(minLength: 8)
-                CoachStatusPill(text: session.phase.title, color: FitnessTheme.violet)
+                CoachStatusPill(text: eligibility.title, color: eligibility.canGenerate ? FitnessTheme.teal : FitnessTheme.orange)
             }
             Text("已确认 \(session.profile.answeredTopics.count) 项资料 · 已聊 \(session.allTurns.count) 轮")
                 .font(.subheadline).foregroundStyle(.secondary)
-            Text(session.profile.isReadyForPlanning ? "基础条件已具备，仍可继续聊具体目标、能力和生活细节。" : "先了解你，再逐步核对安排训练必需的关键条件。")
+            Text(eligibility.message)
                 .font(.footnote).foregroundStyle(.secondary)
+            if eligibility.needsConstraintReview {
+                NavigationLink { ConstraintReviewView(store: store) } label: {
+                    Label("先把运动限制核对成具体约束", systemImage: "slider.horizontal.3")
+                }.frame(minHeight: 44)
+            }
             if session.pausedAt != nil {
                 Label("已暂停，回答和补充都已保留", systemImage: "pause.circle").font(.footnote).foregroundStyle(FitnessTheme.orange)
                 Button("恢复访谈") { setPaused(false) }.frame(minHeight: 44)
@@ -217,7 +223,7 @@ struct CoachInterviewView: View {
             } else if !session.unansweredQuestions.isEmpty {
                 Text("先回答下面的问题。不清楚时，可以明确选择不知道或跳过。")
                     .font(.caption).foregroundStyle(.secondary)
-            } else if session.profile.isReadyForPlanning, session.canContinueInterview {
+            } else if eligibility.canGenerate, session.canContinueInterview {
                 Text("已经可以制定保守首版计划，也能继续补充能力、偏好和坚持困难。")
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -291,18 +297,24 @@ struct CoachInterviewView: View {
     }
 
     private func planSection(_ session: InterviewSession) -> some View {
-        CoachPanel {
+        let eligibility = displayEligibility(for: session)
+        return CoachPanel {
             HStack(spacing: 12) {
                 CoachIconBadge(symbol: "calendar.badge.plus", color: FitnessTheme.teal)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("可以制定第一份计划了").font(.headline)
-                    Text("先看完整七天安排，你确认后才生效。")
+                    Text(eligibility.canGenerate ? "可以制定第一份计划了" : "制定前还有情况需要核对").font(.headline)
+                    Text(eligibility.canGenerate ? "先看完整七天安排，你确认后才生效。" : eligibility.message)
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            Button { generatePlan(session) } label: { Label("生成第一版计划", systemImage: "calendar.badge.plus") }
-                .buttonStyle(FitnessPrimaryButtonStyle())
-                .disabled(request != nil || configuration == nil || !session.unansweredQuestions.isEmpty || !session.pendingInferences.isEmpty || unsavedPlan != nil)
+            if eligibility.canGenerate {
+                Button { generatePlan(session) } label: { Label("生成第一版计划", systemImage: "calendar.badge.plus") }
+                    .buttonStyle(FitnessPrimaryButtonStyle())
+                    .disabled(request != nil || configuration == nil || unsavedPlan != nil)
+            } else if eligibility.needsConstraintReview {
+                NavigationLink { ConstraintReviewView(store: store) } label: { Label("核对约束后继续", systemImage: "checklist") }
+                    .buttonStyle(FitnessPrimaryButtonStyle())
+            }
         }
     }
 
@@ -348,15 +360,16 @@ struct CoachInterviewView: View {
         let starting = session ?? (try? store.startInterview())
         guard let starting else { return }
         guard starting.canContinueInterview else { return }
+        let startingLegacy = store.profile.restrictions
         status = nil
         formatDiagnostic = nil
         request = Task {
             defer { request = nil }
             do {
                 let api = InterviewAPI()
-                let turn = try await api.nextTurn(session: starting, configuration: configuration, key: key)
+                let turn = try await api.nextTurn(session: starting, configuration: configuration, key: key, legacyRestrictions: startingLegacy)
                 try Task.checkCancellation()
-                guard store.interview == starting else {
+                guard store.interview == starting, store.profile.restrictions == startingLegacy else {
                     throw CoreError.invalidState("访谈已在请求期间被修改，旧回答没有覆盖最新资料。请重新询问。")
                 }
                 var updated = starting
@@ -411,6 +424,8 @@ struct CoachInterviewView: View {
 
     private func generatePlan(_ session: InterviewSession) {
         do {
+            let eligibility = displayEligibility(for: session)
+            guard eligibility.canGenerate else { throw CoreError.invalidState(eligibility.message) }
             guard store.activeSession == nil else {
                 throw CoreError.invalidState("请先结束或取消正在进行的训练，再生成新的生效计划。")
             }
@@ -420,6 +435,16 @@ struct CoachInterviewView: View {
                                                     preview: try PersonalizedPlannerAPI.requestJSON(context))
         } catch {
             issue = error.localizedDescription
+        }
+    }
+
+    private func displayEligibility(for session: InterviewSession) -> (canGenerate: Bool, title: String, message: String, needsConstraintReview: Bool) {
+        do {
+            let snapshot = try store.snapshot()
+            let value = session.planningEligibility(legacyRestrictions: snapshot.profile.restrictions, snapshot: snapshot)
+            return (value.canGenerate, value.title, value.message, value.needsConstraintReview)
+        } catch {
+            return (false, "暂时无法读取档案", error.localizedDescription, false)
         }
     }
 

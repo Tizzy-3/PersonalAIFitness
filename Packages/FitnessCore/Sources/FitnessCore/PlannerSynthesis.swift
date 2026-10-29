@@ -96,7 +96,7 @@ extension PlannerEngine {
                                                   "只使用你已确认的目标、经验、器械和时间；未知项没有补猜。",
                                                   "规则 \(rulesVersion)；目录 \(catalogVersion)；估时 \(timingVersion)。"],
                                       limitations: ["这是第一版校准安排，不是长期周期化结果；每周按实际表现复核。",
-                                                    "未指定公斤数：能力未知时用轻重量或容易变式校准并记录实际结果。"],
+                                                    "未指定公斤数：能力未知时用轻重量或容易变式校准并记录实际结果。"] + constraintLimitations(input: input),
                                       rulesVersion: rulesVersion)
         try validate(option: option, input: input)
         return option

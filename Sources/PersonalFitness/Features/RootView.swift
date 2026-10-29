@@ -19,6 +19,8 @@ struct RootView: View {
     @State private var capturePlanner = false
     @State private var captureInterview = false
     @State private var captureMedia = false
+    @State private var captureConstraintReview = false
+    @State private var captureConstraintDraft = false
 
     init(store: TrainingStore) {
         self.store = store
@@ -27,6 +29,9 @@ struct RootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         _capturePlanner = State(initialValue: arguments.contains("--capture-planner"))
         _captureInterview = State(initialValue: arguments.contains("--capture-interview"))
+        if arguments.contains("--capture-constraint-interview") { _captureInterview = State(initialValue: true) }
+        _captureConstraintReview = State(initialValue: arguments.contains("--capture-constraint-review"))
+        _captureConstraintDraft = State(initialValue: arguments.contains("--capture-constraint-draft"))
         _captureMedia = State(initialValue: arguments.contains("--capture-media"))
         _settings = State(initialValue: arguments.contains("--capture-settings"))
         if arguments.contains("--capture-workout"), let active = store.activeSession {
@@ -64,7 +69,9 @@ struct RootView: View {
         .sheet(item: $planEditor) { route in NavigationStack { PlanEditorView(store: store, revising: route.plan) } }
         .sheet(isPresented: $settings) { NavigationStack { SettingsView(store: store) } }
         .sheet(isPresented: $capturePlanner) { NavigationStack { PlannerView(store: store) } }
-        .sheet(isPresented: $captureInterview) { NavigationStack { CoachInterviewView(store: store) } }
+        .sheet(isPresented: $captureInterview) {
+            NavigationStack { CoachInterviewView(store: store).safeAreaInset(edge: .top) { validationLabel } }
+        }
         .sheet(isPresented: $captureMedia) {
             NavigationStack {
                 if let exercise = ExerciseCatalog.exercise(id: "builtin.barbell-bench-press") {
@@ -72,8 +79,30 @@ struct RootView: View {
                 }
             }
         }
+        .sheet(isPresented: $captureConstraintReview) {
+            NavigationStack {
+                ConstraintReviewView(store: store)
+                    .safeAreaInset(edge: .top) { validationLabel }
+            }
+        }
+        .sheet(isPresented: $captureConstraintDraft) {
+            NavigationStack {
+                if let draft = store.planningDrafts.first {
+                    PlanningDraftDetailView(store: store, draftID: draft.id)
+                        .safeAreaInset(edge: .top) { validationLabel }
+                }
+            }
+        }
         .fullScreenCover(item: $workout) { route in
             NavigationStack { WorkoutView(store: store, sessionID: route.id) }
         }
+    }
+
+    @ViewBuilder private var validationLabel: some View {
+        #if DEBUG
+        if ConstraintValidationData.isActive {
+            Text("界面验证数据 · 隔离内存 · 不保存").font(.caption).foregroundStyle(FitnessTheme.orange).padding(8)
+        }
+        #endif
     }
 }

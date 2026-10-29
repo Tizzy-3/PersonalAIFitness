@@ -61,7 +61,7 @@ extension PlanningDraft {
         guard snapshot.interview?.profile == profile else {
             throw CoreError.invalidState("访谈档案已变化，请根据最新档案重新制定。")
         }
-        var draft = try PlanningDraft.make(input: profile.planningInput(), snapshot: snapshot, at: at)
+        var draft = try PlanningDraft.make(input: profile.planningInput(at: at), snapshot: snapshot, at: at)
         try reply.validate(input: draft.input)
         let option = try PlannerEngine.synthesize(input: draft.input, choices: reply.choices,
                                                  preferredExerciseIDs: profile.preferredExerciseIDs.isUsable
