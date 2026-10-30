@@ -3,24 +3,21 @@ import FitnessCore
 
 /// The coach's line at the top of Today. It is one sentence plus at most two supporting lines, and
 /// its colour follows the tone: a safety or caution brief never uses the encouraging accent.
-///
-/// The whole card is a button into the coach tab; the evidence is one tap further, so the person can
-/// check the facts behind the sentence without the sentence becoming a dashboard again.
+/// The evidence sits one tap further, so checking the facts never turns the sentence into a dashboard.
 struct CoachBriefCard: View {
     let brief: DailyCoachBrief
     /// Set when a plan is scheduled for today: the check-in is then offered right here, so answering
     /// the coach's question never requires hunting for another screen.
-    var checkInDestination: AnyView? = nil
+    var onCheckIn: (() -> Void)? = nil
     let openCoach: () -> Void
     @State private var showingEvidence = false
 
     private var tint: Color {
         switch brief.tone {
-        case .safety: return FitnessTheme.orange
-        case .caution: return FitnessTheme.orange
+        case .safety, .caution: return FitnessTheme.orange
         case .rest: return FitnessTheme.teal
         case .welcome: return FitnessTheme.violet
-        default: return FitnessTheme.accent
+        case .plan, .done: return FitnessTheme.accent
         }
     }
 
@@ -51,10 +48,9 @@ struct CoachBriefCard: View {
                         .accessibilityHint("查看这句话用的是哪些已保存记录")
                 }
                 Spacer()
-                if brief.needsPainAnswer, let checkInDestination {
-                    NavigationLink { checkInDestination } label: {
-                        Text("记一下今天的状态").font(.caption.weight(.semibold)).foregroundStyle(tint)
-                    }.frame(minHeight: 44)
+                if brief.needsPainAnswer, let onCheckIn {
+                    Button("记一下今天的状态", action: onCheckIn)
+                        .font(.caption.weight(.semibold)).foregroundStyle(tint).frame(minHeight: 44)
                 } else {
                     Button("和教练聊聊", action: openCoach)
                         .font(.caption.weight(.semibold))

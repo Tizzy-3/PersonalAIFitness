@@ -73,7 +73,7 @@ extension TrainingStore {
     ///
     /// The proposal is **not** stored here: the card is a preview, and generating stays on the review
     /// screen where the evidence is visible before anything is saved.
-    func canProposeReduction(for plan: PlanVersion, on date: Date) -> Bool {
+    func canProposeReduction(for plan: PlanVersion) -> Bool {
         guard activeSession == nil else { return false }
         guard pendingAdjustment == nil else { return false }
         return AdjustmentEngine.reductionPreview(items: plan.items) != plan.items

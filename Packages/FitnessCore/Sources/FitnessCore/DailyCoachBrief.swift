@@ -9,17 +9,20 @@ import Foundation
 /// 2. The confirmed plan for today (or the documented reason there isn't one).
 /// 3. What actually happened last time, to give the day a reference point.
 public struct DailyCoachBrief: Equatable, Sendable {
+    /// Tones are `let` on purpose: tests compare them as strings, and a change of meaning should
+    /// require a code change rather than a stored string.
     public enum Tone: String, Equatable, Sendable {
-        case welcome, plan, rest, caution, safety, done, freeTraining
+        case welcome, plan, rest, caution, safety, done
 
         /// Only these tones may use encouraging language; a caution or safety brief never does.
         public var allowsEncouragement: Bool {
             switch self {
-            case .plan, .done, .freeTraining: return true
+            case .plan, .done: return true
             case .welcome, .rest, .caution, .safety: return false
             }
         }
 
+        /// SF Symbol shown next to the sentence; purely presentational.
         public var symbol: String {
             switch self {
             case .welcome: return "person.text.rectangle"
@@ -28,7 +31,6 @@ public struct DailyCoachBrief: Equatable, Sendable {
             case .caution: return "exclamationmark.triangle"
             case .safety: return "cross.case"
             case .done: return "checkmark.seal"
-            case .freeTraining: return "plus.circle"
             }
         }
     }

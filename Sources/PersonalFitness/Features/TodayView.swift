@@ -9,6 +9,7 @@ struct TodayView: View {
     let openSettings: () -> Void
     let openCoach: () -> Void
     @State private var issue: String?
+    @State private var showingCheckIn = false
     @Environment(\.dynamicTypeSize) private var typeSize
 
     private var teaching: Exercise? { store.allExercises.first { ExerciseDetails.details(for: $0.id)?.media != nil } }
@@ -29,7 +30,7 @@ struct TodayView: View {
                 header
                 weekStrip
                 CoachBriefCard(brief: brief,
-                               checkInDestination: store.scheduledPlan() == nil ? nil : AnyView(CheckInView(store: store)),
+                               onCheckIn: store.scheduledPlan() == nil ? nil : { showingCheckIn = true },
                                openCoach: openCoach)
                 if let proposal = store.pendingAdjustment, proposal.kind != .keep {
                     PendingAdjustmentCard(proposal: proposal,
@@ -55,6 +56,9 @@ struct TodayView: View {
             }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 24)
         }
         .background(FitnessTheme.canvas).navigationTitle("").navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingCheckIn) {
+            NavigationStack { CheckInView(store: store) }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { Text(Date.now, format: .dateTime.month().day().weekday()).font(.caption).foregroundStyle(FitnessTheme.muted) }
             ToolbarItem(placement: .topBarTrailing) {
@@ -138,7 +142,7 @@ struct TodayView: View {
                         .font(.callout)
                 }
                 Button("开始今天的训练") { start(plan) }.buttonStyle(FitnessPrimaryButtonStyle())
-                if store.canProposeReduction(for: plan, on: Date()) {
+                if store.canProposeReduction(for: plan) {
                     NavigationLink { AdjustmentReviewView(store: store, proposeOnOpen: true) } label: {
                         Text("今天少一点（看方案）")
                     }.font(.subheadline).frame(minHeight: 44)
