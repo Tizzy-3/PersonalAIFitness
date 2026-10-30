@@ -107,4 +107,22 @@ final class GentleDayPlannerTests: XCTestCase {
         XCTAssertThrowsError(try chat.makeReview(at: now))
     }
 
+    func testGentleReadbackKeepsActualConditionsWithoutEmptyTechnicalLabels() throws {
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        var chat = ConstraintChatSession(sourceText: "合成：当天不宜剧烈活动", legacySourceText: "合成：过敏注意事项")
+        try chat.appendUser("轻一些", at: now)
+        try chat.receiveCandidate(.init(excludedExerciseIDs: ["builtin.plank"], avoidedPositions: [.kneeling],
+            excludedWeekdays: [2], restDateKeys: ["2026-11-07"], maxSessionMinutes: 25,
+            questions: [], unresolved: [], gentleDateKey: "2026-11-05"), evidenceCount: 1, at: now)
+        chat.setMode(.gentleActivity); chat.gentleActivityAllowed = true; chat.setPainFree(true, at: now)
+        let text = chat.readbackLines.joined(separator: "\n")
+        for value in ["当天不宜剧烈活动", "过敏注意事项", "2026-11-05", "周二", "2026-11-07", "跪姿", "25分钟"] {
+            XCTAssertTrue(text.contains(value), value)
+        }
+        XCTAssertTrue(text.contains(try XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.plank")).name))
+        XCTAssertFalse(text.contains("没有另设允许动作名单"))
+        XCTAssertFalse(text.contains("限制依据"))
+        XCTAssertNoThrow(try chat.makeReview(at: now))
+    }
+
 }

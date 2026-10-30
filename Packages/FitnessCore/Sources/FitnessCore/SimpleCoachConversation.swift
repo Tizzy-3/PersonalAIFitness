@@ -194,6 +194,26 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         let days = ["", "周一", "周二", "周三", "周四", "周五", "周六", "周日"]
         var lines: [String] = []
         if candidateEvidenceCount != userMessageCount { lines.append("你补充了新的情况，以下旧整理需要重新核对。") }
+        if mode == .gentleActivity {
+            if !sourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { lines.append("你说：" + sourceText) }
+            if !legacySourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, legacySourceText != sourceText {
+                lines.append("原来记下的注意事项：" + legacySourceText)
+            }
+            if let key = candidate.gentleDateKey { lines.append("\(key) 需要轻一些，我会安排轻松活动；只影响这一天。") }
+            lines.append(gentleActivityAllowed == true ? "你说当天可以轻松活动。" : "还需确认当天能否轻松活动。")
+            if !candidate.excludedWeekdays.isEmpty { lines.append("每逢" + candidate.excludedWeekdays.sorted().map { days[$0] }.joined(separator: "、") + "休息。") }
+            if !candidate.restDateKeys.isEmpty { lines.append("这些日期休息：" + candidate.restDateKeys.sorted().joined(separator: "、") + "。") }
+            if !candidate.avoidedPositions.isEmpty { lines.append(candidate.avoidedPositions.sorted { $0.rawValue < $1.rawValue }.map(\.title).joined(separator: "、") + "。") }
+            let excluded = Array(Set(candidate.excludedExerciseIDs + candidate.avoidedPositions.flatMap(\.exerciseIDs)))
+            if !excluded.isEmpty { lines.append("不安排这些动作：" + names(excluded) + "。") }
+            if let maxMinutes = candidate.maxSessionMinutes { lines.append("每次最多\(maxMinutes)分钟。") }
+            if let allowed = candidate.allowedExerciseIDs { lines.append("按已记录的指导，只安排：" + names(allowed) + "。") }
+            if !professionalNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { lines.append("你记录的指导：" + professionalNote) }
+            lines.append(painFree == true ? "你说现在没有疼痛或异常不适。" : "还需回答现在是否有疼痛或异常不适。")
+            lines += candidate.questions.map { "还需了解：" + $0 }
+            lines += candidate.unresolved.map { "尚未明确：" + $0 }
+            return lines
+        }
         lines.append(candidate.excludedWeekdays.isEmpty ? "每周没有额外指定的休息日，仍按你的可训练日期安排。" : "每逢" + candidate.excludedWeekdays.sorted().map { days[$0] }.joined(separator: "、") + "不安排训练。")
         lines.append(candidate.restDateKeys.isEmpty ? "没有额外指定的单次休息日期。" : "这些日期休息：" + candidate.restDateKeys.sorted().joined(separator: "、") + "。")
         lines.append(candidate.avoidedPositions.isEmpty ? "没有额外指定的姿势排除。" : candidate.avoidedPositions.sorted { $0.rawValue < $1.rawValue }.map(\.title).joined(separator: "、") + "。")
