@@ -108,7 +108,7 @@ struct PlanningDraftDetailView: View {
                 }
             }
             if let activity = draft.input.constraintReview?.temporaryActivity,
-               let item = try? GentleDayPlanner.suggestedWalking(for: activity, equipment: draft.input.equipment),
+               let item = try? draft.temporaryActivityItem(),
                let exercise = ExerciseCatalog.exercise(id: item.exerciseID) {
                 Section("\(activity.dateKey) · 当天的轻松安排") {
                     Text(exercise.name)

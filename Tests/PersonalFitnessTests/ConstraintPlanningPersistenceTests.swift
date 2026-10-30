@@ -181,4 +181,18 @@ final class ConstraintPlanningPersistenceTests: XCTestCase {
         XCTAssertEqual(backup.weeklyPrograms?.first?.temporaryPlanVersionIDs?[key], temporaryID)
     }
 
+    @MainActor func testCoachFeedbackEntersInterviewWithoutReplacingCurrentPlan() throws {
+        let date = now
+        let store = try TrainingStore(inMemory: true)
+        let manual = try store.confirmPlan(name: "原安排", items: [PlannedExercise(exercise: XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.walking")))])
+        let before = try prepare(store, at: date)
+        try store.continuePlanning(from: "合成反馈：最近时间减少", at: date.addingTimeInterval(1))
+        let after = try XCTUnwrap(store.interview)
+        XCTAssertEqual(after.narratives?.last?.text, "合成反馈：最近时间减少")
+        XCTAssertTrue(after.needsSafetyReview)
+        XCTAssertEqual(after.profile.restrictions.value, before.profile.restrictions.value)
+        XCTAssertEqual(store.currentPlan?.id, manual.id)
+        XCTAssertThrowsError(try store.continuePlanning(from: "  ", at: date.addingTimeInterval(2)))
+    }
+
 }

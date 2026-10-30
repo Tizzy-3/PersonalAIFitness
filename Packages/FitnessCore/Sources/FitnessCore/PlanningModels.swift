@@ -67,6 +67,12 @@ public struct PlanningInput: Codable, Equatable, Sendable {
         self.constraintReview = constraintReview
     }
 
+    public func temporaryActivityItem(preferredID: String? = nil) throws -> PlanningItem? {
+        guard let review = constraintReview, let activity = review.temporaryActivity else { return nil }
+        return try GentleDayPlanner.suggestedActivity(for: activity, equipment: equipment, preferredID: preferredID,
+            excludedExerciseIDs: excludedExerciseIDs, allowedExerciseIDs: review.allowedExerciseIDs)
+    }
+
     public func validate() throws {
         guard adultConfirmed else { throw CoreError.invalidInput("本批自动计划仅面向已明确确认年满18岁的健康成人。未确认时仍可手动记录。") }
         if let review = constraintReview {
@@ -77,9 +83,8 @@ public struct PlanningInput: Codable, Equatable, Sendable {
                 throw CoreError.invalidInput("计划输入未执行已确认的动作、休息日或时长约束。")
             }
         }
-        if let review = constraintReview, let activity = review.temporaryActivity {
-            let item = try GentleDayPlanner.suggestedWalking(for: activity, equipment: equipment)
-            guard allowsExercise(item.exerciseID) else {
+        if constraintReview?.temporaryActivity != nil {
+            guard let item = try temporaryActivityItem(), allowsExercise(item.exerciseID) else {
                 throw CoreError.invalidInput("已记录的活动限制与轻活动候选冲突，请先核对。")
             }
         }
@@ -192,6 +197,10 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
     public var decision: CoachDecision
     public var appliedProgramID: UUID?
     public var personalization: PersonalizationRecord? = nil
+
+    public func temporaryActivityItem() throws -> PlanningItem? {
+        try input.temporaryActivityItem(preferredID: personalization?.choices["cardio"])
+    }
 
     public static func make(input: PlanningInput, snapshot: AppSnapshot, at: Date = Date()) throws -> PlanningDraft {
         try CoreValidation.date(at, name: "计划草案时间")

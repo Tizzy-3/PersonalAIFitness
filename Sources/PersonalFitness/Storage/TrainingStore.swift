@@ -665,8 +665,11 @@ final class TrainingStore {
         }
         var temporaryIDs: [String: UUID] = [:]
         if let activity = draft.input.constraintReview?.temporaryActivity {
-            let item = try GentleDayPlanner.suggestedWalking(for: activity, equipment: draft.input.equipment)
-            guard draft.input.allowsExerciseForPlanning(item.exerciseID),
+            guard activity.dateKey >= TrainingConstraintReview.dateKey(now) else {
+                throw CoreError.invalidState("这份草案中的临时日期已经过去，请根据最新情况重新制定。")
+            }
+            guard let item = try draft.temporaryActivityItem(),
+                  draft.input.allowsExerciseForPlanning(item.exerciseID),
                   let exercise = ExerciseCatalog.exercise(id: item.exerciseID) else {
                 throw CoreError.invalidState("当天的轻活动与已确认条件冲突，请重新制定。")
             }

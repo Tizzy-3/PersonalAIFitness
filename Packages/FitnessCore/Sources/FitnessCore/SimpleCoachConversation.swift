@@ -199,7 +199,7 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         lines.append(candidate.maxSessionMinutes.map { "每次训练最多\($0)分钟。" } ?? "每次时长沿用已确认档案，没有额外缩短上限。")
         lines.append(candidate.allowedExerciseIDs.map { "只能从这些明确允许的动作中安排：" + names($0) + "。" } ?? "没有另设允许动作名单，仍受器械、能力和以上排除条件限制。")
         if let key = candidate.gentleDateKey {
-            lines.append("\(key) 需要降低强度，教练会安排轻活动。")
+            lines.append("\(key) 需要降低强度，教练会安排轻活动；这项临时要求只影响这个日期。")
             lines.append(gentleActivityAllowed == true ? "你确认当天可以轻松活动。" : "当天是否可以轻松活动还需你确认。")
         }
         if let mode { lines.append("限制依据：" + mode.title + "。") }

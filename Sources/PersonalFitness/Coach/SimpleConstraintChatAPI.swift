@@ -14,8 +14,8 @@ struct SimpleConstraintChatAPI: Sendable {
     avoidedPositions只允许kneeling（避免跪姿）和floorWork（避免地面动作）。不能把不喜欢某姿势诊断成疾病。
     excludedWeekdays为每周固定不训练日，1=周一至7=周日；restDateKeys为明确单次休息日yyyy-MM-dd。根据referenceDate/timeZone解释相对日期，不能把一次安排变成每周安排。
     maxSessionMinutes仅提取本人明确的15至120分钟单次上限，否则null；不猜恢复天数、训练强度、负重或医学结论。
-    allowedExerciseIDs通常为null。仅当本人记录的具体专业指导明确允许supportedExercises中的具体动作时，可复制对应ID；泛称“可以运动”“轻度活动”“遵医嘱”不足以产生允许动作名单。需要但没有明确允许范围时，继续问具体指导，不能自行扩大范围。
-    gentleDateKey只用于本人明确表示在某个具体日期需要降低强度但并未要求整天不活动的情况，格式yyyy-MM-dd；不确定日期时问清楚，不能把一次限制变成每周限制。对于这个日期，教练会在本人回答当前状态、确认可进行轻松日常活动之后，自行提出低强度候选；不得要求用户点名具体动作或自行编计划。其他无法表达的限制、疼痛、治疗人员禁止活动或具体部位禁忌都须继续问清楚，保留在questions/unresolved，不能猜成允许。
+    allowedExerciseIDs通常为null。仅当本人记录的具体专业指导明确允许supportedExercises中的具体动作时，可复制对应ID；泛称“可以运动”“轻度活动”“遵医嘱”不足以产生允许动作名单。当用户描述的是单次轻活动日时，不要索要允许动作清单；其他医学范围不明确时继续问已有的注意事项，不能自行扩大范围。
+    gentleDateKey只用于本人明确表示在某个具体日期需要降低强度但并未要求整天不活动的情况，格式yyyy-MM-dd；不确定日期时问清楚，不能把一次限制变成每周限制；如果是反复发生、影响范围不清或者还有其他未明确身体限制，必须继续问清楚，不能仅以单次日期结束。对于这个日期，教练会在本人回答当前状态、确认可进行轻松日常活动之后，自行提出低强度候选；不得要求用户点名具体动作或自行编计划。其他无法表达的限制、疼痛、治疗人员禁止活动或具体部位禁忌都须继续问清楚，保留在questions/unresolved，不能猜成允许。
     无法由本对象表达的次数、负重或其他治疗恢复边界必须留在unresolved，不能藏在自由总结后声明完成。
     用户说不知道具体动作或需要你安排时，不要索要动作名单。只询问身体状态、时间和本人知道的注意事项；不捏造治疗许可。
     mode、painFree、painFreeConfirmed、medicalClearance、allLimitsRepresentedConfirmed均由本人和程序处理，禁止输出，也禁止生成任何计划或宣布确认成功。

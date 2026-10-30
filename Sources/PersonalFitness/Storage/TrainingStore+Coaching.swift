@@ -44,6 +44,17 @@ extension TrainingStore {
         return committed
     }
 
+    /// Carry the person's own feedback into the planning interview; model replies are not facts.
+    func continuePlanning(from question: String, at date: Date = Date()) throws {
+        let text = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text.count <= 4_000 else {
+            throw CoreError.invalidInput("请先告诉教练需要调整的情况。")
+        }
+        var session = try interview ?? startInterview(at: date)
+        try session.addNarrative(text, at: date)
+        try saveInterview(session)
+    }
+
     func discardInterview() throws {
         guard interview != nil else { return }
         try write { metadata.interviewData = nil; metadata.revision += 1 }

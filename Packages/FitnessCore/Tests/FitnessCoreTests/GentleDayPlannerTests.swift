@@ -68,4 +68,18 @@ final class GentleDayPlannerTests: XCTestCase {
         XCTAssertThrowsError(try chat.makeReview(at: now))
     }
 
+    func testCoachCanSelectEligibleBikeButCannotBypassExclusions() throws {
+        let condition = TemporaryActivityConstraint(dateKey: "2026-11-05", lightActivityAllowed: true,
+                                                    hasConcerningSymptoms: false)
+        let gear: Set<PlanningEquipment> = [.walkingSpace, .stationaryBike]
+        let selected = try GentleDayPlanner.suggestedActivity(for: condition, equipment: gear,
+                                                              preferredID: "builtin.stationary-cycling")
+        XCTAssertEqual(selected.exerciseID, "builtin.stationary-cycling")
+        let fallback = try GentleDayPlanner.suggestedActivity(for: condition, equipment: gear,
+            preferredID: "builtin.stationary-cycling", excludedExerciseIDs: ["builtin.stationary-cycling"])
+        XCTAssertEqual(fallback.exerciseID, "builtin.walking")
+        XCTAssertThrowsError(try GentleDayPlanner.suggestedActivity(for: condition, equipment: gear,
+            excludedExerciseIDs: ["builtin.walking", "builtin.stationary-cycling"]))
+    }
+
 }

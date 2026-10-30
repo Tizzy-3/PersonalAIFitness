@@ -20,6 +20,8 @@ struct CoachView: View {
     @State private var issue: String?
     @State private var status: String?
     @State private var askingQuestions = false
+    @State private var lastSavedTurnID: UUID?
+    @State private var replanningFromChat = false
 
     init(store: TrainingStore, initialQuestion: String = "") {
         self.store = store
@@ -67,6 +69,7 @@ struct CoachView: View {
         .sheet(item: $prepared) { prepared in
             NavigationStack { CoachConsentView(prepared: prepared, send: { send(prepared) }) }
         }
+        .navigationDestination(isPresented: $replanningFromChat) { CoachInterviewView(store: store) }
         .onDisappear { request?.cancel() }
         .fitnessError($issue)
     }
@@ -167,6 +170,17 @@ struct CoachView: View {
                     }
                     Text(requestQuestion ?? "").font(.footnote).foregroundStyle(.secondary)
                 }
+                if let id = lastSavedTurnID, let turn = store.coachTurns.first(where: { $0.id == id }) {
+                    Text(turn.reply.answer).font(.callout).textSelection(.enabled)
+                    if store.currentWeeklyProgram != nil {
+                        Button("让教练按这个情况调整计划") {
+                            do {
+                                try store.continuePlanning(from: turn.question)
+                                replanningFromChat = true
+                            } catch { issue = error.localizedDescription }
+                        }.buttonStyle(.borderedProminent)
+                    }
+                }
                 if let status { Label(status, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary) }
             }
         }
@@ -237,7 +251,7 @@ struct CoachView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("每次发送前可查看实际数据。AI 的回答本身不会修改生效计划，调整需要你另外确认。")
                     Text("建档访谈会详细询问你的情况与目标；猜测的内容要先核对。已明确训练条件时，可直接填写条件查看保守规则候选。")
-                    Text("问答里的计划调整仍限于已有手动单日计划的保守减量。模型解释可能有误；完整健康评估、长期自动进阶与周期化仍未完成。")
+                    Text("说出最近的变化后，可以让教练结合已保存资料重新安排一周；确认前不会改变现有计划。模型解释可能有误。")
                     NavigationLink { AISettingsView() } label: { Label("接口、模型与本机密钥", systemImage: "slider.horizontal.3") }
                 }.font(.footnote).foregroundStyle(.secondary).padding(.top, 8)
             }.font(.subheadline)
@@ -283,6 +297,7 @@ struct CoachView: View {
     private func persist(_ turn: CoachTurn) {
         do {
             try store.saveCoachTurn(turn)
+            lastSavedTurnID = turn.id
             unsavedTurn = nil
             if question.trimmingCharacters(in: .whitespacesAndNewlines) == turn.question { question = "" }
             status = "回答已保存在教练记录中。含计划建议时，打开记录查看原方案与建议，再决定是否确认。"
@@ -344,6 +359,7 @@ struct CoachTurnDetailView: View {
     let turnID: UUID
     @State private var issue: String?
     @State private var confirming = false
+    @State private var replanning = false
 
     private var turn: CoachTurn? { store.coachTurns.first { $0.id == turnID } }
 
@@ -355,6 +371,18 @@ struct CoachTurnDetailView: View {
                     Text(turn.reply.answer).textSelection(.enabled)
                     Text("模型解释可能有误，请结合原始记录核对；回答本身不改变计划。")
                         .font(.footnote).foregroundStyle(.secondary)
+                }
+                if store.currentWeeklyProgram != nil {
+                    Section {
+                        Button("根据这次情况重新安排") {
+                            do {
+                                try store.continuePlanning(from: turn.question)
+                                replanning = true
+                            } catch { issue = error.localizedDescription }
+                        }
+                        Text("把你刚才说的情况交给教练，结合已有资料重新制定；确认之前原计划继续保留。")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
                 Section("本次记录依据") {
                     CoachStatisticsRows(context: turn.context)
@@ -415,6 +443,7 @@ struct CoachTurnDetailView: View {
         }
         .scrollContentBackground(.hidden).background(FitnessTheme.canvas).tint(FitnessTheme.accent)
         .navigationTitle("教练记录").navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $replanning) { CoachInterviewView(store: store) }
         .confirmationDialog("确认让这条建议生成新计划版本？", isPresented: $confirming, titleVisibility: .visible) {
             Button("确认保存并生效") { decide(accept: true) }
             Button("取消", role: .cancel) { }

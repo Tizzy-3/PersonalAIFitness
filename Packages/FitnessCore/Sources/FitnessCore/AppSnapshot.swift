@@ -257,8 +257,8 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
                 throw CoreError.invalidInput("周计划与冻结的草案输入不一致。")
             }
             if let activity = program.draft.input.constraintReview?.temporaryActivity {
-                let item = try GentleDayPlanner.suggestedWalking(for: activity, equipment: program.draft.input.equipment)
-                guard let id = program.temporaryPlanVersionIDs?[activity.dateKey], let version = versions[id],
+                guard let item = try program.draft.temporaryActivityItem(),
+                      let id = program.temporaryPlanVersionIDs?[activity.dateKey], let version = versions[id],
                       version.items.count == 1, let planned = version.items.first,
                       planned.exercise.id == item.exerciseID, planned.setCount == item.setCount,
                       planned.targetReps == item.targetReps, planned.targetSeconds == item.targetSeconds,
