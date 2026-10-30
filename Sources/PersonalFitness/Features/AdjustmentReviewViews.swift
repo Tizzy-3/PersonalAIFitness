@@ -5,6 +5,10 @@ import FitnessCore
 @MainActor
 struct AdjustmentReviewView: View {
     let store: TrainingStore
+    /// When opened from Today, the reduction is built on arrival so the person never lands on an
+    /// empty screen after tapping "less today". It is still a *proposal*: nothing changes until the
+    /// confirmation below.
+    var proposeOnOpen: Bool = false
     @State private var issue: String?
     @State private var status: String?
 
@@ -64,13 +68,29 @@ struct AdjustmentReviewView: View {
                 Section {
                     ContentUnavailableView("没有待确认的调整", systemImage: "checkmark.seal",
                                            description: Text("先做一次状态评估，规则会给出是否需要调整。"))
+                    NavigationLink("先记录今天的状态") { CheckInView(store: store) }
                 }
             }
             if let status { Section { Text(status).font(.footnote).foregroundStyle(.secondary) } }
         }
         .navigationTitle("调整建议")
         .navigationBarTitleDisplayMode(.inline)
+        .task { if proposeOnOpen, pending == nil { generate() } }
         .fitnessError($issue)
+    }
+
+    /// Builds the conservative proposal from a freshly computed readiness assessment. Storage re-runs
+    /// the same assessment before saving, so a stale or hand-edited value cannot slip through.
+    private func generate() {
+        do {
+            let assessment = try store.refreshReadiness()
+            _ = try store.proposeAdjustment(readiness: assessment)
+            if store.pendingAdjustment?.kind == .keep {
+                status = "规则判断今天按原计划即可，没有需要改的地方。"
+            }
+        } catch {
+            issue = error.localizedDescription
+        }
     }
 
     private var currentBaseItems: [PlannedExercise]? {

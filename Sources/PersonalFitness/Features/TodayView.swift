@@ -7,6 +7,7 @@ struct TodayView: View {
     let openWorkout: (UUID) -> Void
     let editPlan: (PlanVersion?) -> Void
     let openSettings: () -> Void
+    let openCoach: () -> Void
     @State private var issue: String?
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -22,10 +23,19 @@ struct TodayView: View {
     }
 
     var body: some View {
+        let brief = store.todayBrief
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 weekStrip
+                CoachBriefCard(brief: brief,
+                               checkInDestination: store.scheduledPlan() == nil ? nil : AnyView(CheckInView(store: store)),
+                               openCoach: openCoach)
+                if let proposal = store.pendingAdjustment, proposal.kind != .keep {
+                    PendingAdjustmentCard(proposal: proposal,
+                                          isStale: store.isAdjustmentStale(proposal),
+                                          destination: { AdjustmentReviewView(store: store) })
+                }
                 trainingCard
                 if let program = store.currentWeeklyProgram {
                     NavigationLink { WeeklyProgramDetailView(store: store, programID: program.id, openWorkout: openWorkout) } label: {
@@ -128,6 +138,11 @@ struct TodayView: View {
                         .font(.callout)
                 }
                 Button("开始今天的训练") { start(plan) }.buttonStyle(FitnessPrimaryButtonStyle())
+                if store.canProposeReduction(for: plan, on: Date()) {
+                    NavigationLink { AdjustmentReviewView(store: store, proposeOnOpen: true) } label: {
+                        Text("今天少一点（看方案）")
+                    }.font(.subheadline).frame(minHeight: 44)
+                }
                 if store.currentWeeklyProgram == nil { Button("编辑计划") { editPlan(plan) }.font(.subheadline).frame(minHeight: 44) }
             } else if store.currentWeeklyProgram != nil {
                 Label(store.isConstraintRestDay() ? "今天按已确认的限制休息" : "今天按计划休息", systemImage: "moon.zzz").font(.title3.weight(.semibold)).foregroundStyle(FitnessTheme.teal)

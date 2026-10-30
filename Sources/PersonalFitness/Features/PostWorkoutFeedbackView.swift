@@ -15,11 +15,35 @@ struct PostWorkoutFeedbackView: View {
     @State private var painAreas = ""
     @State private var barrier = ""
     @State private var issue: String?
+    /// Set instead of dismissing straight away, so the coach answers before the sheet closes.
+    @State private var reply: SessionCoachReply?
 
     private var session: WorkoutSession? { store.session(id: sessionID) }
 
     var body: some View {
         Form {
+            if let reply {
+                Section("教练说") {
+                    Text(reply.headline).font(.headline)
+                        .foregroundStyle(reply.isSafetyConcern ? FitnessTheme.orange : FitnessTheme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ForEach(Array(reply.details.enumerated()), id: \.offset) { _, line in
+                        Text(line).font(.subheadline).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Button("知道了，关闭", action: finish).buttonStyle(FitnessPrimaryButtonStyle())
+                }
+            } else {
+                inputSections
+            }
+        }
+        .navigationTitle(reply == nil ? "训练后反馈" : "训练记录")
+        .navigationBarTitleDisplayMode(.inline)
+        .fitnessError($issue)
+    }
+
+    @ViewBuilder private var inputSections: some View {
+        Group {
             if let session {
                 Section("这次训练（程序统计）") {
                     LabeledContent("完成正式组", value: "\(session.completedWorkingSets)")
@@ -57,9 +81,6 @@ struct PostWorkoutFeedbackView: View {
                 Text("跳过就记为“没有反馈”，不会被当成“状态良好”。")
             }
         }
-        .navigationTitle("训练后反馈")
-        .navigationBarTitleDisplayMode(.inline)
-        .fitnessError($issue)
     }
 
     private func save() {
@@ -72,12 +93,19 @@ struct PostWorkoutFeedbackView: View {
                                            painAreas: painReported == true ? areas : [],
                                            barrierNote: barrier)
             try store.saveSessionFeedback(feedback)
-            finish()
+            // Only answer when the reply is backed by a saved feedback record and the session it
+            // belongs to. A failed lookup closes the sheet instead of inventing a response.
+            if let value = store.sessionCoachReply(feedbackID: feedback.id) {
+                reply = value
+            } else {
+                finish()
+            }
         } catch {
             issue = error.localizedDescription
         }
     }
 
+    /// Without an answer there is nothing for the coach to respond to, so this path closes as before.
     private func skip() { finish() }
 
     private func finish() {

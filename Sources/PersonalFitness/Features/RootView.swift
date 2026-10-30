@@ -50,7 +50,8 @@ struct RootView: View {
             NavigationStack {
                 TodayView(store: store, openWorkout: { workout = WorkoutRoute(id: $0) },
                           editPlan: { planEditor = PlanEditorRoute(plan: $0) },
-                          openSettings: { settings = true })
+                          openSettings: { settings = true },
+                          openCoach: { selectedTab = 4 })
             }
             .tabItem { Label("今天", systemImage: "house") }.tag(0)
             NavigationStack {

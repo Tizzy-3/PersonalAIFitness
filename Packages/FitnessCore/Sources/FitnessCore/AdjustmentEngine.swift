@@ -207,6 +207,17 @@ public enum AdjustmentEngine {
             }, healthDigest: health.map { AdjustmentFingerprint.contentDigest($0) })
     }
 
+    /// The one reduction the rules can offer today: every movement loses one set, never below one.
+    /// Today's screen uses this only to decide whether a "less today" entry is worth showing; the
+    /// proposal itself is still built and stored by `proposeForToday` on the review screen.
+    public static func reductionPreview(items: [PlannedExercise]) -> [PlannedExercise] {
+        items.map { item in
+            var copy = item
+            copy.setCount = max(1, item.setCount - 1)
+            return copy
+        }
+    }
+
     /// Builds the conservative adjustment the rules allow for today, from a real readiness verdict.
     /// This never invents a load: it only reduces sets or keeps the plan.
     public static func proposeForToday(readiness: ReadinessAssessment, basePlan: PlanVersion?,

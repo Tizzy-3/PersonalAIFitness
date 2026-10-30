@@ -113,6 +113,21 @@ public enum ReadinessEngine {
     /// A metric needs at least this many samples before it is treated as a personal baseline.
     static let minimumBaselineSamples = 7
 
+    /// Why today's plan cannot be presented as ready to start, if that is the case. `nil` means there
+    /// is no safety question standing between the person and the plan.
+    ///
+    /// Today's screen uses this so a plan card can never sit next to a question it contradicts, and
+    /// so the check-in only opens for a reason it can state out loud.
+    public static func blockingQuestion(checkIn: PreWorkoutCheckIn?, profile: StructuredProfile,
+                                        now: Date = Date(), calendar: Calendar = .current) -> String? {
+        let restriction = profile.restrictions
+        if restriction.isUsable, let text = restriction.value, !DailyCoachBrief.isRealRestriction(text) {
+            return "档案里记有运动限制；本版不会自动绕过，请按专业建议安排。"
+        }
+        let today = checkIn.flatMap { calendar.isDate($0.createdAt, inSameDayAs: now) ? $0 : nil }
+        return today?.painReported == nil ? "今天的疼痛情况还没有回答，不能当成“没问题”。" : nil
+    }
+
     public static func assess(checkIn suppliedCheckIn: PreWorkoutCheckIn?,
                               health: HealthSnapshot?,
                               sessions: [WorkoutSession],
