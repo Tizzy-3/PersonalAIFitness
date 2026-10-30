@@ -173,7 +173,10 @@ final class ConstraintPlanningPersistenceTests: XCTestCase {
         let regular = try XCTUnwrap(store.planVersions.first { $0.id == program.dayPlanVersionIDs[weekday] })
         XCTAssertThrowsError(try store.startWorkout(plan: regular, at: date))
         try store.saveCheckIn(PreWorkoutCheckIn(createdAt: date, painReported: false))
-        let executed = try store.startWorkout(plan: plan, at: date)
+        try store.continuePlanning(from: "合成：出现新的训练注意事项", at: date.addingTimeInterval(1))
+        XCTAssertThrowsError(try store.startWorkout(plan: plan, at: date.addingTimeInterval(2)))
+        try store.saveInterview(saved) // Restore the earlier synthetic snapshot for the happy path.
+        let executed = try store.startWorkout(plan: plan, at: date.addingTimeInterval(2))
         XCTAssertEqual(executed.exercises.first?.exercise.id, "builtin.walking")
         let nextWeek = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: 7, to: date))
         XCTAssertEqual(store.scheduledPlan(on: nextWeek)?.id, regular.id)

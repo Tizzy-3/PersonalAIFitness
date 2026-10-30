@@ -82,7 +82,7 @@ final class GentleDayPlannerTests: XCTestCase {
             excludedExerciseIDs: ["builtin.walking", "builtin.stationary-cycling"]))
     }
 
-    func testGentleDateCannotOverrideExplicitRestOrAConcludedDate() throws {
+    func testGentleDateCannotOverrideExplicitRestAndHistoryRemainsReadable() throws {
         let activity = TemporaryActivityConstraint(dateKey: "2026-11-05", lightActivityAllowed: true,
                                                    hasConcerningSymptoms: false)
         XCTAssertEqual(activity.weekday, 4)
@@ -95,7 +95,16 @@ final class GentleDayPlannerTests: XCTestCase {
         XCTAssertThrowsError(try review.validate())
         review.restDateKeys = []
         review.confirmedAt = Date(timeIntervalSince1970: 1_840_000_000)
-        XCTAssertThrowsError(try review.validate())
+        XCTAssertNoThrow(try review.validate(), "A historical plan must remain readable after its date")
+    }
+
+    func testNewReviewCannotBeConfirmedForPastDate() throws {
+        let now = Date(timeIntervalSince1970: 1_840_000_000)
+        var chat = ConstraintChatSession(sourceText: "合成：旧日期轻活动")
+        try chat.appendUser("已经过去的日子", at: now)
+        try chat.receiveCandidate(.init(gentleDateKey: "2026-11-05"), evidenceCount: 1, at: now)
+        chat.setMode(.gentleActivity); chat.gentleActivityAllowed = true; chat.setPainFree(true, at: now)
+        XCTAssertThrowsError(try chat.makeReview(at: now))
     }
 
 }

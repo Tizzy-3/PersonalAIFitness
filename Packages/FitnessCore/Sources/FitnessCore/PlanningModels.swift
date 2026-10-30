@@ -67,10 +67,20 @@ public struct PlanningInput: Codable, Equatable, Sendable {
         self.constraintReview = constraintReview
     }
 
-    public func temporaryActivityItem(preferredID: String? = nil) throws -> PlanningItem? {
-        guard let review = constraintReview, let activity = review.temporaryActivity else { return nil }
-        return try GentleDayPlanner.suggestedActivity(for: activity, equipment: equipment, preferredID: preferredID,
+    public func temporaryActivityItem(preferredID: String? = nil, minutes: Int? = nil) throws -> PlanningItem? {
+        guard let review = constraintReview, let activity = review.temporaryActivity else {
+            guard minutes == nil else { throw CoreError.invalidInput("没有临时活动日期，不能给它指定时长。") }
+            return nil
+        }
+        let duration = minutes ?? 5
+        guard (5...15).contains(duration) else { throw CoreError.invalidInput("临时轻活动时长超出允许范围。") }
+        var item = try GentleDayPlanner.suggestedActivity(for: activity, equipment: equipment, preferredID: preferredID,
             excludedExerciseIDs: excludedExerciseIDs, allowedExerciseIDs: review.allowedExerciseIDs)
+        item.targetSeconds = Double(duration * 60)
+        guard PlannerEngine.timeRange(items: [item]).upper <= minutesPerSession else {
+            throw CoreError.invalidInput("轻活动连同准备和缓和超过你的可用时间。")
+        }
+        return item
     }
 
     public func validate() throws {
@@ -199,7 +209,7 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
     public var personalization: PersonalizationRecord? = nil
 
     public func temporaryActivityItem() throws -> PlanningItem? {
-        try input.temporaryActivityItem(preferredID: personalization?.choices["cardio"])
+        try input.temporaryActivityItem(preferredID: personalization?.choices["cardio"], minutes: personalization?.gentleMinutes)
     }
 
     public static func make(input: PlanningInput, snapshot: AppSnapshot, at: Date = Date()) throws -> PlanningDraft {
@@ -279,7 +289,7 @@ public struct PlanningDraft: Identifiable, Codable, Equatable, Sendable {
                   expected == input, selection != nil else {
                 throw CoreError.invalidInput("个性化计划缺少有效的冻结档案与规则来源。")
             }
-            try PersonalizedPlanReply(choices: personalization.choices, explanation: "校验冻结动作选择", limitations: []).validate(input: input)
+            try PersonalizedPlanReply(choices: personalization.choices, explanation: "校验冻结动作选择", limitations: [], gentleMinutes: personalization.gentleMinutes).validate(input: input)
             let replay = try PlannerEngine.synthesize(input: input, choices: personalization.choices,
                                                       preferredExerciseIDs: personalization.profile.preferredExerciseIDs.isUsable
                                                       ? personalization.profile.preferredExerciseIDs.value ?? [] : [])

@@ -87,7 +87,6 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
                   activity.lightActivityAllowed == true, activity.hasConcerningSymptoms == false,
                   !restDateKeys.contains(activity.dateKey),
                   activity.weekday.map({ !excludedWeekdays.contains($0) }) == true,
-                  activity.dateKey >= Self.dateKey(confirmedAt),
                   activity.excludedExerciseIDs == effectiveExcludedExerciseIDs else {
                 throw CoreError.invalidInput("请先确认当天可以轻活动、当前身体状况及完整限制。")
             }

@@ -451,7 +451,7 @@ struct SimpleConstraintChatView: View {
 
     private var isIsolatedReadbackCapture: Bool {
         #if DEBUG
-        return (ProcessInfo.processInfo.arguments.contains("--capture-constraint-readback") || ProcessInfo.processInfo.arguments.contains("--capture-constraint-deferred-readback"))
+        return (ProcessInfo.processInfo.arguments.contains("--capture-constraint-readback") || ProcessInfo.processInfo.arguments.contains("--capture-constraint-deferred-readback") || ProcessInfo.processInfo.arguments.contains("--capture-constraint-gentle-readback"))
             && ConstraintValidationData.isActive && store.storageURL == nil
         #else
         return false

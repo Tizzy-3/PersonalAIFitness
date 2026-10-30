@@ -232,6 +232,14 @@ final class TrainingStore {
                     throw CoreError.invalidState("今天已有单独的轻活动安排，请从今天的安排开始。")
                 }
                 if (program.temporaryPlanVersionIDs ?? [:]).values.contains(plan.id) {
+                    guard let review = program.draft.input.constraintReview,
+                          let interview, interview.profile.restrictions.isUsable,
+                          interview.profile.restrictions.value == review.sourceText,
+                          interview.profile.constraintReview == review,
+                          profile.restrictions == review.legacySourceText,
+                          !interview.needsSafetyReview else {
+                        throw CoreError.invalidState("你补充的情况或训练注意事项有变化，请先让教练重新核对后再开始。")
+                    }
                     guard program.temporaryPlanVersionIDs?[key] == plan.id else {
                         throw CoreError.invalidState("这份轻活动安排只适用于确认的日期。")
                     }

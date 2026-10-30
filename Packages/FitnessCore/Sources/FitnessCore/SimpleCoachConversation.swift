@@ -164,6 +164,9 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
             guard let key = candidate.gentleDateKey, gentleActivityAllowed == true else {
                 throw CoreError.invalidState("请先确认具体日期及能否轻松活动。")
             }
+            guard key >= TrainingConstraintReview.dateKey(date) else {
+                throw CoreError.invalidState("这个日期已经过去，请告诉教练最新情况。")
+            }
             let excluded = Array(Set(candidate.excludedExerciseIDs + candidate.avoidedPositions.flatMap(\.exerciseIDs))).sorted()
             temporary = TemporaryActivityConstraint(dateKey: key, lightActivityAllowed: true,
                                                     hasConcerningSymptoms: false, excludedExerciseIDs: excluded)
@@ -198,7 +201,7 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         lines.append(excluded.isEmpty ? "没有额外排除具体动作；这不代表没有身体限制。" : "这些动作不加入计划：" + names(excluded) + "。")
         lines.append(candidate.maxSessionMinutes.map { "每次训练最多\($0)分钟。" } ?? "每次时长沿用已确认档案，没有额外缩短上限。")
         lines.append(candidate.allowedExerciseIDs.map { "只能从这些明确允许的动作中安排：" + names($0) + "。" } ?? "没有另设允许动作名单，仍受器械、能力和以上排除条件限制。")
-        if let key = candidate.gentleDateKey {
+        if let key = candidate.gentleDateKey, mode == .gentleActivity {
             lines.append("\(key) 需要降低强度，教练会安排轻活动；这项临时要求只影响这个日期。")
             lines.append(gentleActivityAllowed == true ? "你确认当天可以轻松活动。" : "当天是否可以轻松活动还需你确认。")
         }

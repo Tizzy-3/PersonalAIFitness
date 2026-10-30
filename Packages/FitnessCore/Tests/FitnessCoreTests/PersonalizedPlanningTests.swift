@@ -104,4 +104,35 @@ final class PersonalizedPlanningTests: XCTestCase {
         session.profile.restrictions.value = ""
         XCTAssertThrowsError(try session.profile.planningInput())
     }
+    func testCoachDurationIsBoundedAndFrozenWithTheTemporaryDate() throws {
+        var session = interview()
+        let now = session.createdAt
+        let day = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: 1, to: now))
+        let key = TrainingConstraintReview.dateKey(day)
+        session.profile.restrictions = ProfileField(value: "合成：某一天只做轻活动", provenance: .stated, confirmedAt: now)
+        let activity = TemporaryActivityConstraint(dateKey: key, lightActivityAllowed: true, hasConcerningSymptoms: false)
+        session.profile.constraintReview = TrainingConstraintReview(sourceText: session.profile.restrictions.value!, mode: .gentleActivity,
+            painFreeConfirmed: true, allLimitsRepresentedConfirmed: true, confirmedAt: now, temporaryActivity: activity)
+        let input = try session.profile.planningInput(at: now)
+        var selected = try reply(input)
+        selected.gentleMinutes = 10
+        let decoded = try PersonalizedPlanReply.decode(data: JSONEncoder().encode(selected), input: input)
+        XCTAssertEqual(decoded.gentleMinutes, 10)
+        let draft = try PlanningDraft.makePersonalized(profile: session.profile, reply: selected,
+            snapshot: AppSnapshot(interview: session), providerHost: "fixture.invalid", model: "fixture", at: now)
+        XCTAssertEqual(try draft.temporaryActivityItem()?.targetSeconds, 600)
+        XCTAssertEqual(draft.personalization?.gentleMinutes, 10)
+        let restored = try JSONDecoder().decode(PlanningDraft.self, from: JSONEncoder().encode(draft))
+        XCTAssertEqual(try restored.temporaryActivityItem()?.targetSeconds, 600)
+        try restored.validate()
+        selected.gentleMinutes = 20
+        XCTAssertThrowsError(try selected.validate(input: input))
+        var tooShort = input
+        tooShort.minutesPerSession = 15
+        selected.gentleMinutes = 15
+        XCTAssertThrowsError(try selected.validate(input: tooShort))
+        selected.gentleMinutes = 10
+        XCTAssertThrowsError(try selected.validate(input: interview().profile.planningInput()))
+    }
+
 }

@@ -6,9 +6,11 @@ public struct PersonalizedPlanReply: Codable, Equatable, Sendable {
     public var choices: [String: String]
     public var explanation: String
     public var limitations: [String]
+    public var gentleMinutes: Int?
 
-    public init(choices: [String: String], explanation: String, limitations: [String]) {
+    public init(choices: [String: String], explanation: String, limitations: [String], gentleMinutes: Int? = nil) {
         self.choices = choices; self.explanation = explanation; self.limitations = limitations
+        self.gentleMinutes = gentleMinutes
     }
 
     public func validate(input: PlanningInput) throws {
@@ -21,6 +23,11 @@ public struct PersonalizedPlanReply: Codable, Equatable, Sendable {
                 throw CoreError.invalidInput("AI返回了不在本人器械与动作限制内的选择。")
             }
         }
+        if let gentleMinutes {
+            guard try input.temporaryActivityItem(preferredID: choices["cardio"], minutes: gentleMinutes) != nil else {
+                throw CoreError.invalidInput("这份计划没有临时轻活动，不能指定该时长。")
+            }
+        }
         try CoreValidation.nonempty(explanation, name: "AI个性化安排说明", maxLength: 12_000)
         guard limitations.count <= 20, limitations.allSatisfy({ !$0.isEmpty && $0.count <= 2_000 }) else {
             throw CoreError.invalidInput("AI计划限制说明过长或为空。")
@@ -31,7 +38,8 @@ public struct PersonalizedPlanReply: Codable, Equatable, Sendable {
         guard !data.isEmpty, data.count <= 128 * 1_024 else { throw CoreError.invalidInput("AI动作选择为空或超长。") }
         do {
             guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  Set(object.keys) == Set(["choices", "explanation", "limitations"]) else {
+                  (Set(object.keys) == Set(["choices", "explanation", "limitations"]) ||
+                   Set(object.keys) == Set(["choices", "explanation", "limitations", "gentleMinutes"])) else {
                 throw CoreError.invalidInput("AI动作组合包含不允许的字段，未生成生效计划。")
             }
             let value = try JSONDecoder().decode(PersonalizedPlanReply.self, from: data)
@@ -48,9 +56,10 @@ public struct PersonalizationRecord: Codable, Equatable, Sendable {
     public var profile: StructuredProfile
     public var choices: [String: String]
     public var promptVersion: String
+    public var gentleMinutes: Int?
 
-    public init(profile: StructuredProfile, choices: [String: String], promptVersion: String = "personalized-plan-1") {
-        self.profile = profile; self.choices = choices; self.promptVersion = promptVersion
+    public init(profile: StructuredProfile, choices: [String: String], promptVersion: String = "personalized-plan-1", gentleMinutes: Int? = nil) {
+        self.profile = profile; self.choices = choices; self.promptVersion = promptVersion; self.gentleMinutes = gentleMinutes
     }
 }
 
@@ -67,7 +76,7 @@ extension PlanningDraft {
                                                  preferredExerciseIDs: profile.preferredExerciseIDs.isUsable
                                                  ? profile.preferredExerciseIDs.value ?? [] : [])
         draft.options = [option]
-        draft.personalization = PersonalizationRecord(profile: profile, choices: reply.choices)
+        draft.personalization = PersonalizationRecord(profile: profile, choices: reply.choices, gentleMinutes: reply.gentleMinutes)
         draft.selection = AISelection(optionID: option.id, explanation: reply.explanation,
                                       evidence: ["request", "rules", "option:\(option.id)"],
                                       limitations: reply.limitations)

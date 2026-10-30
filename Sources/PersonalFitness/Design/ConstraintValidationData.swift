@@ -31,6 +31,13 @@ import FitnessCore
             }
             session.constraintChat = chat
         }
+        if ProcessInfo.processInfo.arguments.contains("--capture-constraint-gentle-readback") {
+            session.profile.restrictions = .init(value: "合成示例：指定日期只适合轻松活动。", provenance: .stated, confirmedAt: evidence)
+            var chat = ConstraintChatSession(sourceText: session.profile.restrictions.value!, legacySourceText: store.profile.restrictions)
+            try chat.receiveCandidate(.init(gentleDateKey: TrainingConstraintReview.dateKey(date)), evidenceCount: 0, at: date)
+            chat.setMode(.gentleActivity); chat.gentleActivityAllowed = true; chat.setPainFree(true, at: date)
+            session.constraintChat = chat
+        }
         if ProcessInfo.processInfo.arguments.contains("--capture-constraint-readback") {
             var chat = ConstraintChatSession(sourceText: session.profile.restrictions.value!, legacySourceText: store.profile.restrictions)
             try chat.appendUser("周五休息，避开跪姿，每次最多25分钟。", at: evidence)

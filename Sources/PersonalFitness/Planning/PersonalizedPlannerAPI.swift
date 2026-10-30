@@ -46,8 +46,9 @@ struct PersonalizedPlannerAPI: Sendable {
     没有发送HealthKit数据，不能声称已读取睡眠/HRV或知道今天恢复程度。本人无App训练记录不等于从未运动。
     本地规则将在你的动作选择上决定保守组次/休息与排程并重新校验；不得返回具体公斤数、剂量或医疗诊断。
     本人会核对七天内容并确认，当前还没有生效。不要声称已应用计划。
-    只返回JSON，且恰好包含三个字段：
-    {"choices":{"模式":"池中的exerciseID"},"explanation":"根据本人资料说明安排原因与未知内容","limitations":["适用范围及不确定性"]}
+    对单次轻活动日，从gentleMinutesOptions选择一个适合本人状态的分钟数（包含5至15分钟且已通过时间预算核对）；没有临时日期时gentleMinutes为null。不能虚构医学许可。
+    只返回JSON，且恰好包含四个字段：
+    {"choices":{"模式":"池中的exerciseID"},"explanation":"根据本人资料说明安排原因与未知内容","limitations":["适用范围及不确定性"],"gentleMinutes":null}
     不得返回plan、items、sets、loadKG、工具调用或Markdown。
     """
 
@@ -63,12 +64,16 @@ struct PersonalizedPlannerAPI: Sendable {
             let request: PlanningInput
             let candidatePool: [String: [String]]
             let movementDefinitions: [Exercise]
+            let gentleMinutesOptions: [Int]
         }
         let ids = Set(request.pool.values.flatMap { $0 })
         let payload = Payload(dataAsOf: request.baseline.createdAt, confirmedFacts: request.confirmedFacts,
                               userNarratives: request.userNarratives, dialogueEvidence: request.dialogueEvidence,
                               request: request.baseline.input, candidatePool: request.pool,
-                              movementDefinitions: ExerciseCatalog.exercises.filter { ids.contains($0.id) }.sorted { $0.id < $1.id })
+                              movementDefinitions: ExerciseCatalog.exercises.filter { ids.contains($0.id) }.sorted { $0.id < $1.id },
+                              gentleMinutesOptions: (5...15).filter { minutes in
+                                  (try? request.baseline.input.temporaryActivityItem(minutes: minutes)) != nil
+                              })
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
