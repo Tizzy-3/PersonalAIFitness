@@ -11,11 +11,10 @@ final class DailyCoachBriefTests: XCTestCase {
         return value
     }
     private let now = Date(timeIntervalSince1970: 1_790_000_000)
-    /// A civil timestamp on the same day as `now`, so day-boundary logic cannot flip with the
+    /// A civil morning on the same day as `now`, so day-boundary logic cannot flip with the
     /// machine's time zone.
     private var sameDay: Date {
-        calendar.date(byAdding: .hour, value: 9,
-                      to: calendar.startOfDay(for: now)) ?? now
+        calendar.date(byAdding: .hour, value: 9, to: calendar.startOfDay(for: now)) ?? now
     }
 
     private func exercise() throws -> Exercise {
@@ -24,7 +23,7 @@ final class DailyCoachBriefTests: XCTestCase {
 
     private func plan(sets: Int = 3) throws -> PlanVersion {
         let item = PlannedExercise(exercise: try exercise(), setCount: sets, targetReps: 10, restSeconds: 90)
-        return PlanVersion(name: "上肢", items: [item], confirmedAt: now.addingTimeInterval(-86_400))
+        return PlanVersion(name: "上肢", items: [item], confirmedAt: sameDay.addingTimeInterval(-86_400))
     }
 
     private func checkIn(pain: Bool?, energy: Int? = nil, minutes: Int? = nil) -> PreWorkoutCheckIn {
@@ -95,11 +94,19 @@ final class DailyCoachBriefTests: XCTestCase {
     // MARK: - Missing pain answer
 
     func testPlanIsNotPresentedAsClearedWithoutAPainAnswer() throws {
-        let brief = make(checkIn: nil, plan: try plan())
+        let brief = make(plan: try plan())
         XCTAssertEqual(brief.tone, .caution)
         XCTAssertTrue(brief.needsPainAnswer)
         XCTAssertFalse(brief.tone.allowsEncouragement)
         XCTAssertFalse(brief.headline.contains("今天练"))
+    }
+
+    /// Only an answer recorded today counts; yesterday's pain-free answer must not clear today.
+    func testYesterdaysPainAnswerDoesNotClearToday() throws {
+        let yesterday = PreWorkoutCheckIn(createdAt: sameDay.addingTimeInterval(-86_400), painReported: false)
+        let brief = make(checkIn: yesterday, plan: try plan())
+        XCTAssertEqual(brief.tone, .caution)
+        XCTAssertTrue(brief.needsPainAnswer)
     }
 
     func testAnsweredNoPainGivesThePlanBrief() throws {
@@ -132,16 +139,12 @@ final class DailyCoachBriefTests: XCTestCase {
 
     // MARK: - Running workout
 
-    private func runningSession() throws -> WorkoutSession {
-        let started = now.addingTimeInterval(-600)
-        let set = LoggedSet(reps: 10)
-        let session = WorkoutSession(name: "上肢", sourcePlanVersionID: nil, startedAt: started,
-                                     exercises: [WorkoutExercise(exercise: try exercise(), sets: [set, set, set])])
-        return session
-    }
-
     func testActiveSessionIsSurfacedBeforeStartingAnother() throws {
-        let brief = make(checkIn: checkIn(pain: false), active: try runningSession())
+        let started = sameDay.addingTimeInterval(-600)
+        let reps = LoggedSet(reps: 10)
+        let session = WorkoutSession(name: "上肢", startedAt: started,
+                                     exercises: [WorkoutExercise(exercise: try exercise(), sets: [reps, reps, reps])])
+        let brief = make(checkIn: checkIn(pain: false), active: session)
         XCTAssertEqual(brief.tone, .plan)
         XCTAssertEqual(brief.headline, "正在训练中。")
         XCTAssertFalse(brief.needsPainAnswer, "进行中的训练不需要先追问疼痛")
@@ -173,7 +176,11 @@ final class DailyCoachBriefTests: XCTestCase {
     }
 
     func testDetailsNeverExceedTwoLines() throws {
-        let session = try WorkoutSession.start(plan: try plan(), at: now.addingTimeInterval(-1_800))
+        let started = sameDay.addingTimeInterval(-1_800)
+        let reps = LoggedSet(reps: 10)
+        var session = WorkoutSession(name: "上肢", startedAt: started,
+                                     exercises: [WorkoutExercise(exercise: try exercise(), sets: [reps, reps, reps])])
+        try session.finish(early: false, at: started.addingTimeInterval(1_800))
         let brief = make(checkIn: checkIn(pain: false, energy: 5), plan: try plan(), lastFinished: session)
         XCTAssertLessThanOrEqual(brief.details.count, 2)
     }
@@ -185,33 +192,34 @@ final class DailyCoachBriefTests: XCTestCase {
 
     // MARK: - Agreement with the real readiness engine
 
-    func testBriefSurfacesAQuestionExactlyWhenReadinessWouldRefuseToClearToday() {
-        XCTAssertNotNil(ReadinessEngine.blockingQuestion(checkIn: nil, profile: StructuredProfile(), now: now))
+    func testBlockingQuestionTracksTheSameDayPainAnswer() {
+        XCTAssertNotNil(ReadinessEngine.blockingQuestion(checkIn: nil, profile: StructuredProfile(),
+                                                         now: now, calendar: calendar))
         XCTAssertNotNil(ReadinessEngine.blockingQuestion(
-            checkIn: PreWorkoutCheckIn(createdAt: now.addingTimeInterval(-86_400), painReported: false),
-            profile: StructuredProfile(), now: now), "昨天的回答不能当作今天已回答")
-
+            checkIn: PreWorkoutCheckIn(createdAt: sameDay.addingTimeInterval(-86_400), painReported: false),
+            profile: StructuredProfile(), now: now, calendar: calendar), "昨天的回答不能当作今天已回答")
         XCTAssertNil(ReadinessEngine.blockingQuestion(checkIn: checkIn(pain: false), profile: StructuredProfile(),
-                                                      now: now))
+                                                      now: now, calendar: calendar))
         XCTAssertNil(ReadinessEngine.blockingQuestion(checkIn: checkIn(pain: true), profile: StructuredProfile(),
-                                                      now: now), "报告疼痛不等于还需要回答同一个问题")
-
-        var restricted = StructuredProfile()
-        restricted.restrictions = ProfileField(value: "医生要求避免负重", provenance: .confirmed,
-                                               confirmedAt: now.addingTimeInterval(-86_400), note: nil)
-        let restrictedQuestion = ReadinessEngine.blockingQuestion(checkIn: checkIn(pain: false),
-                                                                  profile: restricted, now: now)
-        XCTAssertNotNil(restrictedQuestion)
-        XCTAssertTrue(restrictedQuestion?.contains("限制") ?? false)
+                                                      now: now, calendar: calendar),
+                     "报告疼痛不等于还需要回答同一个问题")
     }
 
-    func testCautionForLowEnergyAndClearedDayDisagreeAsExpected() throws {
-        let lowEnergy = make(checkIn: checkIn(pain: false, energy: 1), plan: try plan())
-        XCTAssertEqual(lowEnergy.tone, .caution)
+    func testConfirmedRestrictionIsAlwaysABlockingQuestion() {
+        var restricted = StructuredProfile()
+        restricted.restrictions = ProfileField(value: "医生要求避免负重", provenance: .confirmed,
+                                               confirmedAt: sameDay.addingTimeInterval(-86_400), note: nil)
+        let question = ReadinessEngine.blockingQuestion(checkIn: checkIn(pain: false), profile: restricted,
+                                                        now: now, calendar: calendar)
+        XCTAssertNotNil(question)
+        XCTAssertTrue(question?.contains("限制") ?? false)
+    }
+
+    func testClearedDayAndPlanBriefAgree() throws {
         let cleared = make(checkIn: checkIn(pain: false), plan: try plan())
         XCTAssertEqual(cleared.tone, .plan)
         XCTAssertNil(ReadinessEngine.blockingQuestion(checkIn: checkIn(pain: false), profile: StructuredProfile(),
-                                                      now: now),
+                                                      now: now, calendar: calendar),
                      "已经回答了疼痛、也没有记录限制时，没有阻塞性问题")
     }
 }
@@ -231,7 +239,7 @@ final class SessionCoachReplyTests: XCTestCase {
         }
         var session = WorkoutSession(name: "上肢", startedAt: now.addingTimeInterval(-1_800),
                                      exercises: [WorkoutExercise(exercise: try exercise(), sets: sets)])
-        try session.finish(early: false, at: now)
+        try session.finish(early: false, at: now.addingTimeInterval(-60))
         try session.validate()
         return session
     }

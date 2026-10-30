@@ -1,0 +1,25 @@
+{
+  "total_count": 1,
+  "artifacts": [
+    {
+      "id": 12963051733,
+      "node_id": "MDg6QXJ0aWZhY3QxMjk2MzA1MTczMw==",
+      "name": "PersonalFitness-build-diagnostics",
+      "size_in_bytes": 3683,
+      "url": "https://api.github.com/repos/Tizzy-3/PersonalAIFitness/actions/artifacts/12963051733",
+      "archive_download_url": "https://api.github.com/repos/Tizzy-3/PersonalAIFitness/actions/artifacts/12963051733/zip",
+      "expired": false,
+      "digest": "sha256:04f8f65f3ed04ee6cb18e2e684b28b5e576985a346a40a5ee4797ded7b0e27ef",
+      "created_at": "2026-10-30T08:06:45Z",
+      "updated_at": "2026-10-30T08:06:45Z",
+      "expires_at": "2026-11-06T08:06:44Z",
+      "workflow_run": {
+        "id": 41024142624,
+        "repository_id": 1433735873,
+        "head_repository_id": 1433735873,
+        "head_branch": "develop",
+        "head_sha": "867240b6116d3cae22a2b9f60bef871056b7f1da"
+      }
+    }
+  ]
+}

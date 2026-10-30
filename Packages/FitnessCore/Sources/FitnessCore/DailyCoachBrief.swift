@@ -74,7 +74,7 @@ public struct DailyCoachBrief: Equatable, Sendable {
                 details: ["你记录了疼痛\(areas)，这一条比任何训练安排都优先。",
                           "先休息或改做不加重症状的活动，必要时找专业人士看看。"],
                 tone: .safety,
-                evidence: ["训练前记录：\(self.summary(todayCheckIn))"],
+                evidence: ["训练前记录：" + summary(todayCheckIn)],
                 needsPainAnswer: false)
         }
         if let profileRestrictions, isRealRestriction(profileRestrictions) {
@@ -121,7 +121,7 @@ public struct DailyCoachBrief: Equatable, Sendable {
 
         let painUnknown = todayCheckIn?.painReported == nil
         var evidence: [String] = []
-        if let todayCheckIn { evidence.append("训练前记录：\(self.summary(todayCheckIn))") }
+        if let todayCheckIn { evidence.append("训练前记录：" + summary(todayCheckIn)) }
 
         // 4) No plan at all yet — the honest first-run message.
         guard hasWeeklyProgram || plan != nil else {
@@ -173,7 +173,7 @@ public struct DailyCoachBrief: Equatable, Sendable {
             return DailyCoachBrief(
                 headline: "今天的安排放轻一点更合适。",
                 details: [summaryLine, limited
-                          ? "你说今天只有 \(todayCheckIn?.availableMinutes ?? 0) 分钟，比计划短；可以点“今天少一点”看缩短方案。"
+                          ? "你说今天只有 \(todayCheckIn?.availableMinutes ?? 0) 分钟，比计划短；可以点下面的“今天少一点”看缩短方案。"
                           : "你说今天精力偏低；可以点“今天少一点”看减量方案，确认后才生效。"],
                 tone: .caution,
                 evidence: evidence,
