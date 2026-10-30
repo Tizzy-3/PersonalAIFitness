@@ -167,7 +167,7 @@ jobs:
           (cd "$staging" && /usr/bin/zip -qry "$PF_OUTPUT/PersonalFitness-unsigned.ipa" Payload)
           shasum -a 256 "$PF_OUTPUT/PersonalFitness-unsigned.ipa" > "$PF_OUTPUT/SHA256.txt"
           printf '%s\n' \
-            'Personal Fitness 0.9.0 Today opens with one line from the coach, a pending adjustment is visible on Today, and saving a workout ends with the coach's reply.' \
+            'Personal Fitness 0.9.0 Today opens with one line from the coach, a pending adjustment is shown on Today, and saving a workout ends with a reply from the coach.' \
             "Source commit: $GITHUB_SHA" \
             "Workflow run: $GITHUB_RUN_ID / $GITHUB_RUN_ATTEMPT" \
             'Minimum iOS: 27.0. Unsigned IPA: sign before installation.' \
