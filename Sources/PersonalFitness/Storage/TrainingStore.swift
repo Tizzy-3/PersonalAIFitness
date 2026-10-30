@@ -42,7 +42,7 @@ final class TrainingStore {
     var visibleWeeklyPrograms: [WeeklyProgram] { weeklyPrograms.filter { !deletedWeeklyProgramIDs.contains($0.id) }.sorted { $0.confirmedAt > $1.confirmedAt } }
     var deletedWeeklyPrograms: [WeeklyProgram] { weeklyPrograms.filter { deletedWeeklyProgramIDs.contains($0.id) }.sorted { $0.confirmedAt > $1.confirmedAt } }
     private var generatedFamilyIDs: Set<UUID> {
-        let ids = Set(weeklyPrograms.flatMap { $0.dayPlanVersionIDs.values })
+        let ids = Set(weeklyPrograms.flatMap { Array($0.dayPlanVersionIDs.values) + Array(($0.temporaryPlanVersionIDs ?? [:]).values) })
         return Set(planVersions.filter { ids.contains($0.id) }.map(\.planID))
     }
     private var latestPlans: [PlanVersion] {
@@ -54,8 +54,9 @@ final class TrainingStore {
     func scheduledPlan(on date: Date = Date()) -> PlanVersion? {
         guard let program = currentWeeklyProgram else { return currentPlan }
         guard program.draft.input.constraintReview?.isRestDate(date, calendar: .current) != true else { return nil }
+        let key = TrainingConstraintReview.dateKey(date)
         let weekday = ((Calendar.current.component(.weekday, from: date) + 5) % 7) + 1
-        guard let id = program.dayPlanVersionIDs[weekday] else { return nil }
+        guard let id = program.temporaryPlanVersionIDs?[key] ?? program.dayPlanVersionIDs[weekday] else { return nil }
         return planVersions.first { $0.id == id && !deletedPlanIDs.contains($0.planID) }
     }
 
@@ -221,9 +222,23 @@ final class TrainingStore {
         var consuming: Int?
         if let plan {
             guard planVersions.contains(plan), !deletedPlanIDs.contains(plan.planID) else { throw StorageError.stalePlan }
-            if let program = weeklyPrograms.first(where: { $0.dayPlanVersionIDs.values.contains(plan.id) }),
+            if let program = weeklyPrograms.first(where: { $0.dayPlanVersionIDs.values.contains(plan.id) || ($0.temporaryPlanVersionIDs ?? [:]).values.contains(plan.id) }),
                program.draft.input.constraintReview?.isRestDate(date, calendar: .current) == true {
                 throw CoreError.invalidState("这一天在已确认的训练约束中需要休息，不能启动这份周计划的训练。请先核对约束，重新制定并确认安排。")
+            }
+            if let program = weeklyPrograms.first(where: { $0.dayPlanVersionIDs.values.contains(plan.id) || ($0.temporaryPlanVersionIDs ?? [:]).values.contains(plan.id) }) {
+                let key = TrainingConstraintReview.dateKey(date)
+                if let exceptionID = program.temporaryPlanVersionIDs?[key], exceptionID != plan.id {
+                    throw CoreError.invalidState("今天已有单独的轻活动安排，请从今天的安排开始。")
+                }
+                if (program.temporaryPlanVersionIDs ?? [:]).values.contains(plan.id) {
+                    guard program.temporaryPlanVersionIDs?[key] == plan.id else {
+                        throw CoreError.invalidState("这份轻活动安排只适用于确认的日期。")
+                    }
+                    guard todaysCheckIn(now: date)?.painReported == false else {
+                        throw CoreError.invalidState("请先在教练的训练前记录里回答今天是否疼痛或不适，再开始今天的活动。")
+                    }
+                }
             }
             var executionPlan = plan
             if scheduledPlan(on: date)?.id == plan.id {
@@ -648,7 +663,22 @@ final class TrainingStore {
             let committed = try RecordCodec.decode(PlanVersion.self, from: RecordCodec.encode(plan))
             plans.append(committed); dayIDs[day.weekday] = committed.id
         }
-        let program = WeeklyProgram(confirmedAt: now, draft: draft, selectedOptionID: optionID, dayPlanVersionIDs: dayIDs)
+        var temporaryIDs: [String: UUID] = [:]
+        if let activity = draft.input.constraintReview?.temporaryActivity {
+            let item = try GentleDayPlanner.suggestedWalking(for: activity, equipment: draft.input.equipment)
+            guard draft.input.allowsExerciseForPlanning(item.exerciseID),
+                  let exercise = ExerciseCatalog.exercise(id: item.exerciseID) else {
+                throw CoreError.invalidState("当天的轻活动与已确认条件冲突，请重新制定。")
+            }
+            let planned = PlannedExercise(exercise: exercise, setCount: item.setCount, targetReps: item.targetReps,
+                                          targetSeconds: item.targetSeconds, restSeconds: item.restSeconds)
+            let plan = PlanVersion(name: "\(activity.dateKey) · 轻松活动", items: [planned], confirmedAt: now)
+            try plan.validate()
+            let saved = try RecordCodec.decode(PlanVersion.self, from: RecordCodec.encode(plan))
+            plans.append(saved); temporaryIDs[activity.dateKey] = saved.id
+        }
+        let program = WeeklyProgram(confirmedAt: now, draft: draft, selectedOptionID: optionID,
+                                    dayPlanVersionIDs: dayIDs, temporaryPlanVersionIDs: temporaryIDs.isEmpty ? nil : temporaryIDs)
         let committed = try RecordCodec.decode(WeeklyProgram.self, from: RecordCodec.encode(program))
         var updatedDrafts = planningDrafts
         updatedDrafts[index].decision = .accepted; updatedDrafts[index].appliedProgramID = committed.id
@@ -689,7 +719,7 @@ final class TrainingStore {
 
     func activateWeeklyProgram(id: UUID) throws {
         guard let program = visibleWeeklyPrograms.first(where: { $0.id == id }) else { throw CoreError.notFound("周计划") }
-        let dayFamilies = Set(planVersions.filter { program.dayPlanVersionIDs.values.contains($0.id) }.map(\.planID))
+        let dayFamilies = Set(planVersions.filter { (program.dayPlanVersionIDs.values.contains($0.id) || (program.temporaryPlanVersionIDs ?? [:]).values.contains($0.id)) }.map(\.planID))
         guard dayFamilies.isDisjoint(with: deletedPlanIDs) else { throw CoreError.invalidState("周计划训练日已删除，请先恢复完整周计划。") }
         try write { metadata.activeWeeklyProgramID = id; metadata.activePlanVersionID = nil; metadata.revision += 1 }
         activeWeeklyProgramID = id; activePlanVersionID = nil
@@ -698,7 +728,7 @@ final class TrainingStore {
     func deleteWeeklyProgram(id: UUID) throws {
         guard let program = visibleWeeklyPrograms.first(where: { $0.id == id }) else { throw CoreError.notFound("可删除周计划") }
         var deletedPrograms = deletedWeeklyProgramIDs; deletedPrograms.insert(id)
-        let families = planVersions.filter { program.dayPlanVersionIDs.values.contains($0.id) }.map(\.planID)
+        let families = planVersions.filter { (program.dayPlanVersionIDs.values.contains($0.id) || (program.temporaryPlanVersionIDs ?? [:]).values.contains($0.id)) }.map(\.planID)
         let deleted = deletedPlanIDs.union(families)
         let data = try RecordCodec.encode(deleted.sorted { $0.uuidString < $1.uuidString })
         let programsData = try RecordCodec.encode(deletedPrograms.sorted { $0.uuidString < $1.uuidString })
@@ -714,7 +744,7 @@ final class TrainingStore {
     func restoreWeeklyProgram(id: UUID) throws {
         guard let program = weeklyPrograms.first(where: { $0.id == id }), deletedWeeklyProgramIDs.contains(id) else { throw CoreError.notFound("已删除周计划") }
         var programs = deletedWeeklyProgramIDs; programs.remove(id)
-        let families = Set(planVersions.filter { program.dayPlanVersionIDs.values.contains($0.id) }.map(\.planID))
+        let families = Set(planVersions.filter { (program.dayPlanVersionIDs.values.contains($0.id) || (program.temporaryPlanVersionIDs ?? [:]).values.contains($0.id)) }.map(\.planID))
         let deleted = deletedPlanIDs.subtracting(families)
         let data = try RecordCodec.encode(deleted.sorted { $0.uuidString < $1.uuidString })
         let programData = try RecordCodec.encode(programs.sorted { $0.uuidString < $1.uuidString })

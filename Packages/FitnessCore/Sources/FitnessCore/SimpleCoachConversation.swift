@@ -10,14 +10,16 @@ public struct ConstraintChatCandidate: Codable, Equatable, Sendable {
     public var allowedExerciseIDs: [String]?
     public var questions: [String]
     public var unresolved: [String]
+    public var gentleDateKey: String?
 
     public init(excludedExerciseIDs: [String] = [], avoidedPositions: [ConstraintAvoidance] = [],
                 excludedWeekdays: [Int] = [], restDateKeys: [String] = [], maxSessionMinutes: Int? = nil,
-                allowedExerciseIDs: [String]? = nil, questions: [String] = [], unresolved: [String] = []) {
+                allowedExerciseIDs: [String]? = nil, questions: [String] = [], unresolved: [String] = [],
+                gentleDateKey: String? = nil) {
         self.excludedExerciseIDs = excludedExerciseIDs; self.avoidedPositions = avoidedPositions
         self.excludedWeekdays = excludedWeekdays; self.restDateKeys = restDateKeys
         self.maxSessionMinutes = maxSessionMinutes; self.allowedExerciseIDs = allowedExerciseIDs
-        self.questions = questions; self.unresolved = unresolved
+        self.questions = questions; self.unresolved = unresolved; self.gentleDateKey = gentleDateKey
     }
 
     public func validate() throws {
@@ -28,7 +30,8 @@ public struct ConstraintChatCandidate: Codable, Equatable, Sendable {
               restDateKeys.count <= 366, restDateKeys.allSatisfy(TrainingConstraintReview.isValidDateKey),
               avoidedPositions.count <= ConstraintAvoidance.allCases.count,
               maxSessionMinutes.map({ (15...120).contains($0) }) ?? true,
-              questions.count <= 5, unresolved.count <= 20 else {
+              questions.count <= 5, unresolved.count <= 20,
+              gentleDateKey.map(TrainingConstraintReview.isValidDateKey) ?? true else {
             throw CoreError.invalidInput("教练整理的动作、日期、时间或待问事项无效，请继续补充。")
         }
         try CoreValidation.unique(excludedExerciseIDs, name: "暂不安排的动作")
@@ -75,6 +78,7 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
     /// Optional for decoding saved conversations made before this explicit answer timestamp existed.
     public var painFreeAnsweredAt: Date?
     public var restScopeConfirmed: Bool?
+    public var gentleActivityAllowed: Bool?
 
     public init(sourceText: String, legacySourceText: String = "", messages: [ConstraintChatMessage] = [],
                 candidate: ConstraintChatCandidate? = nil, candidateEvidenceCount: Int? = nil,
@@ -84,7 +88,7 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         self.candidate = candidate; self.candidateEvidenceCount = candidateEvidenceCount
         self.mode = mode; self.painFree = painFree; self.professionalNote = professionalNote
         self.confirmedAt = confirmedAt; self.painFreeAnsweredAt = painFreeAnsweredAt
-        self.restScopeConfirmed = nil
+        self.restScopeConfirmed = nil; self.gentleActivityAllowed = nil
     }
 
     public var userMessageCount: Int { messages.filter { $0.role == .user }.count }
@@ -108,17 +112,17 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         try value.validate()
         var draft = self
         draft.candidate = value; draft.candidateEvidenceCount = evidenceCount; draft.confirmedAt = nil
-        draft.restScopeConfirmed = nil
+        draft.restScopeConfirmed = nil; draft.gentleActivityAllowed = nil
         try draft.validate(); self = draft
     }
     public mutating func setMode(_ value: ConstraintReviewMode?) {
-        mode = value; confirmedAt = nil; restScopeConfirmed = nil
+        mode = value; confirmedAt = nil; restScopeConfirmed = nil; gentleActivityAllowed = nil
     }
     public mutating func setPainFree(_ value: Bool?, at date: Date = Date()) {
         painFree = value; painFreeAnsweredAt = value == nil ? nil : date; confirmedAt = nil
     }
     private mutating func invalidateReadback() {
-        candidateEvidenceCount = nil; painFree = nil; painFreeAnsweredAt = nil; confirmedAt = nil; restScopeConfirmed = nil
+        candidateEvidenceCount = nil; painFree = nil; painFreeAnsweredAt = nil; confirmedAt = nil; restScopeConfirmed = nil; gentleActivityAllowed = nil
     }
 
     public func validate() throws {
@@ -155,6 +159,15 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
                 throw CoreError.invalidState("还需明确专业指导允许哪些动作，教练不能替你给活动许可。")
             }
         }
+        let temporary: TemporaryActivityConstraint?
+        if mode == .gentleActivity {
+            guard let key = candidate.gentleDateKey, gentleActivityAllowed == true else {
+                throw CoreError.invalidState("请先确认具体日期及能否轻松活动。")
+            }
+            let excluded = Array(Set(candidate.excludedExerciseIDs + candidate.avoidedPositions.flatMap(\.exerciseIDs))).sorted()
+            temporary = TemporaryActivityConstraint(dateKey: key, lightActivityAllowed: true,
+                                                    hasConcerningSymptoms: false, excludedExerciseIDs: excluded)
+        } else { temporary = nil }
         let review = TrainingConstraintReview(sourceText: sourceText, legacySourceText: legacySourceText, mode: mode,
             excludedWeekdays: candidate.excludedWeekdays, restDateKeys: candidate.restDateKeys,
             excludedExerciseIDs: candidate.excludedExerciseIDs, avoidedPositions: candidate.avoidedPositions,
@@ -162,7 +175,8 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
             painFreeConfirmed: true, allLimitsRepresentedConfirmed: true,
             professionalGuidanceNote: professionalNote, confirmedAt: date,
             restScopeConfirmed: restScopeConfirmed,
-            deferredClinicalQuestions: mode == .affectedDaysRest ? candidate.questions + candidate.unresolved : nil)
+            deferredClinicalQuestions: mode == .affectedDaysRest ? candidate.questions + candidate.unresolved : nil,
+            temporaryActivity: temporary)
         try review.validate()
         return review
     }
@@ -184,6 +198,10 @@ public struct ConstraintChatSession: Codable, Equatable, Sendable {
         lines.append(excluded.isEmpty ? "没有额外排除具体动作；这不代表没有身体限制。" : "这些动作不加入计划：" + names(excluded) + "。")
         lines.append(candidate.maxSessionMinutes.map { "每次训练最多\($0)分钟。" } ?? "每次时长沿用已确认档案，没有额外缩短上限。")
         lines.append(candidate.allowedExerciseIDs.map { "只能从这些明确允许的动作中安排：" + names($0) + "。" } ?? "没有另设允许动作名单，仍受器械、能力和以上排除条件限制。")
+        if let key = candidate.gentleDateKey {
+            lines.append("\(key) 需要降低强度，教练会安排轻活动。")
+            lines.append(gentleActivityAllowed == true ? "你确认当天可以轻松活动。" : "当天是否可以轻松活动还需你确认。")
+        }
         if let mode { lines.append("限制依据：" + mode.title + "。") }
         if !professionalNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { lines.append("你记录的专业指导：" + professionalNote) }
         lines.append(painFree == true ? "你本轮回答：当前没有疼痛或异常不适。" : "还需你回答今天当前是否有疼痛或异常不适。")

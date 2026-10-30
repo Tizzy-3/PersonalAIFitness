@@ -15,11 +15,12 @@ struct SimpleConstraintChatAPI: Sendable {
     excludedWeekdays为每周固定不训练日，1=周一至7=周日；restDateKeys为明确单次休息日yyyy-MM-dd。根据referenceDate/timeZone解释相对日期，不能把一次安排变成每周安排。
     maxSessionMinutes仅提取本人明确的15至120分钟单次上限，否则null；不猜恢复天数、训练强度、负重或医学结论。
     allowedExerciseIDs通常为null。仅当本人记录的具体专业指导明确允许supportedExercises中的具体动作时，可复制对应ID；泛称“可以运动”“轻度活动”“遵医嘱”不足以产生允许动作名单。需要但没有明确允许范围时，继续问具体指导，不能自行扩大范围。
-    无法由本对象表达的次数、负重、强度或治疗恢复边界必须留在unresolved，不能藏在自由总结后声明完成。
-    用户已说不知道、没有具体动作指导或需要你安排时，不要反复追问同一个“专业人士点名哪些动作”问题。保留为unresolved，说明可以由本人在App中选择全部受影响时段先休息，并询问影响哪些时段；不能替本人确认范围、删掉未知或声称其余日期安全。
+    gentleDateKey只用于本人明确表示在某个具体日期需要降低强度但并未要求整天不活动的情况，格式yyyy-MM-dd；不确定日期时问清楚，不能把一次限制变成每周限制。对于这个日期，教练会在本人回答当前状态、确认可进行轻松日常活动之后，自行提出低强度候选；不得要求用户点名具体动作或自行编计划。其他无法表达的限制、疼痛、治疗人员禁止活动或具体部位禁忌都须继续问清楚，保留在questions/unresolved，不能猜成允许。
+    无法由本对象表达的次数、负重或其他治疗恢复边界必须留在unresolved，不能藏在自由总结后声明完成。
+    用户说不知道具体动作或需要你安排时，不要索要动作名单。只询问身体状态、时间和本人知道的注意事项；不捏造治疗许可。
     mode、painFree、painFreeConfirmed、medicalClearance、allLimitsRepresentedConfirmed均由本人和程序处理，禁止输出，也禁止生成任何计划或宣布确认成功。
-    仅返回JSON，字段必须恰好为以下八项，所有列表即便为空也要返回：
-    {"excludedExerciseIDs":[],"avoidedPositions":[],"excludedWeekdays":[],"restDateKeys":[],"maxSessionMinutes":null,"allowedExerciseIDs":null,"questions":[],"unresolved":[]}
+    仅返回JSON，字段必须恰好为以下九项，所有列表即便为空也要返回：
+    {"excludedExerciseIDs":[],"avoidedPositions":[],"excludedWeekdays":[],"restDateKeys":[],"maxSessionMinutes":null,"allowedExerciseIDs":null,"questions":[],"unresolved":[],"gentleDateKey":null}
     """
 
     static func decode(_ content: String) throws -> ConstraintChatCandidate {
@@ -28,7 +29,7 @@ struct SimpleConstraintChatAPI: Sendable {
         let keys: Set<String> = ["excludedExerciseIDs", "avoidedPositions", "excludedWeekdays", "restDateKeys", "maxSessionMinutes", "allowedExerciseIDs", "questions", "unresolved"]
         guard !data.isEmpty, data.count <= 64 * 1_024,
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              Set(object.keys) == keys,
+              (Set(object.keys) == keys || Set(object.keys) == keys.union(["gentleDateKey"])),
               let candidate = try? JSONDecoder().decode(ConstraintChatCandidate.self, from: data),
               (try? candidate.validate()) != nil else { throw CoreError.invalidInput(message) }
         return candidate
@@ -97,7 +98,7 @@ struct SimpleConstraintChatAPI: Sendable {
         }
         catch is CoreError {
             // Never send back, log or persist the rejected model output. At most one correction.
-            let correction = CoachMessage(role: "system", content: "刚才的整理未通过校验。根据同一原始资料重新输出完整八字段JSON，包含allowedExerciseIDs；动作只来自supportedExercises，允许动作只来自本人明确记录的具体专业指导，未知保留questions/unresolved。不得输出健康许可、本人确认、mode、painFree或计划。")
+            let correction = CoachMessage(role: "system", content: "刚才的整理未通过校验。根据同一原始资料重新输出完整九字段JSON，包含allowedExerciseIDs和gentleDateKey；动作只来自supportedExercises，允许动作只来自本人明确记录的具体专业指导，未知保留questions/unresolved。不得输出健康许可、本人确认、mode、painFree或计划。")
             let repaired = try await client.complete(configuration: configuration, key: key,
                 messages: messages + [correction], outputFormat: format)
             try Task.checkCancellation()

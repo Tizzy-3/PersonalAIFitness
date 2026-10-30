@@ -2,7 +2,7 @@ name: Build Personal Fitness trial
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, codex/fitness-coach-20261030]
   workflow_dispatch:
 
 permissions:

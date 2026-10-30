@@ -101,6 +101,21 @@ struct WeeklyProgramDetailView: View {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
+                if let activity = program.draft.input.constraintReview?.temporaryActivity,
+                   let id = program.temporaryPlanVersionIDs?[activity.dateKey],
+                   let temporary = store.planVersions.first(where: { $0.id == id }) {
+                    Section("\(activity.dateKey) · 当天的轻松安排") {
+                        ForEach(temporary.items) { item in
+                            Text("\(item.exercise.name) · \(item.targetSeconds.map { "\(Int($0 / 60)) 分钟" } ?? "轻松活动")")
+                        }
+                        Text("仅在这个日期替换常规安排；当天请先记录身体状态。")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        Button("开始这天的活动", systemImage: "play.fill") {
+                            do { show(try store.startWorkout(plan: temporary).id) }
+                            catch { issue = error.localizedDescription }
+                        }.disabled(store.activeSession != nil)
+                    }
+                }
                 ForEach(option.days) { day in
                     Section {
                         if day.isRestDay { Text("休息 / 自主轻量日常活动").foregroundStyle(.secondary) }

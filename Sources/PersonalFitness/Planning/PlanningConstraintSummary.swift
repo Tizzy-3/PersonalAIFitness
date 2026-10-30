@@ -17,6 +17,11 @@ struct PlanningConstraintSummary: View {
                     .font(.footnote).foregroundStyle(.secondary)
                 ForEach(Array(deferred.enumerated()), id: \.offset) { _, text in Text(text).font(.footnote) }
             }
+            if let activity = review.temporaryActivity {
+                LabeledContent("当天轻活动", value: activity.dateKey)
+                Text("仅影响这个日期，开始前核对当天身体状态。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if !review.excludedWeekdays.isEmpty {
                 LabeledContent("每周休息", value: review.excludedWeekdays.map(PlanningDisplay.weekday).joined(separator: "、"))
             }

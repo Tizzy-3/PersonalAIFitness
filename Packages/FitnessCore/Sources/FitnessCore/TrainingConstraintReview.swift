@@ -1,12 +1,13 @@
 import Foundation
 
 public enum ConstraintReviewMode: String, Codable, CaseIterable, Sendable {
-    case practicalOnly, professionalBoundaries, affectedDaysRest
+    case practicalOnly, professionalBoundaries, affectedDaysRest, gentleActivity
     public var title: String {
         switch self {
         case .practicalOnly: return "时间、能力或偏好限制"
         case .professionalBoundaries: return "已明确的专业活动指导"
         case .affectedDaysRest: return "受影响时段休息，未确定事项保留"
+        case .gentleActivity: return "指定日期轻活动"
         }
     }
 }
@@ -42,6 +43,7 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
     public var confirmedAt: Date
     public var restScopeConfirmed: Bool?
     public var deferredClinicalQuestions: [String]?
+    public var temporaryActivity: TemporaryActivityConstraint?
 
     public init(sourceText: String, legacySourceText: String = "", mode: ConstraintReviewMode = .practicalOnly,
                 excludedWeekdays: [Int] = [], restDateKeys: [String] = [], excludedExerciseIDs: [String] = [],
@@ -49,7 +51,8 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
                 maxSessionMinutes: Int? = nil, painFreeConfirmed: Bool = false,
                 allLimitsRepresentedConfirmed: Bool = false, professionalGuidanceNote: String = "",
                 confirmedAt: Date = Date(), rulesVersion: String = TrainingConstraintReview.currentRulesVersion,
-                restScopeConfirmed: Bool? = nil, deferredClinicalQuestions: [String]? = nil) {
+                restScopeConfirmed: Bool? = nil, deferredClinicalQuestions: [String]? = nil,
+                temporaryActivity: TemporaryActivityConstraint? = nil) {
         self.rulesVersion = rulesVersion; self.sourceText = sourceText; self.legacySourceText = legacySourceText; self.mode = mode
         self.excludedWeekdays = excludedWeekdays.sorted(); self.restDateKeys = restDateKeys.sorted()
         self.excludedExerciseIDs = excludedExerciseIDs.sorted(); self.avoidedPositions = avoidedPositions
@@ -57,9 +60,10 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
         self.painFreeConfirmed = painFreeConfirmed; self.allLimitsRepresentedConfirmed = allLimitsRepresentedConfirmed
         self.professionalGuidanceNote = professionalGuidanceNote; self.confirmedAt = confirmedAt
         self.restScopeConfirmed = restScopeConfirmed; self.deferredClinicalQuestions = deferredClinicalQuestions
+        self.temporaryActivity = temporaryActivity
     }
 
-    public static let currentRulesVersion = "training-constraints-2"
+    public static let currentRulesVersion = "training-constraints-3"
     public var effectiveExcludedExerciseIDs: [String] {
         Array(Set(excludedExerciseIDs + avoidedPositions.flatMap(\.exerciseIDs))).sorted()
     }
@@ -69,14 +73,25 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
 
     public func validate() throws {
         try CoreValidation.date(confirmedAt, name: "训练约束确认时间")
-        guard ["training-constraints-1", Self.currentRulesVersion].contains(rulesVersion) else { throw CoreError.invalidInput("训练约束规则版本不受支持。") }
+        guard ["training-constraints-1", "training-constraints-2", Self.currentRulesVersion].contains(rulesVersion) else { throw CoreError.invalidInput("训练约束规则版本不受支持。") }
         if mode == .affectedDaysRest {
-            guard rulesVersion == Self.currentRulesVersion, restScopeConfirmed == true,
+            guard ["training-constraints-2", Self.currentRulesVersion].contains(rulesVersion), restScopeConfirmed == true,
                   !excludedWeekdays.isEmpty || !restDateKeys.isEmpty,
                   let pending = deferredClinicalQuestions, !pending.isEmpty, pending.count <= 25 else {
                 throw CoreError.invalidInput("请先选择全部受影响的休息日，并本人确认未明确事项仅限这些时段；其他日期也不确定时不能继续。")
             }
             for question in pending { try CoreValidation.nonempty(question, name: "休息日内保留的待确认事项", maxLength: 1_000) }
+        }
+        if mode == .gentleActivity {
+            guard rulesVersion == Self.currentRulesVersion, let activity = temporaryActivity,
+                  activity.lightActivityAllowed == true, activity.hasConcerningSymptoms == false,
+                  !restDateKeys.contains(activity.dateKey),
+                  activity.excludedExerciseIDs == effectiveExcludedExerciseIDs else {
+                throw CoreError.invalidInput("请先确认当天可以轻活动、当前身体状况及完整限制。")
+            }
+            try activity.validate()
+        } else if temporaryActivity != nil {
+            throw CoreError.invalidInput("临时活动限制与核对方式不一致。")
         }
         guard sourceText.count <= 2_000, legacySourceText.count <= 2_000,
               professionalGuidanceNote.count <= 2_000 else { throw CoreError.invalidInput("训练约束原文或说明过长。") }
@@ -213,6 +228,7 @@ extension PlanningInput {
     func allowsExercise(_ id: String) -> Bool {
         !excludedExerciseIDs.contains(id) && (constraintReview?.allows(exerciseID: id) ?? true)
     }
+    public func allowsExerciseForPlanning(_ id: String) -> Bool { allowsExercise(id) }
 
     /// New drafts and pending confirmations respect contradictory evidence already recorded today.
     /// Historical frozen drafts validate against their creation time, not today's state.

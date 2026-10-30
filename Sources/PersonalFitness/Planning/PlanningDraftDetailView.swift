@@ -107,6 +107,16 @@ struct PlanningDraftDetailView: View {
                     }
                 }
             }
+            if let activity = draft.input.constraintReview?.temporaryActivity,
+               let item = try? GentleDayPlanner.suggestedWalking(for: activity, equipment: draft.input.equipment),
+               let exercise = ExerciseCatalog.exercise(id: item.exerciseID) {
+                Section("\(activity.dateKey) · 当天的轻松安排") {
+                    Text(exercise.name)
+                    Text(PlanningDisplay.target(item))
+                    Text("这只替换指定日期的安排，不会改变以后每周同一天的训练。当天开始前请先记录身体状态。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+            }
             Section {
                 Text("初次重量从能控制动作的轻重量开始。")
                 ForEach(Array(option.limitations.enumerated()), id: \.offset) { _, text in Text(text) }

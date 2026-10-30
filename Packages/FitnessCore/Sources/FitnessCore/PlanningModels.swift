@@ -77,6 +77,12 @@ public struct PlanningInput: Codable, Equatable, Sendable {
                 throw CoreError.invalidInput("计划输入未执行已确认的动作、休息日或时长约束。")
             }
         }
+        if let review = constraintReview, let activity = review.temporaryActivity {
+            let item = try GentleDayPlanner.suggestedWalking(for: activity, equipment: equipment)
+            guard allowsExercise(item.exerciseID) else {
+                throw CoreError.invalidInput("已记录的活动限制与轻活动候选冲突，请先核对。")
+            }
+        }
         guard safety == .noKnownRestrictions || (safety == .reviewedConstraints && constraintReview != nil) else {
             throw CoreError.invalidInput(safety == .acuteSymptoms ? "存在急性或异常不适时不生成训练处方，请先停止相关活动并寻求适当专业帮助。" : "请先明确运动限制；存在伤病/限制时，本批不自动安排，仍可按专业建议手动编辑。")
         }
@@ -313,9 +319,11 @@ public struct WeeklyProgram: Identifiable, Codable, Equatable, Sendable {
     public var draft: PlanningDraft
     public var selectedOptionID: String
     public var dayPlanVersionIDs: [Int: UUID]
+    public var temporaryPlanVersionIDs: [String: UUID]?
     public var selectedOption: WeeklyPlanOption? { draft.options.first { $0.id == selectedOptionID } }
-    public init(id: UUID = UUID(), confirmedAt: Date = Date(), draft: PlanningDraft, selectedOptionID: String, dayPlanVersionIDs: [Int: UUID]) {
+    public init(id: UUID = UUID(), confirmedAt: Date = Date(), draft: PlanningDraft, selectedOptionID: String, dayPlanVersionIDs: [Int: UUID], temporaryPlanVersionIDs: [String: UUID]? = nil) {
         self.id = id; self.confirmedAt = confirmedAt; self.draft = draft; self.selectedOptionID = selectedOptionID; self.dayPlanVersionIDs = dayPlanVersionIDs
+        self.temporaryPlanVersionIDs = temporaryPlanVersionIDs
     }
     public func validate() throws {
         try CoreValidation.date(confirmedAt, name: "周计划确认时间")
@@ -324,6 +332,11 @@ public struct WeeklyProgram: Identifiable, Codable, Equatable, Sendable {
               let option = selectedOption else { throw CoreError.invalidInput("周计划缺少有效待确认草案或选择。") }
         let required = Set(option.days.filter { !$0.isRestDay }.map(\.weekday))
         guard Set(dayPlanVersionIDs.keys) == required else { throw CoreError.invalidInput("周计划每天的记录计划关联不完整。") }
-        try CoreValidation.unique(Array(dayPlanVersionIDs.values), name: "周计划日版本 ID")
+        let expectedKeys = draft.input.constraintReview?.temporaryActivity.map { Set([$0.dateKey]) } ?? []
+        let actual = temporaryPlanVersionIDs ?? [:]
+        guard Set(actual.keys) == expectedKeys else {
+            throw CoreError.invalidInput("临时日期安排与已确认的条件不一致。")
+        }
+        try CoreValidation.unique(Array(dayPlanVersionIDs.values) + Array(actual.values), name: "周计划日版本 ID")
     }
 }

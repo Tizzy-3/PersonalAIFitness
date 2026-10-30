@@ -168,9 +168,12 @@ public enum ReviewEngine {
             var completedDates = Set<Date>()
             while day <= now {
                 let weekday = ((calendar.component(.weekday, from: day) + 5) % 7) + 1
+                let key = TrainingConstraintReview.dateKey(day, calendar: calendar)
+                let exceptionID = program.temporaryPlanVersionIDs?[key]
+                let regularID = option.days.contains(where: { $0.weekday == weekday && !$0.isRestDay })
+                    ? program.dayPlanVersionIDs[weekday] : nil
                 if !(program.draft.input.constraintReview?.isRestDate(day, calendar: calendar) ?? false),
-                   option.days.contains(where: { $0.weekday == weekday && !$0.isRestDay }),
-                   let versionID = program.dayPlanVersionIDs[weekday] {
+                   let versionID = exceptionID ?? regularID {
                     planned += 1
                     if finished.contains(where: { $0.sourcePlanVersionID == versionID && $0.startedAt >= earliest
                         && calendar.isDate($0.startedAt, inSameDayAs: day) && $0.completedWorkingSets > 0 }) {

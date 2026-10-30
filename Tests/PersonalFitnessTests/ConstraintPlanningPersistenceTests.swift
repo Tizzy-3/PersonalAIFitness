@@ -141,4 +141,44 @@ final class ConstraintPlanningPersistenceTests: XCTestCase {
         XCTAssertTrue(store.weeklyPrograms.isEmpty)
         XCTAssertTrue(store.planVersions.isEmpty)
     }
+    @MainActor func testSpecificGentleDateIsConfirmedDisplayedAndActuallyExecuted() throws {
+        let date = now
+        let key = dateKey(date)
+        let store = try TrainingStore(inMemory: true)
+        var session = try store.startInterview(at: date.addingTimeInterval(-5))
+        let evidence = date.addingTimeInterval(-1)
+        session.profile.adultStatus = .init(value: true, provenance: .stated, confirmedAt: evidence)
+        session.profile.primaryGoal = .init(value: .generalFitness, provenance: .stated, confirmedAt: evidence)
+        session.profile.experience = .init(value: .beginner, provenance: .stated, confirmedAt: evidence)
+        session.profile.weekdays = .init(value: Array(1...7), provenance: .stated, confirmedAt: evidence)
+        session.profile.minutesPerSession = .init(value: 35, provenance: .stated, confirmedAt: evidence)
+        session.profile.equipment = .init(value: [.bodyweight, .dumbbells, .bench, .walkingSpace], provenance: .stated, confirmedAt: evidence)
+        session.profile.restrictions = .init(value: "合成：指定一天不能剧烈活动", provenance: .stated, confirmedAt: evidence)
+        let activity = TemporaryActivityConstraint(dateKey: key, lightActivityAllowed: true, hasConcerningSymptoms: false)
+        let review = TrainingConstraintReview(sourceText: session.profile.restrictions.value!, legacySourceText: store.profile.restrictions,
+            mode: .gentleActivity, painFreeConfirmed: true, allLimitsRepresentedConfirmed: true,
+            confirmedAt: date, temporaryActivity: activity)
+        try session.confirmConstraintReview(review, at: date)
+        try store.saveInterview(session)
+        let saved = try XCTUnwrap(store.interview)
+        let draft = try PlanningDraft.make(input: saved.profile.planningInput(at: date), snapshot: store.snapshot(), at: date)
+        try store.savePlanningDraft(draft)
+        let program = try store.confirmWeeklyProgram(draftID: draft.id, optionID: XCTUnwrap(draft.options.first).id, at: date)
+        let temporaryID = try XCTUnwrap(program.temporaryPlanVersionIDs?[key])
+        let plan = try XCTUnwrap(store.scheduledPlan(on: date))
+        XCTAssertEqual(plan.id, temporaryID)
+        XCTAssertEqual(plan.items.first?.exercise.id, "builtin.walking")
+        XCTAssertThrowsError(try store.startWorkout(plan: plan, at: date))
+        let weekday = ((Calendar.current.component(.weekday, from: date) + 5) % 7) + 1
+        let regular = try XCTUnwrap(store.planVersions.first { $0.id == program.dayPlanVersionIDs[weekday] })
+        XCTAssertThrowsError(try store.startWorkout(plan: regular, at: date))
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: date, painReported: false))
+        let executed = try store.startWorkout(plan: plan, at: date)
+        XCTAssertEqual(executed.exercises.first?.exercise.id, "builtin.walking")
+        let nextWeek = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: 7, to: date))
+        XCTAssertEqual(store.scheduledPlan(on: nextWeek)?.id, regular.id)
+        let backup = try SnapshotCodec.decode(SnapshotCodec.encode(store.snapshot()))
+        XCTAssertEqual(backup.weeklyPrograms?.first?.temporaryPlanVersionIDs?[key], temporaryID)
+    }
+
 }

@@ -256,6 +256,19 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
             guard accepted == program.draft, let option = program.selectedOption else {
                 throw CoreError.invalidInput("周计划与冻结的草案输入不一致。")
             }
+            if let activity = program.draft.input.constraintReview?.temporaryActivity {
+                let item = try GentleDayPlanner.suggestedWalking(for: activity, equipment: program.draft.input.equipment)
+                guard let id = program.temporaryPlanVersionIDs?[activity.dateKey], let version = versions[id],
+                      version.items.count == 1, let planned = version.items.first,
+                      planned.exercise.id == item.exerciseID, planned.setCount == item.setCount,
+                      planned.targetReps == item.targetReps, planned.targetSeconds == item.targetSeconds,
+                      planned.restSeconds == item.restSeconds else {
+                    throw CoreError.invalidInput("临时日期的训练内容与已确认安排不一致。")
+                }
+                if activeWeeklyProgramID == program.id, deletedPlans.contains(version.planID) {
+                    throw CoreError.invalidState("生效周计划包含已删除的临时训练日。")
+                }
+            }
             for day in option.days where !day.isRestDay {
                 guard let id = program.dayPlanVersionIDs[day.weekday], let version = versions[id],
                       version.items.count == day.items.count else { throw CoreError.missingReference("周计划训练日版本") }

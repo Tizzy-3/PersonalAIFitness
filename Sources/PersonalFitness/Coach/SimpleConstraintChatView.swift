@@ -88,7 +88,7 @@ struct SimpleConstraintChatView: View {
     private var introduction: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("先聊清楚，再安排").font(.title2.bold())
-            Text("告诉教练需要避开的动作、时间安排，或身体方面要注意的事。说不清也没关系，可以慢慢聊。")
+            Text("告诉教练你的身体状况和需要注意的事；如何安排训练交给教练。")
                 .foregroundStyle(.secondary)
             if hasSavedEvidence {
                 DisclosureGroup("看看已经记下的注意事项") {
@@ -140,6 +140,13 @@ struct SimpleConstraintChatView: View {
                     .font(.footnote).foregroundStyle(.secondary)
                 restAlternative
             }.chatCard()
+        } else if let candidate = latestCandidate, let dateKey = candidate.gentleDateKey, chat?.mode == nil {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("\(dateKey) 可以做轻松的日常活动吗？").font(.headline)
+                Text("我会按你的情况安排当天内容，不用你列动作。若治疗人员要求不活动，请如实告诉我。")
+                Button("可以轻松活动") { recordGentleActivity() }.buttonStyle(.borderedProminent)
+                Button("不能／不确定，我再说说") { typing = true }.buttonStyle(.bordered)
+            }.chatCard()
         } else if latestCandidate != nil, chat?.mode == nil {
             VStack(alignment: .leading, spacing: 14) {
                 Text("避开这些动作，主要是因为什么？").font(.headline)
@@ -182,7 +189,7 @@ struct SimpleConstraintChatView: View {
                 ForEach(Array(conversation.readbackLines.enumerated()), id: \.offset) { _, line in
                     Label(line, systemImage: "checkmark").labelStyle(.titleAndIcon)
                 }
-                Text(chat?.mode == .affectedDaysRest ? "这些未明确事项继续保留；所选时段只休息。其他日期仍按你已确认的条件核对。" : (chat?.mode == .professionalBoundaries ? "按你记录的专业指导范围安排。" : "这些是你说明的习惯、能力、偏好和时间安排。"))
+                Text(chat?.mode == .affectedDaysRest ? "这些未明确事项继续保留；所选时段只休息。其他日期仍按你已确认的条件核对。" : (chat?.mode == .gentleActivity ? "教练会为这一天安排轻松活动，其他日期按计划安排。" : (chat?.mode == .professionalBoundaries ? "按你记录的专业指导范围安排。" : "这些是你说明的习惯、能力、偏好和时间安排。")))
                     .font(.callout).foregroundStyle(.secondary)
                 if chat?.mode == .professionalBoundaries, let note = chat?.professionalNote {
                     Text("你记录的具体指导：\(note)").font(.callout)
@@ -332,6 +339,20 @@ struct SimpleConstraintChatView: View {
             conversation.setMode(mode)
             try session.addNarrative(text)
             // This exact, visible human classification applies to the current readback.
+            session.constraintChat = conversation
+            try store.saveInterview(session)
+        } catch { issue = error.localizedDescription }
+    }
+
+    private func recordGentleActivity() {
+        do {
+            guard var session = store.interview, var conversation = session.constraintChat,
+                  sourcesMatch(conversation), conversation.candidate?.gentleDateKey != nil else {
+                throw CoreError.invalidState("情况有更新，请先让教练重新整理。")
+            }
+            conversation.setMode(.gentleActivity)
+            conversation.gentleActivityAllowed = true
+            try session.addNarrative("本人确认所述日期可以做轻松日常活动。")
             session.constraintChat = conversation
             try store.saveInterview(session)
         } catch { issue = error.localizedDescription }

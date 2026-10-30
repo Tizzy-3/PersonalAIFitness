@@ -123,6 +123,10 @@ struct TodayView: View {
                         }.frame(minHeight: 44)
                     }.buttonStyle(.plain)
                 }
+                if store.currentWeeklyProgram?.temporaryPlanVersionIDs?[TrainingConstraintReview.dateKey(Date())] == plan.id {
+                    NavigationLink("先记录今天的身体状态") { CheckInView(store: store) }
+                        .font(.callout)
+                }
                 Button("开始今天的训练") { start(plan) }.buttonStyle(FitnessPrimaryButtonStyle())
                 if store.currentWeeklyProgram == nil { Button("编辑计划") { editPlan(plan) }.font(.subheadline).frame(minHeight: 44) }
             } else if store.currentWeeklyProgram != nil {
