@@ -121,7 +121,9 @@ public enum ReadinessEngine {
     public static func blockingQuestion(checkIn: PreWorkoutCheckIn?, profile: StructuredProfile,
                                         now: Date = Date(), calendar: Calendar = .current) -> String? {
         let restriction = profile.restrictions
-        if restriction.isUsable, let text = restriction.value, !DailyCoachBrief.isRealRestriction(text) {
+        // "无 / 无已知限制 / none" are the strings the rest of the app treats as no restriction;
+        // anything else the person confirmed is a real limit and must not be planned around.
+        if restriction.isUsable, let text = restriction.value, DailyCoachBrief.hasRealRestriction(text) {
             return "档案里记有运动限制；本版不会自动绕过，请按专业建议安排。"
         }
         let today = checkIn.flatMap { calendar.isDate($0.createdAt, inSameDayAs: now) ? $0 : nil }

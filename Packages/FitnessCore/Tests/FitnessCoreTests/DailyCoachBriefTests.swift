@@ -61,9 +61,9 @@ final class DailyCoachBriefTests: XCTestCase {
 
     func testNullRestrictionsAreNotTreatedAsALimit() {
         for text in ["无", "无已知限制", "无运动限制", "没有已知限制", "none", " 无 ", ""] {
-            XCTAssertFalse(DailyCoachBrief.isRealRestriction(text), text)
+            XCTAssertFalse(DailyCoachBrief.hasRealRestriction(text), text)
         }
-        XCTAssertTrue(DailyCoachBrief.isRealRestriction("右膝半月板术后，医生要求避免深蹲"))
+        XCTAssertTrue(DailyCoachBrief.hasRealRestriction("右膝半月板术后，医生要求避免深蹲"))
     }
 
     func testProfileRestrictionBlocksAutomaticPlanning() throws {
@@ -203,6 +203,15 @@ final class DailyCoachBriefTests: XCTestCase {
         XCTAssertNil(ReadinessEngine.blockingQuestion(checkIn: checkIn(pain: true), profile: StructuredProfile(),
                                                       now: now, calendar: calendar),
                      "报告疼痛不等于还需要回答同一个问题")
+    }
+
+    func testNullRestrictionTextIsNotABlockingQuestion() {
+        var none = StructuredProfile()
+        none.restrictions = ProfileField(value: "无", provenance: .confirmed,
+                                         confirmedAt: sameDay.addingTimeInterval(-86_400), note: nil)
+        XCTAssertNil(ReadinessEngine.blockingQuestion(checkIn: checkIn(pain: false), profile: none,
+                                                      now: now, calendar: calendar),
+                     "档案写“无”不是限制，不能因此拦住今天的训练")
     }
 
     func testConfirmedRestrictionIsAlwaysABlockingQuestion() {

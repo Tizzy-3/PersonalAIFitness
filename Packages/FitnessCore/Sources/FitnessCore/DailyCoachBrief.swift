@@ -79,7 +79,7 @@ public struct DailyCoachBrief: Equatable, Sendable {
                 evidence: ["训练前记录：" + summary(todayCheckIn)],
                 needsPainAnswer: false)
         }
-        if let profileRestrictions, isRealRestriction(profileRestrictions) {
+        if let profileRestrictions, hasRealRestriction(profileRestrictions) {
             return DailyCoachBrief(
                 headline: "档案里有运动限制，我不替你绕过它。",
                 details: ["本版没有医学限制的个体适配能力，不会因为今天状态好就放行。",
@@ -193,7 +193,7 @@ public struct DailyCoachBrief: Equatable, Sendable {
 
     /// The five strings the rest of the app already treats as "no restriction". Anything else is a
     /// real, person-confirmed limit and must not be planned around automatically.
-    static func isRealRestriction(_ text: String) -> Bool {
+    static func hasRealRestriction(_ text: String) -> Bool {
         let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if normalized.isEmpty { return false }
         return !Set(["无", "无已知限制", "无运动限制", "没有已知限制", "none"]).contains(normalized)
