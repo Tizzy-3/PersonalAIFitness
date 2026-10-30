@@ -125,6 +125,8 @@ final class PersonalizedPlanningTests: XCTestCase {
         let restored = try JSONDecoder().decode(PlanningDraft.self, from: JSONEncoder().encode(draft))
         XCTAssertEqual(try restored.temporaryActivityItem()?.targetSeconds, 600)
         try restored.validate()
+        selected.gentleMinutes = nil
+        XCTAssertThrowsError(try selected.validate(input: input))
         selected.gentleMinutes = 20
         XCTAssertThrowsError(try selected.validate(input: input))
         var tooShort = input

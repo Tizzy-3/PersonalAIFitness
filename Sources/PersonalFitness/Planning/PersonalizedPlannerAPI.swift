@@ -47,8 +47,9 @@ struct PersonalizedPlannerAPI: Sendable {
     本地规则将在你的动作选择上决定保守组次/休息与排程并重新校验；不得返回具体公斤数、剂量或医疗诊断。
     本人会核对七天内容并确认，当前还没有生效。不要声称已应用计划。
     对单次轻活动日，从gentleMinutesOptions选择一个适合本人状态的分钟数（包含5至15分钟且已通过时间预算核对）；没有临时日期时gentleMinutes为null。不能虚构医学许可。
-    只返回JSON，且恰好包含四个字段：
+    只返回JSON，且恰好包含四个字段。没有临时日期时格式示例：
     {"choices":{"模式":"池中的exerciseID"},"explanation":"根据本人资料说明安排原因与未知内容","limitations":["适用范围及不确定性"],"gentleMinutes":null}
+    如果存在临时日期，gentleMinutes必须是gentleMinutesOptions中的一个整数，不能为null或缺失。
     不得返回plan、items、sets、loadKG、工具调用或Markdown。
     """
 

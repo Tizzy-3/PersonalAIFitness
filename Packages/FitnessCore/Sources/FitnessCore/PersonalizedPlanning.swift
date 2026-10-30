@@ -23,6 +23,9 @@ public struct PersonalizedPlanReply: Codable, Equatable, Sendable {
                 throw CoreError.invalidInput("AI返回了不在本人器械与动作限制内的选择。")
             }
         }
+        if input.constraintReview?.temporaryActivity != nil && gentleMinutes == nil {
+            throw CoreError.invalidInput("教练没有安排轻活动的时长，请重新请求计划。")
+        }
         if let gentleMinutes {
             guard try input.temporaryActivityItem(preferredID: choices["cardio"], minutes: gentleMinutes) != nil else {
                 throw CoreError.invalidInput("这份计划没有临时轻活动，不能指定该时长。")
