@@ -11,6 +11,12 @@ final class DailyCoachBriefTests: XCTestCase {
         return value
     }
     private let now = Date(timeIntervalSince1970: 1_790_000_000)
+    /// A civil timestamp on the same day as `now`, so day-boundary logic cannot flip with the
+    /// machine's time zone.
+    private var sameDay: Date {
+        calendar.date(byAdding: .hour, value: 9,
+                      to: calendar.startOfDay(for: now)) ?? now
+    }
 
     private func exercise() throws -> Exercise {
         try XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.barbell-bench-press"))
@@ -22,7 +28,7 @@ final class DailyCoachBriefTests: XCTestCase {
     }
 
     private func checkIn(pain: Bool?, energy: Int? = nil, minutes: Int? = nil) -> PreWorkoutCheckIn {
-        PreWorkoutCheckIn(createdAt: now, energy: energy, painReported: pain, availableMinutes: minutes)
+        PreWorkoutCheckIn(createdAt: sameDay, energy: energy, painReported: pain, availableMinutes: minutes)
     }
 
     private func make(checkIn: PreWorkoutCheckIn? = nil,
@@ -107,7 +113,7 @@ final class DailyCoachBriefTests: XCTestCase {
     // MARK: - Already finished today
 
     func testFinishedSessionIsReportedBeforeAnyFurtherTraining() {
-        let feedback = SessionFeedback(sessionID: UUID(), createdAt: now, completedWorkingSets: 7,
+        let feedback = SessionFeedback(sessionID: UUID(), createdAt: sameDay, completedWorkingSets: 7,
                                        totalSeconds: 1_800, tooHard: true)
         let brief = make(checkIn: checkIn(pain: false), completedToday: feedback)
         XCTAssertEqual(brief.tone, .done)
@@ -116,7 +122,7 @@ final class DailyCoachBriefTests: XCTestCase {
     }
 
     func testPostSessionPainIsCalledOutWithoutDiagnosing() {
-        let feedback = SessionFeedback(sessionID: UUID(), createdAt: now, completedWorkingSets: 4,
+        let feedback = SessionFeedback(sessionID: UUID(), createdAt: sameDay, completedWorkingSets: 4,
                                        totalSeconds: 900, painReported: true)
         let brief = make(checkIn: checkIn(pain: false), completedToday: feedback)
         XCTAssertEqual(brief.tone, .done)

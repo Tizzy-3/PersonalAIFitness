@@ -218,7 +218,8 @@ public struct DailyCoachBrief: Equatable, Sendable {
         }
         let sets = lastFinished.completedWorkingSets
         if sets == 0 { return "上一次训练没有完成的正式组，这次从轻量开始找感觉。" }
-        return (samePlan ? "上次同一个安排" : "上次训练") + "完成 \(sets) 组，用时 \(duration(lastFinished.elapsed(at: lastFinished.endedAt ?? lastFinished.startedAt)))。"
+        let minutes = Int((lastFinished.elapsed(at: lastFinished.endedAt ?? lastFinished.startedAt) / 60).rounded())
+        return (samePlan ? "上次同一个安排" : "上次训练") + "完成 \(sets) 组，用时约 \(max(1, minutes)) 分钟。"
     }
 
     static func summary(_ checkIn: PreWorkoutCheckIn) -> String {

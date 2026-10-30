@@ -18,14 +18,14 @@ extension TrainingStore {
             .filter { !$0.status.isOngoing && Calendar.current.isDate($0.startedAt, inSameDayAs: now) }
             .sorted { ($0.endedAt ?? $0.startedAt) > ($1.endedAt ?? $1.startedAt) }
             .first
-        let feedback = finishedToday.flatMap { feedback(for: $0.id) }
+        let finishedFeedback = finishedToday.flatMap { saved in feedback(for: saved.id) }
         // Feedback counts as "today's session" only when it was actually recorded after the workout
         // ended; a feedback record carried over from an earlier session must not read as done today.
         let completedToday: SessionFeedback? = {
-            guard let feedback, let ended = finishedToday?.endedAt,
-                  Calendar.current.isDate(feedback.createdAt, inSameDayAs: now),
-                  feedback.createdAt >= ended.addingTimeInterval(-60) else { return nil }
-            return feedback
+            guard let finishedFeedback, let ended = finishedToday?.endedAt,
+                  Calendar.current.isDate(finishedFeedback.createdAt, inSameDayAs: now),
+                  finishedFeedback.createdAt >= ended.addingTimeInterval(-60) else { return nil }
+            return finishedFeedback
         }()
         let lastFinished = sessions
             .filter { !$0.status.isOngoing && !Calendar.current.isDate($0.startedAt, inSameDayAs: now) }
@@ -41,16 +41,16 @@ extension TrainingStore {
             isConstraintRestDay: isConstraintRestDay(on: now),
             activeSession: activeSession,
             lastFinishedSession: lastFinished,
-            lastFeedback: lastFinished.flatMap { feedback(for: $0.id) },
+            lastFeedback: lastFinished.flatMap { saved in feedback(for: saved.id) },
             completedToday: completedToday)
     }
 
     /// The reply to show once a workout has been saved. `nil` when the feedback could not be matched
     /// to a saved session, so the UI never shows a reply about a workout it cannot verify.
     func sessionCoachReply(feedbackID: UUID) -> SessionCoachReply? {
-        guard let feedback = sessionFeedbackRecords.first(where: { $0.id == feedbackID }),
-              let session = session(id: feedback.sessionID) else { return nil }
-        return SessionCoachReply.make(feedback: feedback, session: session)
+        guard let saved = sessionFeedbackRecords.first(where: { $0.id == feedbackID }),
+              let savedSession = session(id: saved.sessionID) else { return nil }
+        return SessionCoachReply.make(feedback: saved, session: savedSession)
     }
 
     /// True when the stored proposal no longer matches today's facts, so the card can say so instead
