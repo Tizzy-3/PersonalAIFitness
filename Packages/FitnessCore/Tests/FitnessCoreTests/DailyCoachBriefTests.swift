@@ -234,12 +234,17 @@ final class SessionCoachReplyTests: XCTestCase {
     }
 
     private func session(completedSets: Int, plannedSets: Int = 3) throws -> WorkoutSession {
+        let started = now.addingTimeInterval(-1_800)
+        let ended = now.addingTimeInterval(-60)
+        // Completed sets must fall inside the recorded window, otherwise `validate` correctly refuses
+        // the session as inconsistent.
         let sets = (0..<plannedSets).map { index in
-            LoggedSet(reps: 10, loadKG: 20, completedAt: index < completedSets ? now : nil)
+            LoggedSet(loadKG: 20, reps: 10,
+                      completedAt: index < completedSets ? started.addingTimeInterval(300) : nil)
         }
-        var session = WorkoutSession(name: "上肢", startedAt: now.addingTimeInterval(-1_800),
+        var session = WorkoutSession(name: "上肢", startedAt: started,
                                      exercises: [WorkoutExercise(exercise: try exercise(), sets: sets)])
-        try session.finish(early: false, at: now.addingTimeInterval(-60))
+        try session.finish(early: false, at: ended)
         try session.validate()
         return session
     }
