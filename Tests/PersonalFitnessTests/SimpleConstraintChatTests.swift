@@ -181,4 +181,20 @@ final class SimpleConstraintChatTests: XCTestCase {
         } catch { XCTAssertEqual(error as? CoachClientError, .authentication) }
         XCTAssertEqual(SimpleConstraintChatProtocol.fixture.requests().count, 1)
     }
+    @MainActor
+    func testCoachCanReturnTemporaryLowIntensityDateWithoutDemandingMovementList() async throws {
+        let response = #"{"excludedExerciseIDs":[],"avoidedPositions":[],"excludedWeekdays":[],"restDateKeys":[],"maxSessionMinutes":null,"allowedExerciseIDs":null,"questions":[],"unresolved":[],"gentleDateKey":"2028-02-29"}"#
+        SimpleConstraintChatProtocol.fixture.reset([.init(status: 200, content: response)])
+        let original = try session()
+        let candidate = try await api().reply(session: original, legacyRestrictions: "原档案里的安排", configuration: service, key: "fixture-key")
+        XCTAssertEqual(candidate.gentleDateKey, "2028-02-29")
+        XCTAssertNil(candidate.allowedExerciseIDs)
+        XCTAssertNil(original.constraintChat?.mode)
+        XCTAssertNil(original.constraintChat?.gentleActivityAllowed)
+        let request = try XCTUnwrap(SimpleConstraintChatProtocol.fixture.requests().first)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: request) as? [String: Any])
+        let messages = try XCTUnwrap(body["messages"] as? [[String: String]])
+        XCTAssertTrue(messages[0]["content"]?.contains("不得要求用户点名具体动作") ?? false)
+    }
+
 }

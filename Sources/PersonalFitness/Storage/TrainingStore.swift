@@ -235,8 +235,13 @@ final class TrainingStore {
                     guard program.temporaryPlanVersionIDs?[key] == plan.id else {
                         throw CoreError.invalidState("这份轻活动安排只适用于确认的日期。")
                     }
-                    guard todaysCheckIn(now: date)?.painReported == false else {
+                    guard let checkIn = todaysCheckIn(now: date), checkIn.painReported == false else {
                         throw CoreError.invalidState("请先在教练的训练前记录里回答今天是否疼痛或不适，再开始今天的活动。")
+                    }
+                    if let assessment = latestReadiness, assessment.createdAt >= checkIn.createdAt,
+                       assessment.createdAt <= date, Calendar.current.isDate(assessment.createdAt, inSameDayAs: date),
+                       assessment.safetyVerdict == .stop {
+                        throw CoreError.invalidState("今天的状态评估仍提示先停止相关活动，请先重新核对身体情况。")
                     }
                 }
             }

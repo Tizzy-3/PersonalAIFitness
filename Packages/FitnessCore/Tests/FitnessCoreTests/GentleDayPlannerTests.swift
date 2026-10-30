@@ -82,4 +82,20 @@ final class GentleDayPlannerTests: XCTestCase {
             excludedExerciseIDs: ["builtin.walking", "builtin.stationary-cycling"]))
     }
 
+    func testGentleDateCannotOverrideExplicitRestOrAConcludedDate() throws {
+        let activity = TemporaryActivityConstraint(dateKey: "2026-11-05", lightActivityAllowed: true,
+                                                   hasConcerningSymptoms: false)
+        XCTAssertEqual(activity.weekday, 4)
+        var review = TrainingConstraintReview(sourceText: "合成限制", mode: .gentleActivity,
+            excludedWeekdays: [4], painFreeConfirmed: true, allLimitsRepresentedConfirmed: true,
+            confirmedAt: Date(timeIntervalSince1970: 1_790_000_000), temporaryActivity: activity)
+        XCTAssertThrowsError(try review.validate())
+        review.excludedWeekdays = []
+        review.restDateKeys = ["2026-11-05"]
+        XCTAssertThrowsError(try review.validate())
+        review.restDateKeys = []
+        review.confirmedAt = Date(timeIntervalSince1970: 1_840_000_000)
+        XCTAssertThrowsError(try review.validate())
+    }
+
 }

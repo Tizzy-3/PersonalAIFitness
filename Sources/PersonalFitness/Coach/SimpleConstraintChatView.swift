@@ -75,6 +75,8 @@ struct SimpleConstraintChatView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if chat?.mode == .affectedDaysRest {
                     Button("修改休息日") { editRestScope { $0.restScopeConfirmed = nil } }
+                } else if chat?.mode == .gentleActivity {
+                    Button("继续说明") { editing = true; typing = true }
                 } else {
                     NavigationLink("详细编辑") { ConstraintReviewView(store: store) }
                 }

@@ -110,6 +110,7 @@ struct WeeklyProgramDetailView: View {
                         }
                         Text("仅在这个日期替换常规安排；当天请先记录身体状态。")
                             .font(.footnote).foregroundStyle(.secondary)
+                        NavigationLink("记录今天的身体状态") { CheckInView(store: store) }
                         Button("开始这天的活动", systemImage: "play.fill") {
                             do { show(try store.startWorkout(plan: temporary).id) }
                             catch { issue = error.localizedDescription }
