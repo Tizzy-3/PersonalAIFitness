@@ -193,7 +193,7 @@ struct CoachInterviewView: View {
                 CoachIconBadge(symbol: "person.text.rectangle", color: FitnessTheme.violet)
                 VStack(alignment: .leading, spacing: 5) {
                     Text("把你的情况，慢慢聊清楚").font(.headline)
-                    Text(configuration == nil ? "先连接你选择的 AI 服务" : "使用 \(configuration?.model ?? "")")
+                    Text(configuration == nil ? "教练需要先连上你选的服务，才能开口提问" : "正在使用 \(configuration?.model ?? "")")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

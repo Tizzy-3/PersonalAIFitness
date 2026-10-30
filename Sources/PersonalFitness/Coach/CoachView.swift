@@ -87,7 +87,7 @@ struct CoachView: View {
             NavigationLink { CoachInterviewView(store: store) } label: {
                 Label("生成训练计划", systemImage: "calendar.badge.plus")
             }.buttonStyle(FitnessPrimaryButtonStyle())
-            Text("需要补资料时，AI会主动问你。你只需回答，不用自己想话题。进入后会把已存档案和对话发给你配置的AI。")
+            Text("需要补资料时，教练会主动问你，你只需回答。进入后会把已存档案和对话发给你配置的 AI 服务。")
                 .font(.caption).foregroundStyle(.secondary)
             NavigationLink { CoachInterviewView(store: store, continueInDepth: true) } label: {
                 Label("让教练继续问我", systemImage: "bubble.left.and.bubble.right")

@@ -261,7 +261,7 @@ public struct SessionCoachReply: Equatable, Sendable {
         if feedback.painReported == true {
             let areas = feedback.painAreas.isEmpty ? "" : "（\(feedback.painAreas.joined(separator: "、"))）"
             return SessionCoachReply(
-                headline: "记录下来了你报告疼痛\(areas)。",
+                headline: "你报告了疼痛\(areas)，我记下了。",
                 details: ["先观察这个部位，下一次训练前我会重新问当天状态。",
                           "是否继续同强度训练，以你自己和专业意见为准，我不会替你判断。"],
                 isSafetyConcern: true)
@@ -283,7 +283,7 @@ public struct SessionCoachReply: Equatable, Sendable {
             : "完成 \(sets) 个正式组。"
         var details = [progressLine]
         if feedback.perceivedExertion.map({ $0 <= 6 }) ?? false {
-            details.append("你说昨天还有余力；等连续几次都稳定，再讨论往上加，现在先按原量。")
+            details.append("你说这次还有余力；等连续几次都稳定，再讨论往上加，现在先按原量。")
         } else if feedback.perceivedExertion == nil {
             details.append("这次没有填主观感受，下次填一下，我才能判断该不该变。")
         } else {
