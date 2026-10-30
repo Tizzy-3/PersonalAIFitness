@@ -122,4 +122,40 @@ final class PersonalizedPlannerClientTests: XCTestCase {
             XCTFail("Invalid service choices must fail, never fall back to local defaults")
         } catch { XCTAssertNil(prepared.baseline.selection) }
     }
+    func testHTTPPlanCompositionCarriesAndFreezesBoundedGentleDuration() async throws {
+        var session = interview()
+        let now = session.createdAt
+        let tomorrow = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: 1, to: now))
+        let key = TrainingConstraintReview.dateKey(tomorrow)
+        session.profile.restrictions = ProfileField(value: "合成：单日轻活动", provenance: .stated, confirmedAt: now)
+        session.profile.constraintReview = TrainingConstraintReview(sourceText: "合成：单日轻活动", mode: .gentleActivity,
+            painFreeConfirmed: true, allLimitsRepresentedConfirmed: true, confirmedAt: now,
+            temporaryActivity: TemporaryActivityConstraint(dateKey: key, lightActivityAllowed: true, hasConcerningSymptoms: false))
+        let snapshot = AppSnapshot(interview: session)
+        let prepared = try PersonalizedPlanRequest.make(session: session, snapshot: snapshot, at: now)
+        let selected = PersonalizedPlanReply(choices: prepared.pool.mapValues { $0[0] },
+            explanation: "合成测试：轻活动", limitations: [], gentleMinutes: 10)
+        let content = String(decoding: try JSONEncoder().encode(selected), as: UTF8.self)
+        let envelope = try JSONSerialization.data(withJSONObject: ["choices": [["message": ["content": content], "finish_reason": "stop"]]])
+        CompositionFixtureProtocol.state.set { request in
+            let body = try HTTPRequestBodyFixture.read(request)
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+            let messages = try XCTUnwrap(object["messages"] as? [[String: String]])
+            let payloadText = try XCTUnwrap(messages.last?["content"])
+            let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(payloadText.utf8)) as? [String: Any])
+            XCTAssertTrue((payload["gentleMinutesOptions"] as? [Int])?.contains(10) ?? false)
+            XCTAssertTrue(payloadText.contains(key))
+            return envelope
+        }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [CompositionFixtureProtocol.self]
+        let result = try await PersonalizedPlannerAPI(client: CoachHTTPClient(session: URLSession(configuration: config)))
+            .compose(prepared, configuration: AIConfiguration(endpoint: "https://fixture.invalid/v1/chat/completions", model: "fixture"), key: "fixture-token")
+        XCTAssertEqual(result.gentleMinutes, 10)
+        let draft = try PlanningDraft.makePersonalized(profile: session.profile, reply: result, snapshot: snapshot,
+            providerHost: "fixture.invalid", model: "fixture", at: now)
+        XCTAssertEqual(try draft.temporaryActivityItem()?.targetSeconds, 600)
+        XCTAssertEqual(draft.decision, .pending)
+    }
+
 }
