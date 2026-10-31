@@ -21,7 +21,7 @@ final class CoachBehaviourTests: XCTestCase {
     private func session(completed: Int, planned: Int = 3) throws -> WorkoutSession {
         let started = now.addingTimeInterval(-86_400 - 1_800)
         let sets = (0..<planned).map { index in
-            LoggedSet(reps: 10, loadKG: 20,
+            LoggedSet(loadKG: 20, reps: 10,
                       completedAt: index < completed ? started.addingTimeInterval(300) : nil)
         }
         var value = WorkoutSession(name: "上肢", startedAt: started,

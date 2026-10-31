@@ -96,7 +96,7 @@ final class CalorieEstimatorTests: XCTestCase {
     func testSessionTotalUsesCompletedSetsOnly() throws {
         let move = try exercise()
         let done = (0..<3).map { index in
-            LoggedSet(reps: 10, loadKG: 20,
+            LoggedSet(loadKG: 20, reps: 10,
                       completedAt: index < 2 ? now.addingTimeInterval(Double(index) * 120) : nil)
         }
         var session = WorkoutSession(name: "上肢", startedAt: now.addingTimeInterval(-1_800),
