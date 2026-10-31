@@ -12,6 +12,7 @@ struct WorkoutView: View {
     @State private var finishing = false
     @State private var noteTarget: NoteRoute?
     @State private var pendingFeedback: PostWorkoutRoute?
+    @State private var showingProfileForWeight = false
 
     private var session: WorkoutSession? { store.session(id: sessionID) }
 
@@ -92,6 +93,9 @@ struct WorkoutView: View {
                     current.exercises[index].note = text
                 }
             } }
+        }
+        .sheet(isPresented: $showingProfileForWeight) {
+            NavigationStack { CoachProfileReviewView(store: store) }
         }
         .sheet(item: $pendingFeedback) { route in
             NavigationStack {
@@ -225,6 +229,16 @@ struct WorkoutView: View {
                     HStack(spacing: 8) {
                         Text(item.skipped ? "本次已跳过" : item.exercise.loadConvention.title)
                             .font(.caption).foregroundStyle(.secondary)
+                        // No body weight means no calorie number, and the person needs to know why
+                        // instead of assuming the feature is missing.
+                        if itemCalories(item) == nil, store.interview?.profile.weightKG.isUsable != true {
+                            Button { showingProfileForWeight = true } label: {
+                                Text("填体重可估算千卡")
+                                    .font(.system(size: 11, design: .rounded))
+                                    .foregroundStyle(FitnessTheme.faint)
+                            }
+                            .buttonStyle(.plain)
+                        }
                         if let kcal = itemCalories(item) {
                             // An estimate, and labelled as one wherever it appears.
                             Text("\(kcal) 千卡")
