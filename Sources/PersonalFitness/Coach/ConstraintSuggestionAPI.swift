@@ -125,7 +125,7 @@ struct ConstraintSuggestionAPI: Sendable {
             // logged or persisted.
             let correction = CoachMessage(role: "system", content: ModelOutputRejection.correction(
                 reason: rejection.reason,
-                allowedKeys: Self.protocolKeys,
+                allowedKeys: ConstraintSuggestion.protocolKeys,
                 extraRules: "动作只来自真实的 supportedExercises；未知事项保留在 questions/unresolved，不编造答案，不输出健康许可或任何计划字段。"))
             let repaired = try await client.complete(configuration: configuration, key: key, messages: messages + [correction], outputFormat: format)
             try Task.checkCancellation()
