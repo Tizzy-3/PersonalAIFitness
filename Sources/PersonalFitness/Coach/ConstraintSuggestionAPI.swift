@@ -129,7 +129,10 @@ struct ConstraintSuggestionAPI: Sendable {
                 extraRules: "动作只来自真实的 supportedExercises；未知事项保留在 questions/unresolved，不编造答案，不输出健康许可或任何计划字段。"))
             let repaired = try await client.complete(configuration: configuration, key: key, messages: messages + [correction], outputFormat: format)
             try Task.checkCancellation()
-            return try ConstraintSuggestion.decode(repaired)
+            do { return try ConstraintSuggestion.decode(repaired) }
+            catch let second as ModelOutputRejection {
+                throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
+            }
         }
     }
 }

@@ -276,7 +276,10 @@ struct CoachAPI: Sendable {
                 extraRules: "evidence 只能从 allowedEvidenceIDs 精确选择；没有建议时 proposal 必须写 null；不输出计划、剂量或医疗许可。"))
             let repaired = try await client.complete(configuration: configuration, key: key,
                                                      messages: messages + [correction])
-            return try Self.accept(repaired, context: context)
+            do { return try Self.accept(repaired, context: context) }
+            catch let second as ModelOutputRejection {
+                throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
+            }
         }
     }
 

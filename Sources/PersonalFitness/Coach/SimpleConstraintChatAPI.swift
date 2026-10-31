@@ -141,7 +141,10 @@ struct SimpleConstraintChatAPI: Sendable {
             let repaired = try await client.complete(configuration: configuration, key: key,
                 messages: messages + [correction], outputFormat: format)
             try Task.checkCancellation()
-            return try Self.accept(repaired, session: session)
+            do { return try Self.accept(repaired, session: session) }
+            catch let second as ModelOutputRejection {
+                throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
+            }
         }
     }
 

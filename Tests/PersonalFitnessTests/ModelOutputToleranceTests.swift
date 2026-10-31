@@ -3,8 +3,8 @@ import Foundation
 import FitnessCore
 @testable import PersonalFitness
 
-/// The model-output layer has two separate jobs and both are tested here:
-/// repairing the *shape* real models produce, and still refusing anything that would change meaning.
+/// The model-output layer has two separate jobs, and both are tested here: repairing the *shape*
+/// real models produce, and still refusing anything that would change meaning.
 final class ModelOutputToleranceTests: XCTestCase {
 
     // MARK: - Shape repair
@@ -13,10 +13,13 @@ final class ModelOutputToleranceTests: XCTestCase {
         let plain = #"{"a":1}"#
         XCTAssertEqual(ModelOutputRepair.extractJSONObject(plain), plain)
 
+        // Prose before and after, plus a markdown fence.
         let fenced = "好的，结果如下：\n```json\n{\"a\":1}\n```\n以上。"
         XCTAssertEqual(ModelOutputRepair.extractJSONObject(fenced), plain)
 
-        let quoted = String(data: try! JSONSerialization.data(withJSONObject: ["{\"a\":1}"]), encoding: .utf8)!
+        // A model that returns the object as a JSON *string* containing JSON. The literal below is
+        // the text `"{\"a\":1}"`, quotes included.
+        let quoted = #""{\"a\":1}""#
         XCTAssertEqual(ModelOutputRepair.extractJSONObject(quoted), plain)
 
         XCTAssertNil(ModelOutputRepair.extractJSONObject("抱歉，我无法整理。"))
@@ -29,12 +32,12 @@ final class ModelOutputToleranceTests: XCTestCase {
         // The comma inside the string value survives untouched.
         XCTAssertTrue(output.contains("逗号,保留"))
 
-        // Multi-line output with the comma on its own line, which is what pretty-printed model
-        // replies look like.
+        // Pretty-printed replies put the comma on its own line; whitespace after a comma must not
+        // hide the fact that it is trailing.
         let multiline = "{\n  \"a\": 1,\n  \"b\": 2,\n}"
         XCTAssertEqual(ModelOutputRepair.removingTrailingCommas(multiline),
                        "{\n  \"a\": 1,\n  \"b\": 2\n}")
-        // Whitespace before the bracket after a comma is also trailing.
+
         XCTAssertEqual(ModelOutputRepair.removingTrailingCommas(#"{"a":[1,2, ]}"#), #"{"a":[1,2 ]}"#)
         // A comma followed by a real value is never removed.
         XCTAssertEqual(ModelOutputRepair.removingTrailingCommas(#"{"a":1,"b":2}"#), #"{"a":1,"b":2}"#)
@@ -45,7 +48,7 @@ final class ModelOutputToleranceTests: XCTestCase {
         XCTAssertEqual(ModelOutputRepair.integer("25"), 25)
         XCTAssertEqual(ModelOutputRepair.integer("25分钟"), 25)
         XCTAssertEqual(ModelOutputRepair.integer(" 25 min"), 25)
-        // A fractional value or a boolean must not be rounded or read as 1/0.
+        // A fractional value must not be rounded, and a boolean must not become 1 or 0.
         XCTAssertNil(ModelOutputRepair.integer("25.5"))
         XCTAssertNil(ModelOutputRepair.integer(25.5))
         XCTAssertNil(ModelOutputRepair.integer(true))
@@ -80,14 +83,17 @@ final class ModelOutputToleranceTests: XCTestCase {
     private let valid = #"{"excludedExerciseIDs":["builtin.bird-dog"],"avoidedPositions":["kneeling"],"excludedWeekdays":[5],"restDateKeys":["2028-02-29"],"maxSessionMinutes":25,"allowedExerciseIDs":null,"questions":["这个日期只休息一次吗？"],"unresolved":["还没有说明活动的具体要求"]}"#
 
     func testFormattedVariantsThatPreserveMeaningAreAccepted() throws {
-        // Markdown fence, prose around the object, trailing comma, minute count as a string with unit,
-        // and weekday as a string: all represent the same candidate.
-        let wrapped = "整理如下：\n```json\n"
-            + valid.replacingOccurrences(of: #""maxSessionMinutes":25"#, with: #""maxSessionMinutes":"25分钟""#)
-                   .replacingOccurrences(of: #""excludedWeekdays":[5],"#, with: #""excludedWeekdays":["5"],"#)
-                   .dropLast() + #","}"#
-            + "\n```\n请确认。"
-        let candidate = try SimpleConstraintChatAPI.decode(String(wrapped))
+        // Fence, prose, trailing comma, a minute count written with a unit, and a weekday sent as a
+        // string. Every one of these is the same candidate; only the representation differs.
+        var body = valid
+        body = body.replacingOccurrences(of: #""maxSessionMinutes":25"#,
+                                         with: #""maxSessionMinutes":"25分钟""#)
+        body = body.replacingOccurrences(of: #""excludedWeekdays":[5],"#,
+                                         with: #""excludedWeekdays":["5"],"#)
+        body.removeLast()                     // drop the closing brace
+        body += "," + "}"                     // re-add it after a trailing comma
+        let wrapped = "整理如下：\n```json\n" + body + "\n```\n请确认。"
+        let candidate = try SimpleConstraintChatAPI.decode(wrapped)
         XCTAssertEqual(candidate.maxSessionMinutes, 25)
         XCTAssertEqual(candidate.excludedWeekdays, [5])
         XCTAssertEqual(candidate.avoidedPositions, [.kneeling])
@@ -100,9 +106,10 @@ final class ModelOutputToleranceTests: XCTestCase {
         XCTAssertThrowsError(try SimpleConstraintChatAPI.decode(withMode)) { error in
             let rejection = error as? ModelOutputRejection
             XCTAssertEqual(rejection?.reason.contains("mode"), true)
-            XCTAssertFalse(error.localizedDescription.contains("practicalOnly"), "拒绝原因不回显原始值")
+            XCTAssertFalse(error.localizedDescription.contains("practicalOnly"),
+                           "拒绝原因不回显模型给出的原始值")
         }
-        // A missing mandatory field is named, not just "invalid".
+        // A missing mandatory field is named, not merely called invalid.
         let missing = valid.replacingOccurrences(of: #""allowedExerciseIDs":null,"#, with: "")
         XCTAssertThrowsError(try SimpleConstraintChatAPI.decode(missing)) { error in
             XCTAssertEqual((error as? ModelOutputRejection)?.reason.contains("allowedExerciseIDs"), true)
@@ -110,11 +117,13 @@ final class ModelOutputToleranceTests: XCTestCase {
     }
 
     func testOutOfRangeValuesStillFailAfterCoercion() {
-        // "5" parses as an integer, but 5 minutes is below the 15-minute floor, so validation refuses.
-        let tooShort = valid.replacingOccurrences(of: #""maxSessionMinutes":25"#, with: #""maxSessionMinutes":"5""#)
+        // "5" parses as an integer, but 5 minutes is below the 15-minute floor.
+        let tooShort = valid.replacingOccurrences(of: #""maxSessionMinutes":25"#,
+                                                  with: #""maxSessionMinutes":"5""#)
         XCTAssertThrowsError(try SimpleConstraintChatAPI.decode(tooShort))
-        // A fractional minute is not truncated into a valid one.
-        let fractional = valid.replacingOccurrences(of: #""maxSessionMinutes":25"#, with: #""maxSessionMinutes":"25.5""#)
+        // "25.5" is not truncated into a valid 25.
+        let fractional = valid.replacingOccurrences(of: #""maxSessionMinutes":25"#,
+                                                    with: #""maxSessionMinutes":"25.5""#)
         XCTAssertThrowsError(try SimpleConstraintChatAPI.decode(fractional))
     }
 

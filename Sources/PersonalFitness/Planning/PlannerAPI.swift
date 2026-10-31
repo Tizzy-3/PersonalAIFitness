@@ -59,7 +59,12 @@ struct PlannerAPI: Sendable {
             let repaired = try await client.complete(configuration: configuration, key: key,
                                                      messages: messages + [correction])
             try Task.checkCancellation()
-            return try Self.accept(repaired, options: draft.options)
+            do { return try Self.accept(repaired, options: draft.options) }
+            catch let second as ModelOutputRejection {
+                // Outward contract stays CoreError: callers and existing tests treat any
+                // CoreError from a model reply as "reject, do not apply".
+                throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
+            }
         }
     }
 

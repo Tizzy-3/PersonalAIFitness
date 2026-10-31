@@ -103,7 +103,10 @@ struct PersonalizedPlannerAPI: Sendable {
             let repaired = try await client.complete(configuration: configuration, key: key,
                                                      messages: messages + [correction])
             try Task.checkCancellation()
-            return try Self.accept(repaired, input: request.baseline.input)
+            do { return try Self.accept(repaired, input: request.baseline.input) }
+            catch let second as ModelOutputRejection {
+                throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
+            }
         }
     }
 
