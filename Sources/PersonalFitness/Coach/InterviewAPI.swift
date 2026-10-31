@@ -144,29 +144,18 @@ struct InterviewAPI: Sendable {
             // including the explicit JSON-mode compatibility fallback above.
             let correction = CoachMessage(role: "system", content:
                 "上次JSON未通过结构校验。路径：\(error.path)，需要：\(error.expected)。请根据同一用户资料重新输出完整JSON，严格只含questions/extractions/note；不要Markdown、额外字段或计划。保留未知，不编造答案。")
+            // One correction only, retried in plain-text mode when the first attempt used JSON
+            // mode: a model answering in prose will not start emitting JSON just because it was
+            // asked again the same way. The same strict decoder still decides.
+            let retryFormat: CoachOutputFormat = format == .jsonObject ? .text : format
             let repaired = try await client.completeDetailed(configuration: configuration, key: key,
-                messages: messages + [correction], outputFormat: format)
+                messages: messages + [correction], outputFormat: retryFormat)
             try Task.checkCancellation()
             do {
                 var turn = try Self.decodeTurn(repaired.content, session: session, provider: provider)
                 turn.formatRepairUsed = true; turn.jsonModeFallbackUsed = fallback ? true : nil
                 return turn
             } catch let error as InterviewProtocolError {
-                // A model answering in prose will not start emitting JSON because it was asked
-                // again in the same mode. One attempt in plain-text mode is the last chance; the
-                // same strict decoder still decides, so nothing unsafe gets through.
-                if format == .jsonObject {
-                    do {
-                        let plain = try await client.completeDetailed(configuration: configuration, key: key,
-                            messages: messages + [correction], outputFormat: .text)
-                        try Task.checkCancellation()
-                        var turn = try Self.decodeTurn(plain.content, session: session, provider: provider)
-                        turn.formatRepairUsed = true; turn.jsonModeFallbackUsed = true
-                        return turn
-                    } catch is InterviewProtocolError {
-                        // Fall through and report the original failure with its finish reason.
-                    }
-                }
                 var final = error
                 let allowed = ["stop", "length", "content_filter", "tool_calls", "function_call"]
                 final.finishReason = repaired.finishReason.map { allowed.contains($0) ? $0 : "other" }

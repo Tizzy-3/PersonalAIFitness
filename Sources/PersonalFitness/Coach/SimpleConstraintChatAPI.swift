@@ -138,23 +138,16 @@ struct SimpleConstraintChatAPI: Sendable {
                 reason: rejection.reason,
                 allowedKeys: Self.protocolKeys,
                 extraRules: "动作只来自 supportedExercises；允许动作只来自本人明确记录的具体专业指导；未知事项保留在 questions/unresolved。不得输出健康许可、本人确认、mode、painFree 或任何计划字段。上一轮本人的原话已经包含在请求里，请据此重新整理。"))
+            // The correction is retried in plain-text mode when the first attempt used JSON mode:
+            // a model that answered in prose will not start emitting JSON just because it was
+            // asked again the same way. Still exactly one correction, and the same strict decoder
+            // decides, so the safety rules are unchanged.
+            let retryFormat: CoachOutputFormat = format == .jsonObject ? .text : format
             let repaired = try await client.complete(configuration: configuration, key: key,
-                messages: messages + [correction], outputFormat: format)
+                messages: messages + [correction], outputFormat: retryFormat)
             try Task.checkCancellation()
             do { return try Self.accept(repaired, session: session) }
             catch let second as ModelOutputRejection {
-                // A model that answered in prose twice will not start emitting JSON because it was
-                // asked a third time in the same mode. One attempt in plain-text mode is the last
-                // chance; the same validator still decides, so nothing unsafe gets through.
-                if format == .jsonObject {
-                    let plain = try await client.complete(configuration: configuration, key: key,
-                        messages: messages + [correction], outputFormat: .text)
-                    try Task.checkCancellation()
-                    do { return try Self.accept(plain, session: session) }
-                    catch let third as ModelOutputRejection {
-                        throw CoreError.invalidInput(third.detail + "（原因：" + third.reason + "）")
-                    }
-                }
                 throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
             }
         }

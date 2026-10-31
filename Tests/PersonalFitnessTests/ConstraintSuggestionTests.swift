@@ -131,7 +131,10 @@ final class ConstraintSuggestionTests: XCTestCase {
         let second = try XCTUnwrap(requests.last)
         XCTAssertFalse(String(decoding: second, as: UTF8.self).contains("PRIVATE-BAD-REPLY"))
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: second) as? [String: Any])
-        XCTAssertEqual((body["response_format"] as? [String: String])?["type"], "json_object")
+        // The correction is sent in plain-text mode: a model that answered in prose will not start
+        // emitting JSON because it was asked the same way again. Structure is still enforced by the
+        // decoder, not by the transport.
+        XCTAssertNil(body["response_format"])
         ConstraintSuggestionProtocol.fixture.reset(["PRIVATE-FIRST", "PRIVATE-SECOND"])
         do {
             _ = try await api.suggest(session: InterviewSession(), legacyRestrictions: "", configuration: service, key: "fixture-key")

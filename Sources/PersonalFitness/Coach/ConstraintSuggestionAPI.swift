@@ -127,22 +127,15 @@ struct ConstraintSuggestionAPI: Sendable {
                 reason: rejection.reason,
                 allowedKeys: ConstraintSuggestion.protocolKeys,
                 extraRules: "动作只来自真实的 supportedExercises；未知事项保留在 questions/unresolved，不编造答案，不输出健康许可或任何计划字段。"))
-            let repaired = try await client.complete(configuration: configuration, key: key, messages: messages + [correction], outputFormat: format)
+            // One correction only, retried in plain-text mode when the first attempt used JSON
+            // mode: a model answering in prose will not start emitting JSON just because it was
+            // asked again the same way. The same validator still decides.
+            let retryFormat: CoachOutputFormat = format == .jsonObject ? .text : format
+            let repaired = try await client.complete(configuration: configuration, key: key,
+                                                    messages: messages + [correction], outputFormat: retryFormat)
             try Task.checkCancellation()
             do { return try ConstraintSuggestion.decode(repaired) }
             catch let second as ModelOutputRejection {
-                // A model answering in prose will not start emitting JSON because it was asked
-                // again in the same mode. One plain-text attempt is the last chance; the same
-                // validator still decides.
-                if format == .jsonObject {
-                    let plain = try await client.complete(configuration: configuration, key: key,
-                        messages: messages + [correction], outputFormat: .text)
-                    try Task.checkCancellation()
-                    do { return try ConstraintSuggestion.decode(plain) }
-                    catch let third as ModelOutputRejection {
-                        throw CoreError.invalidInput(third.detail + "（原因：" + third.reason + "）")
-                    }
-                }
                 throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
             }
         }

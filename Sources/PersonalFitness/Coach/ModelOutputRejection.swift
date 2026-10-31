@@ -5,24 +5,32 @@ import Foundation
 ///
 /// `detail` is what the person sees; `reason` is what the model is told. Neither contains the raw
 /// reply, a user value, or a key — only the shape of the problem.
+///
+/// A preview of the reply is kept separately in `diagnostic` and is **never** put in
+/// `errorDescription`. The reply can contain the person's own health narrative, and a rejected
+/// model output must not be surfaced in an alert, a log line, a stored record or a support paste.
 struct ModelOutputRejection: Error, LocalizedError, Equatable, Sendable {
     let reason: String
     let detail: String
-    /// A short, sanitised preview of what the model actually sent, when the failure was "not JSON".
-    /// Without it, "the reply was not JSON" is unactionable: a refusal, a truncated stream and a
-    /// wrong-endpoint HTML page all look identical. Trimmed to 120 characters and stripped of
-    /// newlines; never the whole reply.
+    /// Sanitised, truncated preview for local diagnostics only. Never shown to the person and never
+    /// included in `errorDescription`.
     var preview: String? = nil
 
-    var errorDescription: String? {
-        guard let preview, !preview.isEmpty else { return detail }
-        return "\(detail)\n\n模型实际返回的开头是：「\(preview)」"
+    var errorDescription: String? { detail }
+
+    /// Short machine-readable line for the in-app format diagnostic screen, which the person
+    /// chooses to open. Still truncated and newline-collapsed.
+    var diagnostic: String {
+        var lines = ["model-output", "reason=\(reason)"]
+        if let preview, !preview.isEmpty { lines.append("preview=\(preview)") }
+        lines.append("原始回复未保存；本诊断不含完整回答或密钥。")
+        return lines.joined(separator: "\n")
     }
 }
 
 extension ModelOutputRejection {
-    /// Builds a rejection for "the reply was not a JSON object", keeping a short preview so the
-    /// person and the log can tell a refusal from a truncation from a wrong endpoint.
+    /// Builds a rejection for "the reply was not a JSON object". The preview is captured for the
+    /// diagnostic only; the person sees `detail` alone.
     static func notJSON(_ content: String, detail: String) -> ModelOutputRejection {
         ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: detail,
                              preview: sanitizedPreview(content))
