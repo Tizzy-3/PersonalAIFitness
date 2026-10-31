@@ -11,13 +11,34 @@ struct ConstraintSuggestion: Codable, Equatable, Sendable {
     var questions: [String]
     var unresolved: [String]
 
+    static let protocolKeys = ["excludedExerciseIDs", "avoidedPositions", "excludedWeekdays",
+                               "restDateKeys", "maxSessionMinutes", "questions", "unresolved"]
+
     static func decode(_ content: String) throws -> ConstraintSuggestion {
-        let message = "AI整理内容未通过约束校验，未修改你的资料。请继续说明或手动核对。"
-        let data = Data(CoachAPI.unfencedJSON(content).utf8)
-        guard !data.isEmpty, data.count <= 64 * 1_024,
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              Set(object.keys) == Set(["excludedExerciseIDs", "avoidedPositions", "excludedWeekdays", "restDateKeys", "maxSessionMinutes", "questions", "unresolved"]),
-              let value = try? JSONDecoder().decode(Self.self, from: data) else { throw CoreError.invalidInput(message) }
+        let message = "这次整理没能通过校验，未修改你的资料。"
+        guard let extracted = ModelOutputRepair.extractJSONObject(content),
+              let parsed = try? JSONSerialization.jsonObject(with: Data(extracted.utf8)),
+              var root = parsed as? [String: Any] else {
+            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: message)
+        }
+        let allowed = Set(protocolKeys)
+        let unknown = ModelOutputRepair.unknownKeys(in: root, allowed: allowed)
+        guard unknown.isEmpty else {
+            throw ModelOutputRejection(reason: "包含不允许多余字段：\(unknown.joined(separator: ", "))", detail: message)
+        }
+        let missing = ModelOutputRepair.missingKeys(in: root, required: allowed)
+        guard missing.isEmpty else {
+            throw ModelOutputRejection(reason: "缺少字段：\(missing.joined(separator: ", "))", detail: message)
+        }
+        if let minutes = root["maxSessionMinutes"], !(minutes is NSNull),
+           let value = ModelOutputRepair.integer(minutes) { root["maxSessionMinutes"] = value }
+        if let weekdays = root["excludedWeekdays"] as? [Any] {
+            root["excludedWeekdays"] = weekdays.map { ModelOutputRepair.integer($0) ?? $0 }
+        }
+        guard let normalized = try? JSONSerialization.data(withJSONObject: root),
+              let value = try? JSONDecoder().decode(Self.self, from: normalized) else {
+            throw ModelOutputRejection(reason: "字段类型与约定不符", detail: message)
+        }
         let supported = Set(PlannerEngine.supportedMovementIDs)
         guard value.excludedExerciseIDs.count <= supported.count,
               Set(value.excludedExerciseIDs).count == value.excludedExerciseIDs.count,
@@ -31,7 +52,7 @@ struct ConstraintSuggestion: Codable, Equatable, Sendable {
               value.maxSessionMinutes.map({ (15...120).contains($0) }) ?? true,
               value.questions.count <= 12, value.unresolved.count <= 12,
               (value.questions + value.unresolved).allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.count <= 1_000 }) else {
-            throw CoreError.invalidInput(message)
+            throw ModelOutputRejection(reason: "动作 ID、日期、星期或分钟数超出允许范围", detail: message)
         }
         return value
     }
@@ -99,10 +120,13 @@ struct ConstraintSuggestionAPI: Sendable {
         }
         try Task.checkCancellation()
         do { return try ConstraintSuggestion.decode(content) }
-        catch is CoreError {
-            // One bounded correction; no failed raw response is re-sent, logged or persisted.
-            let correction = CoachMessage(role: "system", content:
-                "上次候选未通过JSON与约束校验。请根据同一原始资料重新输出完整对象，只含excludedExerciseIDs/avoidedPositions/excludedWeekdays/restDateKeys/maxSessionMinutes/questions/unresolved。动作只来自真实支持池；不允许健康许可或计划字段。未知问题保留在questions/unresolved，不编造答案。")
+        catch let rejection as ModelOutputRejection {
+            // One bounded correction that names the defect; the rejected output is never re-sent,
+            // logged or persisted.
+            let correction = CoachMessage(role: "system", content: ModelOutputRejection.correction(
+                reason: rejection.reason,
+                allowedKeys: Self.protocolKeys,
+                extraRules: "动作只来自真实的 supportedExercises；未知事项保留在 questions/unresolved，不编造答案，不输出健康许可或任何计划字段。"))
             let repaired = try await client.complete(configuration: configuration, key: key, messages: messages + [correction], outputFormat: format)
             try Task.checkCancellation()
             return try ConstraintSuggestion.decode(repaired)

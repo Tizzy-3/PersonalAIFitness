@@ -179,16 +179,24 @@ public struct AISelection: Codable, Equatable, Sendable {
     }
     public static func decode(data: Data, options: [WeeklyPlanOption]) throws -> AISelection {
         guard !data.isEmpty, data.count <= 128 * 1_024 else { throw CoreError.invalidInput("AI计划选择为空或超长。") }
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw CoreError.invalidInput("模型没有返回 JSON 对象。")
+        }
+        let allowed: Set<String> = ["optionID", "explanation", "evidence", "limitations"]
+        let unknown = object.keys.filter { !allowed.contains($0) }.sorted()
+        guard unknown.isEmpty else {
+            throw CoreError.invalidInput("计划选择包含不允许的字段：\(unknown.joined(separator: "、"))，未应用。")
+        }
+        let missing = allowed.filter { object[$0] == nil }.sorted()
+        guard missing.isEmpty else {
+            throw CoreError.invalidInput("计划选择缺少字段：\(missing.joined(separator: "、"))。")
+        }
         do {
-            guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  Set(object.keys) == Set(["optionID", "explanation", "evidence", "limitations"]) else {
-                throw CoreError.invalidInput("AI计划选择包含不允许的字段，未应用。")
-            }
             let value = try JSONDecoder().decode(AISelection.self, from: data)
             try value.validate(options: options)
             return value
         } catch let error as CoreError { throw error }
-        catch { throw CoreError.invalidInput("AI没有返回约定的计划选择格式，原计划未变。") }
+        catch { throw CoreError.invalidInput("计划选择字段类型与约定不符，原计划未变。") }
     }
 }
 

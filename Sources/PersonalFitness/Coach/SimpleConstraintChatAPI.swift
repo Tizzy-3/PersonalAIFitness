@@ -23,15 +23,53 @@ struct SimpleConstraintChatAPI: Sendable {
     {"excludedExerciseIDs":[],"avoidedPositions":[],"excludedWeekdays":[],"restDateKeys":[],"maxSessionMinutes":null,"allowedExerciseIDs":null,"questions":[],"unresolved":[],"gentleDateKey":null}
     """
 
+    /// Protocol keys, in the order the prompt lists them.
+    static let protocolKeys = ["excludedExerciseIDs", "avoidedPositions", "excludedWeekdays",
+                               "restDateKeys", "maxSessionMinutes", "allowedExerciseIDs",
+                               "questions", "unresolved", "gentleDateKey"]
+
+    /// Every shape the model may legitimately produce is normalized first; only then is the strict
+    /// key set enforced. A repair that cannot preserve meaning leaves the value untouched, so this
+    /// never turns an unknown into a fact.
     static func decode(_ content: String) throws -> ConstraintChatCandidate {
-        let message = "教练暂时没能把这些话整理清楚。你的原话已保留，可以补充说明或重试。"
-        let data = Data(CoachAPI.unfencedJSON(content).utf8)
-        let keys: Set<String> = ["excludedExerciseIDs", "avoidedPositions", "excludedWeekdays", "restDateKeys", "maxSessionMinutes", "allowedExerciseIDs", "questions", "unresolved"]
-        guard !data.isEmpty, data.count <= 64 * 1_024,
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              (Set(object.keys) == keys || Set(object.keys) == keys.union(["gentleDateKey"])),
-              let candidate = try? JSONDecoder().decode(ConstraintChatCandidate.self, from: data),
-              (try? candidate.validate()) != nil else { throw CoreError.invalidInput(message) }
+        let message = "教练这次的整理没能通过校验。你的原话已保留，可以重试。"
+        guard let extracted = ModelOutputRepair.extractJSONObject(content),
+              let parsed = try? JSONSerialization.jsonObject(with: Data(extracted.utf8)),
+              var root = parsed as? [String: Any] else {
+            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: message)
+        }
+        // `gentleDateKey` is optional; the other eight are mandatory. Written explicitly rather than
+        // derived from the array's order, so reordering the prompt list cannot silently change which
+        // fields are required.
+        let required: Set<String> = ["excludedExerciseIDs", "avoidedPositions", "excludedWeekdays",
+                                     "restDateKeys", "maxSessionMinutes", "allowedExerciseIDs",
+                                     "questions", "unresolved"]
+        let allowed = Set(protocolKeys)
+        let unknown = ModelOutputRepair.unknownKeys(in: root, allowed: allowed)
+        guard unknown.isEmpty else {
+            throw ModelOutputRejection(
+                reason: "包含不允许多余字段：\(unknown.joined(separator: ", "))",
+                detail: message)
+        }
+        let missing = ModelOutputRepair.missingKeys(in: root, required: required)
+        guard missing.isEmpty else {
+            throw ModelOutputRejection(reason: "缺少字段：\(missing.joined(separator: ", "))", detail: message)
+        }
+        // Typed coercions the model commonly gets wrong. An unparseable value is left as-is and
+        // fails validation below, rather than being guessed into a number.
+        if let minutes = root["maxSessionMinutes"], !(minutes is NSNull) {
+            if let value = ModelOutputRepair.integer(minutes) { root["maxSessionMinutes"] = value }
+        }
+        if let weekdays = root["excludedWeekdays"] as? [Any] {
+            let mapped: [Any] = weekdays.map { day in ModelOutputRepair.integer(day) ?? day }
+            root["excludedWeekdays"] = mapped
+        }
+        guard let normalized = try? JSONSerialization.data(withJSONObject: root),
+              let candidate = try? JSONDecoder().decode(ConstraintChatCandidate.self, from: normalized) else {
+            throw ModelOutputRejection(reason: "字段类型与约定不符", detail: message)
+        }
+        do { try candidate.validate() }
+        catch { throw ModelOutputRejection(reason: error.localizedDescription, detail: message) }
         return candidate
     }
 
@@ -92,19 +130,25 @@ struct SimpleConstraintChatAPI: Sendable {
         }
         try Task.checkCancellation()
         do {
-            let candidate = try Self.decode(content)
-            if let chat = session.constraintChat { try Self.validateEvidence(candidate, chat: chat) }
-            return candidate
-        }
-        catch is CoreError {
-            // Never send back, log or persist the rejected model output. At most one correction.
-            let correction = CoachMessage(role: "system", content: "刚才的整理未通过校验。根据同一原始资料重新输出完整九字段JSON，包含allowedExerciseIDs和gentleDateKey；动作只来自supportedExercises，允许动作只来自本人明确记录的具体专业指导，未知保留questions/unresolved。不得输出健康许可、本人确认、mode、painFree或计划。")
+            return try Self.accept(content, session: session)
+        } catch let rejection as ModelOutputRejection {
+            // One bounded correction that names the actual defect. The rejected output is never
+            // echoed to the person, written to storage or re-sent as a message.
+            let correction = CoachMessage(role: "system", content: ModelOutputRejection.correction(
+                reason: rejection.reason,
+                allowedKeys: Self.protocolKeys,
+                extraRules: "动作只来自 supportedExercises；允许动作只来自本人明确记录的具体专业指导；未知事项保留在 questions/unresolved。不得输出健康许可、本人确认、mode、painFree 或任何计划字段。上一轮本人的原话已经包含在请求里，请据此重新整理。"))
             let repaired = try await client.complete(configuration: configuration, key: key,
                 messages: messages + [correction], outputFormat: format)
             try Task.checkCancellation()
-            let candidate = try Self.decode(repaired)
-            if let chat = session.constraintChat { try Self.validateEvidence(candidate, chat: chat) }
-            return candidate
+            return try Self.accept(repaired, session: session)
         }
+    }
+
+    /// Decode plus evidence check, so both attempts run the identical acceptance path.
+    private static func accept(_ content: String, session: InterviewSession) throws -> ConstraintChatCandidate {
+        let candidate = try decode(content)
+        if let chat = session.constraintChat { try validateEvidence(candidate, chat: chat) }
+        return candidate
     }
 }

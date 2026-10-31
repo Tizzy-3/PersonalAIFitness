@@ -150,11 +150,34 @@ struct CoachHTTPClient: Sendable {
         } catch is CancellationError { throw CancellationError() }
         catch let error as URLError {
             if error.code == .cancelled { throw CancellationError() }
-            if error.code == .timedOut { throw CoachClientError.network("请求超时，未自动重发。提问仍保留，可稍后手动重试。") }
-            if error.code == .notConnectedToInternet || error.code == .networkConnectionLost {
-                throw CoachClientError.network("网络不可用或连接中断。离线时训练记录仍可使用，AI 请求需恢复网络后手动发送。")
+            // Name the actual failure. One generic "cannot connect" message made a DNS problem, a
+            // closed port and an untrusted certificate look identical, which is unactionable for the
+            // person reading it and impossible to report accurately.
+            let host = url.host ?? "该地址"
+            switch error.code {
+            case .timedOut:
+                throw CoachClientError.network("连接 \(host) 超时（60 秒），未自动重发。提问仍保留，可稍后手动重试。")
+            case .notConnectedToInternet:
+                throw CoachClientError.network("设备当前没有网络。离线时训练记录仍可使用，AI 请求需恢复网络后手动发送。")
+            case .networkConnectionLost:
+                throw CoachClientError.network("连接 \(host) 中途断开，未自动重发。可稍后手动重试。")
+            case .cannotFindHost, .dnsLookupFailed:
+                throw CoachClientError.network("找不到域名 \(host)。请检查地址拼写和网络 DNS；地址需以 /chat/completions 结尾。")
+            case .cannotConnectToHost:
+                throw CoachClientError.network("无法建立到 \(host) 的连接（端口不通或被拒绝）。请确认服务在运行，且地址与模型名称正确。")
+            case .secureConnectionFailed, .serverCertificateUntrusted,
+                 .serverCertificateHasBadDate, .serverCertificateNotYetValid,
+                 .serverCertificateHasUnknownRoot, .clientCertificateRejected:
+                throw CoachClientError.network("\(host) 的 TLS 连接失败（证书无效、不受信任或已过期）。请使用有效证书，或联系服务提供方。")
+            case .appTransportSecurityRequiresSecureConnection:
+                throw CoachClientError.network("该地址被系统传输安全策略拒绝。请使用 https 地址。")
+            case .userAuthenticationRequired:
+                throw CoachClientError.network("\(host) 要求额外认证（可能是代理或需要在系统设置中信任证书）。")
+            case .dataNotAllowed:
+                throw CoachClientError.network("当前网络策略不允许该请求（可能是蜂窝数据限制或家长控制）。")
+            default:
+                throw CoachClientError.network("连接 \(host) 失败：\(error.localizedDescription)（URLError \(error.code.rawValue)）。")
             }
-            throw CoachClientError.network("无法连接此 HTTPS 服务。请检查地址、网络和证书；没有关闭 TLS 验证或自动重发。")
         }
     }
 
@@ -235,17 +258,39 @@ struct CoachAPI: Sendable {
     所有建议只是供本人确认的草案；计划生效由本地规则验证和用户明确确认决定。
     """
 
+    static let protocolKeys = ["answer", "evidence", "limitations", "proposal"]
+
     func reply(question: String, context: CoachContext, configuration: AIConfiguration, key: String) async throws -> CoachReply {
         let question = question.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty, question.count <= 4_000 else {
             throw CoachClientError.configuration("问题需为 1 至 4000 个字符。")
         }
         let input = try Self.requestJSON(question: question, context: context)
-        let content = try await client.complete(configuration: configuration, key: key, messages: [
-            CoachMessage(role: "system", content: Self.systemPrompt),
-            CoachMessage(role: "user", content: input)
-        ])
-        return try CoachReply.decode(data: Data(Self.unfencedJSON(content).utf8), context: context)
+        let messages = [CoachMessage(role: "system", content: Self.systemPrompt),
+                        CoachMessage(role: "user", content: input)]
+        let content = try await client.complete(configuration: configuration, key: key, messages: messages)
+        do { return try Self.accept(content, context: context) }
+        catch let rejection as ModelOutputRejection {
+            let correction = CoachMessage(role: "system", content: ModelOutputRejection.correction(
+                reason: rejection.reason, allowedKeys: Self.protocolKeys,
+                extraRules: "evidence 只能从 allowedEvidenceIDs 精确选择；没有建议时 proposal 必须写 null；不输出计划、剂量或医疗许可。"))
+            let repaired = try await client.complete(configuration: configuration, key: key,
+                                                     messages: messages + [correction])
+            return try Self.accept(repaired, context: context)
+        }
+    }
+
+    /// Shape repair then decode; both attempts share this path so a retry cannot take a shortcut.
+    static func accept(_ content: String, context: CoachContext) throws -> CoachReply {
+        guard let extracted = ModelOutputRepair.extractJSONObject(content) else {
+            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: "教练没有返回约定格式，可以重试。")
+        }
+        do {
+            return try CoachReply.decode(data: Data(extracted.utf8), context: context)
+        } catch let error as CoreError {
+            throw ModelOutputRejection(reason: error.localizedDescription,
+                                       detail: "教练的回答没有通过校验，可以重试。")
+        }
     }
 
     /// Reused by the consent screen, so the displayed data is the exact user payload sent later.

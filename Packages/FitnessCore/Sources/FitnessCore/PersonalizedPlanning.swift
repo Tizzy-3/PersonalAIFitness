@@ -39,17 +39,52 @@ public struct PersonalizedPlanReply: Codable, Equatable, Sendable {
 
     public static func decode(data: Data, input: PlanningInput) throws -> PersonalizedPlanReply {
         guard !data.isEmpty, data.count <= 128 * 1_024 else { throw CoreError.invalidInput("AI动作选择为空或超长。") }
+        guard var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw CoreError.invalidInput("模型没有返回 JSON 对象。")
+        }
+        let allowed: Set<String> = ["choices", "explanation", "limitations", "gentleMinutes"]
+        let unknown = object.keys.filter { !allowed.contains($0) }.sorted()
+        guard unknown.isEmpty else {
+            throw CoreError.invalidInput("动作组合包含不允许的字段：\(unknown.joined(separator: "、"))，未生成生效计划。")
+        }
+        let missing = ["choices", "explanation", "limitations"].filter { object[$0] == nil }
+        guard missing.isEmpty else {
+            throw CoreError.invalidInput("动作组合缺少字段：\(missing.joined(separator: "、"))。")
+        }
+        // A model sometimes sends the minute count as "10" or "10分钟"; only an exact integer is
+        // accepted, never a rounded or guessed duration.
+        if let minutes = object["gentleMinutes"], !(minutes is NSNull),
+           let value = strictInteger(minutes) { object["gentleMinutes"] = value }
+        guard let normalized = try? JSONSerialization.data(withJSONObject: object) else {
+            throw CoreError.invalidInput("动作组合无法还原为标准 JSON。")
+        }
         do {
-            guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  (Set(object.keys) == Set(["choices", "explanation", "limitations"]) ||
-                   Set(object.keys) == Set(["choices", "explanation", "limitations", "gentleMinutes"])) else {
-                throw CoreError.invalidInput("AI动作组合包含不允许的字段，未生成生效计划。")
-            }
-            let value = try JSONDecoder().decode(PersonalizedPlanReply.self, from: data)
+            let value = try JSONDecoder().decode(PersonalizedPlanReply.self, from: normalized)
             try value.validate(input: input)
             return value
         } catch let error as CoreError { throw error }
-        catch { throw CoreError.invalidInput("AI没有返回约定的动作组合格式，原计划未变。") }
+        catch { throw CoreError.invalidInput("动作组合的字段类型与约定不符，原计划未变。") }
+    }
+
+    /// Exact integer only: `10`, `"10"`, `"10分钟"`. A decimal or a boolean is rejected rather than
+    /// truncated into a duration the model never asked for.
+    static func strictInteger(_ value: Any) -> Int? {
+        if let text = value as? String {
+            var digits = ""
+            for character in text.trimmingCharacters(in: .whitespacesAndNewlines) {
+                if character.isNumber || (digits.isEmpty && character == "-") { digits.append(character) }
+                else { break }
+            }
+            guard !digits.isEmpty else { return nil }
+            let remainder = text.trimmingCharacters(in: .whitespacesAndNewlines).dropFirst(digits.count)
+            guard !remainder.hasPrefix(".") else { return nil }
+            return Int(digits)
+        }
+        guard let number = value as? NSNumber, !(value is Bool) else { return nil }
+        let double = number.doubleValue
+        guard double.isFinite, double == double.rounded(),
+              double >= Double(Int.min), double <= Double(Int.max) else { return nil }
+        return Int(double)
     }
 }
 

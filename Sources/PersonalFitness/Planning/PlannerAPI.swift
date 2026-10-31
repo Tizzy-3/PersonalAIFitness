@@ -41,13 +41,38 @@ struct PlannerAPI: Sendable {
         return String(decoding: data, as: UTF8.self)
     }
 
+    static let protocolKeys = ["optionID", "explanation", "evidence", "limitations"]
+
     func select(draft: PlanningDraft, configuration: AIConfiguration, key: String) async throws -> AISelection {
         try Task.checkCancellation()
         let json = try Self.requestJSON(draft: draft)
-        let content = try await client.complete(configuration: configuration, key: key, messages: [
-            CoachMessage(role: "system", content: Self.systemPrompt), CoachMessage(role: "user", content: json)
-        ])
+        let messages = [CoachMessage(role: "system", content: Self.systemPrompt),
+                        CoachMessage(role: "user", content: json)]
+        let content = try await client.complete(configuration: configuration, key: key, messages: messages)
         try Task.checkCancellation()
-        return try AISelection.decode(data: Data(CoachAPI.unfencedJSON(content).utf8), options: draft.options)
+        do { return try Self.accept(content, options: draft.options) }
+        catch let rejection as ModelOutputRejection {
+            // One bounded correction that names the actual defect instead of "that was wrong".
+            let correction = CoachMessage(role: "system", content: ModelOutputRejection.correction(
+                reason: rejection.reason, allowedKeys: Self.protocolKeys,
+                extraRules: "optionID 必须从 options 中原样复制一个真实 id；evidence 只能用 allowedEvidenceIDs 中的标识；不新增动作、不改剂量、不返回计划字段。"))
+            let repaired = try await client.complete(configuration: configuration, key: key,
+                                                     messages: messages + [correction])
+            try Task.checkCancellation()
+            return try Self.accept(repaired, options: draft.options)
+        }
+    }
+
+    /// Extract, repair shape, then decode — the same acceptance path for both attempts.
+    static func accept(_ content: String, options: [WeeklyPlanOption]) throws -> AISelection {
+        guard let extracted = ModelOutputRepair.extractJSONObject(content) else {
+            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: "计划选择没有返回约定格式，原计划未变。")
+        }
+        do {
+            return try AISelection.decode(data: Data(extracted.utf8), options: options)
+        } catch let error as CoreError {
+            throw ModelOutputRejection(reason: error.localizedDescription,
+                                       detail: "计划选择没有通过校验，原计划未变。可以重试。")
+        }
     }
 }

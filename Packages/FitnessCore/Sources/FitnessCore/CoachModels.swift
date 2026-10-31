@@ -261,23 +261,42 @@ public struct CoachReply: Codable, Equatable, Sendable {
 
     public static func decode(data: Data, context: CoachContext) throws -> CoachReply {
         guard !data.isEmpty, data.count <= 128 * 1_024 else { throw CoreError.invalidInput("AI 结构化回答为空或过大。") }
-        do {
-            guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  Set(root.keys) == Set(["answer", "evidence", "limitations", "proposal"]) else {
-                throw CoreError.invalidInput("AI 回答字段不符合约定，请重试或更换模型。")
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw CoreError.invalidInput("模型没有返回 JSON 对象。")
+        }
+        // Names the offending key so the caller can tell the model what to remove. A generic
+        // "format error" makes a model repeat the same mistake on the retry.
+        let allowed: Set<String> = ["answer", "evidence", "limitations", "proposal"]
+        let unknown = root.keys.filter { !allowed.contains($0) }.sorted()
+        guard unknown.isEmpty else {
+            throw CoreError.invalidInput("回答包含不允许的字段：\(unknown.joined(separator: "、"))。")
+        }
+        let missing = allowed.filter { $0 != "proposal" && root[$0] == nil }.sorted()
+        guard missing.isEmpty else {
+            throw CoreError.invalidInput("回答缺少字段：\(missing.joined(separator: "、"))。")
+        }
+        if let proposal = root["proposal"] as? [String: Any] {
+            let proposalKeys: Set<String> = ["reason", "targetPlanVersionID", "items"]
+            let extra = proposal.keys.filter { !proposalKeys.contains($0) }.sorted()
+            guard extra.isEmpty else {
+                throw CoreError.invalidInput("建议包含不允许的字段：\(extra.joined(separator: "、"))，未应用。")
             }
-            if let proposal = root["proposal"] as? [String: Any] {
-                guard Set(proposal.keys) == Set(["reason", "targetPlanVersionID", "items"]),
-                      let items = proposal["items"] as? [[String: Any]],
-                      items.allSatisfy({ Set($0.keys) == Set(["exerciseID", "setCount", "targetReps", "targetSeconds", "restSeconds"]) }) else {
-                    throw CoreError.invalidInput("AI 建议包含不允许的字段，未应用。")
+            if let items = proposal["items"] as? [[String: Any]] {
+                let itemKeys: Set<String> = ["exerciseID", "setCount", "targetReps", "targetSeconds", "restSeconds"]
+                for item in items {
+                    let itemExtra = item.keys.filter { !itemKeys.contains($0) }.sorted()
+                    guard itemExtra.isEmpty else {
+                        throw CoreError.invalidInput("建议动作包含不允许的字段：\(itemExtra.joined(separator: "、"))，未应用。")
+                    }
                 }
             }
+        }
+        do {
             let reply = try JSONDecoder().decode(CoachReply.self, from: data)
             try reply.validate(context: context)
             return reply
         } catch let error as CoreError { throw error }
-        catch { throw CoreError.invalidInput("模型没有返回约定的结构化回答，请检查模型兼容性后重试。") }
+        catch { throw CoreError.invalidInput("回答的字段类型与约定不符，请重试。") }
     }
 }
 

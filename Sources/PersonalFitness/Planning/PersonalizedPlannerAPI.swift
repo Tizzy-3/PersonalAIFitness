@@ -83,13 +83,39 @@ struct PersonalizedPlannerAPI: Sendable {
         return String(decoding: data, as: UTF8.self)
     }
 
+    static let protocolKeys = ["choices", "explanation", "limitations", "gentleMinutes"]
+
     func compose(_ request: PersonalizedPlanRequest, configuration: AIConfiguration, key: String) async throws -> PersonalizedPlanReply {
         let preview = try Self.requestJSON(request)
         try Task.checkCancellation()
-        let content = try await client.complete(configuration: configuration, key: key, messages: [
-            CoachMessage(role: "system", content: Self.systemPrompt), CoachMessage(role: "user", content: preview)
-        ])
+        let messages = [CoachMessage(role: "system", content: Self.systemPrompt),
+                        CoachMessage(role: "user", content: preview)]
+        let content = try await client.complete(configuration: configuration, key: key, messages: messages)
         try Task.checkCancellation()
-        return try PersonalizedPlanReply.decode(data: Data(CoachAPI.unfencedJSON(content).utf8), input: request.baseline.input)
+        do { return try Self.accept(content, input: request.baseline.input) }
+        catch let rejection as ModelOutputRejection {
+            let hasTemporary = request.baseline.input.constraintReview?.temporaryActivity != nil
+            let rules = hasTemporary
+                ? "choices 必须为 candidatePool 中每个动作模式各选一个真实 exerciseID；gentleMinutes 必须是 gentleMinutesOptions 中的一个整数；不返回计划、剂量、公斤数或医疗许可。"
+                : "choices 必须为 candidatePool 中每个动作模式各选一个真实 exerciseID；没有临时日期时 gentleMinutes 为 null；不返回计划、剂量、公斤数或医疗许可。"
+            let correction = CoachMessage(role: "system", content: ModelOutputRejection.correction(
+                reason: rejection.reason, allowedKeys: Self.protocolKeys, extraRules: rules))
+            let repaired = try await client.complete(configuration: configuration, key: key,
+                                                     messages: messages + [correction])
+            try Task.checkCancellation()
+            return try Self.accept(repaired, input: request.baseline.input)
+        }
+    }
+
+    static func accept(_ content: String, input: PlanningInput) throws -> PersonalizedPlanReply {
+        guard let extracted = ModelOutputRepair.extractJSONObject(content) else {
+            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: "动作组合没有返回约定格式，原计划未变。")
+        }
+        do {
+            return try PersonalizedPlanReply.decode(data: Data(extracted.utf8), input: input)
+        } catch let error as CoreError {
+            throw ModelOutputRejection(reason: error.localizedDescription,
+                                       detail: "动作组合没有通过校验，原计划未变。可以重试。")
+        }
     }
 }
