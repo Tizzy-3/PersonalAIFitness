@@ -32,9 +32,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$PF_OUTPUT"
-          xcodebuild -version | tee "$PF_OUTPUT/toolchain.log"
-          xcodebuild -version | head -n 1 | grep -E '^Xcode 27\.0$'
-          xcrun --sdk iphoneos --show-sdk-version | tee -a "$PF_OUTPUT/toolchain.log"
+          # Run xcodebuild once, save its output, then filter the file. Piping it into `head -n 1`
+          # closes the pipe while xcodebuild is still writing, which aborts it with SIGPIPE
+          # ("NSFileHandleOperationException: Broken pipe", exit 134) on some runners.
+          xcodebuild -version > "$PF_OUTPUT/toolchain.log"
+          cat "$PF_OUTPUT/toolchain.log"
+          grep -E '^Xcode 27\.0$' "$PF_OUTPUT/toolchain.log"
+          xcrun --sdk iphoneos --show-sdk-version >> "$PF_OUTPUT/toolchain.log"
+          cat "$PF_OUTPUT/toolchain.log"
           python3 scripts/generate_project.py
           plutil -lint PersonalFitness.xcodeproj/project.pbxproj Sources/PersonalFitness/Resources/Info.plist Sources/PersonalFitness/Resources/PersonalFitness.entitlements
           python3 scripts/check_source.py | tee "$PF_OUTPUT/static-checks.log"
