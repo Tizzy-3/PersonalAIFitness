@@ -85,8 +85,15 @@ struct PlanningDraftDetailView: View {
                     if day.isRestDay {
                         Label("今天不安排正式训练", systemImage: "moon.zzz").foregroundStyle(.secondary)
                     } else {
-                        Text("约 \(day.estimatedMinutesLower)–\(day.estimatedMinutesUpper) 分钟")
-                            .font(.caption).foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Text("约 \(day.estimatedMinutesLower)–\(day.estimatedMinutesUpper) 分钟")
+                                .font(.caption).foregroundStyle(.secondary)
+                            if let kcal = dayCalories(day) {
+                                Text("\(kcal) 千卡").font(.caption.weight(.medium))
+                                    .foregroundStyle(FitnessTheme.accent)
+                                Text("估算").font(.caption2).foregroundStyle(.tertiary)
+                            }
+                        }
                         ForEach(Array(day.items.enumerated()), id: \.offset) { _, item in
                             if let exercise = ExerciseCatalog.exercise(id: item.exerciseID) {
                                 NavigationLink { ExerciseDetailView(exercise: exercise, store: store) } label: {
@@ -191,6 +198,25 @@ struct PlanningDraftDetailView: View {
             Text("全部候选都需本人核对。预计时间是区间，初次重量需按技术和能力校准；这里没有虚构的最优公斤数。")
                 .font(.footnote).foregroundStyle(.secondary)
         }
+    }
+
+    /// Calories for one planned day. Nil when the body weight is unknown, so the plan never shows a
+    /// number it cannot support.
+    private func dayCalories(_ day: PlanningDay) -> Int? {
+        let weight = CalorieEstimator.bodyWeightKG(store.interview?.profile ?? StructuredProfile())
+        guard let weight else { return nil }
+        var total = 0
+        var any = false
+        for item in day.items {
+            guard let exercise = ExerciseCatalog.exercise(id: item.exerciseID) else { continue }
+            if let value = CalorieEstimator.estimate(exercise: exercise, sets: item.setCount,
+                                                    targetReps: item.targetReps,
+                                                    targetSeconds: item.targetSeconds,
+                                                    restSeconds: item.restSeconds, weightKG: weight) {
+                total += value; any = true
+            }
+        }
+        return any ? total : nil
     }
 
     private func confirmationSection(_ draft: PlanningDraft) -> some View {

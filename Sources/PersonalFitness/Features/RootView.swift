@@ -19,6 +19,7 @@ struct RootView: View {
     @State private var capturePlanner = false
     @State private var captureInterview = false
     @State private var captureMedia = false
+    @State private var captureLibrary = false
     @State private var captureConstraintReview = false
     @State private var captureConstraintDraft = false
 
@@ -38,33 +39,34 @@ struct RootView: View {
             _workout = State(initialValue: WorkoutRoute(id: active.id))
         }
         if let index = arguments.firstIndex(of: "--capture-tab"), arguments.indices.contains(index + 1),
-           let tab = Int(arguments[index + 1]), (0...4).contains(tab) {
+           let tab = Int(arguments[index + 1]), (0...2).contains(tab) {
             _selectedTab = State(initialValue: tab)
         }
-        if arguments.contains("--capture-history") { _selectedTab = State(initialValue: 3) }
+        if arguments.contains("--capture-history") { _selectedTab = State(initialValue: 1) }
+        // The exercise library is no longer a tab; CI opens it directly so the screenshot coverage
+        // stays intact.
+        _captureLibrary = State(initialValue: arguments.contains("--capture-library"))
         #endif
     }
 
     var body: some View {
+        // Three tabs, not five. The person asked for one place to train and one to talk to the coach;
+        // the exercise library and the plan library now live inside those, where they are actually
+        // needed, instead of competing for a tab.
         TabView(selection: $selectedTab) {
             NavigationStack {
                 TodayView(store: store, openWorkout: { workout = WorkoutRoute(id: $0) },
                           editPlan: { planEditor = PlanEditorRoute(plan: $0) },
                           openSettings: { settings = true },
-                          openCoach: { selectedTab = 4 })
+                          openCoach: { selectedTab = 2 })
             }
             .tabItem { Label("今天", systemImage: "house") }.tag(0)
             NavigationStack {
-                PlansAndHistoryView(store: store, openWorkout: { workout = WorkoutRoute(id: $0) },
-                                    editPlan: { planEditor = PlanEditorRoute(plan: $0) })
+                TrainingHistoryCalendarView(store: store, openWorkout: { workout = WorkoutRoute(id: $0) })
             }
-            .tabItem { Label("训练", systemImage: "dumbbell") }.tag(1)
-            NavigationStack { ExerciseLibraryView(store: store) }
-                .tabItem { Label("动作库", systemImage: "books.vertical") }.tag(2)
-            NavigationStack { TrainingHistoryCalendarView(store: store, openWorkout: { workout = WorkoutRoute(id: $0) }) }
-                .tabItem { Label("历史", systemImage: "clock.arrow.circlepath") }.tag(3)
-            NavigationStack { CoachView(store: store) }
-                .tabItem { Label("教练", systemImage: "bubble.left.and.text.bubble.right") }.tag(4)
+            .tabItem { Label("记录", systemImage: "clock.arrow.circlepath") }.tag(1)
+            NavigationStack { CoachConversationView(store: store) }
+                .tabItem { Label("教练", systemImage: "bubble.left.and.text.bubble.right") }.tag(2)
         }
         .tint(FitnessTheme.accent)
         // A tab change is a navigation, not a value edit; a light tap keeps it feeling responsive
@@ -83,6 +85,9 @@ struct RootView: View {
                     ExerciseDetailView(exercise: exercise, store: store)
                 }
             }
+        }
+        .sheet(isPresented: $captureLibrary) {
+            NavigationStack { ExerciseLibraryView(store: store) }
         }
         .sheet(isPresented: $captureConstraintReview) {
             NavigationStack {

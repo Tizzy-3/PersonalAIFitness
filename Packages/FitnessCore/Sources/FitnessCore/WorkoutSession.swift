@@ -58,12 +58,22 @@ public struct WorkoutExercise: Identifiable, Codable, Equatable, Sendable {
     public var restSeconds: Double
     public var note: String
     public var skipped: Bool
+    /// How hard this movement felt, recorded by the person after its sets. Optional, and absent in
+    /// sessions saved before this existed — "not recorded" stays distinguishable from "felt easy".
+    public var exertion: Int?
+    /// A short free-form feeling note for this movement ("肩膀有点紧"), separate from the sets.
+    public var feelingNote: String?
 
     public init(id: UUID = UUID(), exercise: Exercise, sets: [LoggedSet] = [],
-                restSeconds: Double = 90, note: String = "", skipped: Bool = false) {
+                restSeconds: Double = 90, note: String = "", skipped: Bool = false,
+                exertion: Int? = nil, feelingNote: String? = nil) {
         self.id = id; self.exercise = exercise; self.sets = sets
         self.restSeconds = restSeconds; self.note = note; self.skipped = skipped
+        self.exertion = exertion; self.feelingNote = feelingNote
     }
+
+    /// Whether the person said anything about how this movement felt.
+    public var hasFeedback: Bool { exertion != nil || !(feelingNote ?? "").isEmpty }
 
     public func validate() throws {
         try exercise.validate()
@@ -71,6 +81,8 @@ public struct WorkoutExercise: Identifiable, Codable, Equatable, Sendable {
         guard restSeconds <= 86_400, sets.count <= 500, note.count <= 10_000 else {
             throw CoreError.invalidInput("动作记录超出支持范围。")
         }
+        if let exertion { guard (1...10).contains(exertion) else { throw CoreError.invalidInput("动作感受应在 1 至 10 之间。") } }
+        guard (feelingNote?.count ?? 0) <= 500 else { throw CoreError.invalidInput("动作感受说明过长。") }
         try CoreValidation.unique(sets.map(\.id), name: "组 ID")
         for set in sets { try set.validate(for: exercise) }
     }

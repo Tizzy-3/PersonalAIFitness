@@ -138,6 +138,17 @@ struct WorkoutView: View {
                 Label("训练已暂停，恢复后继续记录", systemImage: "pause.circle.fill")
                     .font(.system(size: 12, design: .rounded)).foregroundStyle(FitnessTheme.orange)
             }
+            if let kcal = sessionCalories {
+                HStack(spacing: 6) {
+                    Image(systemName: "flame.fill").font(.system(size: 12))
+                    Text("已消耗约 \(kcal) 千卡")
+                        .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                    Spacer(minLength: 0)
+                    Text("估算").font(.system(size: 10, design: .rounded)).foregroundStyle(FitnessTheme.faint)
+                }
+                .foregroundStyle(FitnessTheme.accent)
+                .accessibilityLabel("本次已消耗约 \(kcal) 千卡，估算")
+            }
             if session.plannedWorkingSets > 0 {
                 // Segmented bar instead of a thin system ProgressView: one segment per planned set,
                 // so progress is countable without reading the fraction.
@@ -163,6 +174,37 @@ struct WorkoutView: View {
         .animation(FitnessTheme.Motion.state, value: completed)
     }
 
+    /// Calories for one movement, using the planned target while training and the completed sets
+    /// afterwards. `nil` whenever the estimate cannot be made honestly (no body weight, no target).
+    private func itemCalories(_ item: WorkoutExercise) -> Int? {
+        let weight = CalorieEstimator.bodyWeightKG(store.interview?.profile ?? StructuredProfile())
+        let completed = item.sets.filter { $0.kind == .working && $0.isCompleted }
+        if !completed.isEmpty {
+            let reps = completed.compactMap(\.reps).max()
+            let seconds = completed.compactMap(\.durationSeconds).max()
+            return CalorieEstimator.estimate(
+                exercise: item.exercise, sets: completed.count,
+                targetReps: reps ?? item.sets.first(where: { $0.kind == .working })?.reps,
+                targetSeconds: seconds ?? item.sets.first(where: { $0.kind == .working })?.durationSeconds,
+                restSeconds: item.restSeconds, weightKG: weight)
+        }
+        let planned = item.sets.filter { $0.kind == .working }
+        guard let first = planned.first else { return nil }
+        return CalorieEstimator.estimate(
+            exercise: item.exercise, sets: planned.count,
+            targetReps: first.reps, targetSeconds: first.durationSeconds,
+            restSeconds: item.restSeconds, weightKG: weight)
+    }
+
+    /// Total for this session so far, and the label that keeps it honest.
+    private var sessionCalories: Int? {
+        guard let session else { return nil }
+        return CalorieEstimator.estimate(
+            session: session,
+            weightKG: CalorieEstimator.bodyWeightKG(store.interview?.profile ?? StructuredProfile()))
+    }
+
+
     private func pauseButton(_ session: WorkoutSession) -> some View {
         Button { togglePause(session) } label: {
             Image(systemName: session.status == .paused ? "play.fill" : "pause.fill")
@@ -180,7 +222,19 @@ struct WorkoutView: View {
                              })?.id)
                 VStack(alignment: .leading, spacing: 8) {
                     Text(item.exercise.name).font(.headline)
-                    Text(item.skipped ? "本次已跳过" : item.exercise.loadConvention.title).font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text(item.skipped ? "本次已跳过" : item.exercise.loadConvention.title)
+                            .font(.caption).foregroundStyle(.secondary)
+                        if let kcal = itemCalories(item) {
+                            // An estimate, and labelled as one wherever it appears.
+                            Text("\(kcal) 千卡")
+                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .foregroundStyle(FitnessTheme.accent)
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(FitnessTheme.blueTint, in: Capsule())
+                                .accessibilityLabel("预计消耗 \(kcal) 千卡，估算")
+                        }
+                    }
                     NavigationLink { ExerciseDetailView(exercise: item.exercise, store: store) } label: {
                         Label(ExerciseDetails.details(for: item.exercise.id)?.media?.kind == .video ? "动作示范" : "动作要点",
                               systemImage: ExerciseDetails.details(for: item.exercise.id)?.media?.kind == .video ? "play.rectangle" : "text.book.closed")
@@ -203,6 +257,11 @@ struct WorkoutView: View {
                 let number = item.sets.prefix(index + 1).filter { $0.kind == .working }.count
                 WorkoutSetRow(store: store, sessionID: sessionID, item: item, set: set, number: number,
                               canEdit: session.status == .active && !item.skipped)
+            }
+            // Feeling is asked per movement, right after its sets, where the memory is fresh.
+            if !item.skipped, session.status.isOngoing || item.hasFeedback {
+                Divider()
+                ExerciseFeelingCard(store: store, sessionID: sessionID, item: item)
             }
             if !item.skipped {
                 Divider()
