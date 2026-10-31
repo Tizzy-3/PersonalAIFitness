@@ -19,3 +19,6 @@ xcuserdata/
 /docs/
 /design/
 scripts/render-icon.cjs
+
+# Local scratch/download artifacts
+_diag/
