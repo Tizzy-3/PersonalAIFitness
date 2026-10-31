@@ -112,7 +112,7 @@ struct PersonalizedPlannerAPI: Sendable {
 
     static func accept(_ content: String, input: PlanningInput) throws -> PersonalizedPlanReply {
         guard let extracted = ModelOutputRepair.extractJSONObject(content) else {
-            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: "动作组合没有返回约定格式，原计划未变。")
+            throw ModelOutputRejection.notJSON(content, detail: "动作组合没有返回约定格式，原计划未变。")
         }
         do {
             return try PersonalizedPlanReply.decode(data: Data(extracted.utf8), input: input)

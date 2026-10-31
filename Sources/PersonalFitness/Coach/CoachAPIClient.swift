@@ -286,7 +286,7 @@ struct CoachAPI: Sendable {
     /// Shape repair then decode; both attempts share this path so a retry cannot take a shortcut.
     static func accept(_ content: String, context: CoachContext) throws -> CoachReply {
         guard let extracted = ModelOutputRepair.extractJSONObject(content) else {
-            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: "教练没有返回约定格式，可以重试。")
+            throw ModelOutputRejection.notJSON(content, detail: "教练没有返回约定格式，可以重试。")
         }
         do {
             return try CoachReply.decode(data: Data(extracted.utf8), context: context)

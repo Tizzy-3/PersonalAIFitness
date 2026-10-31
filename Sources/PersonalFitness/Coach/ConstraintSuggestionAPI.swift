@@ -19,7 +19,7 @@ struct ConstraintSuggestion: Codable, Equatable, Sendable {
         guard let extracted = ModelOutputRepair.extractJSONObject(content),
               let parsed = try? JSONSerialization.jsonObject(with: Data(extracted.utf8)),
               var root = parsed as? [String: Any] else {
-            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: message)
+            throw ModelOutputRejection.notJSON(content, detail: message)
         }
         let allowed = Set(protocolKeys)
         let unknown = ModelOutputRepair.unknownKeys(in: root, allowed: allowed)
@@ -131,6 +131,18 @@ struct ConstraintSuggestionAPI: Sendable {
             try Task.checkCancellation()
             do { return try ConstraintSuggestion.decode(repaired) }
             catch let second as ModelOutputRejection {
+                // A model answering in prose will not start emitting JSON because it was asked
+                // again in the same mode. One plain-text attempt is the last chance; the same
+                // validator still decides.
+                if format == .jsonObject {
+                    let plain = try await client.complete(configuration: configuration, key: key,
+                        messages: messages + [correction], outputFormat: .text)
+                    try Task.checkCancellation()
+                    do { return try ConstraintSuggestion.decode(plain) }
+                    catch let third as ModelOutputRejection {
+                        throw CoreError.invalidInput(third.detail + "（原因：" + third.reason + "）")
+                    }
+                }
                 throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
             }
         }

@@ -152,6 +152,21 @@ struct InterviewAPI: Sendable {
                 turn.formatRepairUsed = true; turn.jsonModeFallbackUsed = fallback ? true : nil
                 return turn
             } catch let error as InterviewProtocolError {
+                // A model answering in prose will not start emitting JSON because it was asked
+                // again in the same mode. One attempt in plain-text mode is the last chance; the
+                // same strict decoder still decides, so nothing unsafe gets through.
+                if format == .jsonObject {
+                    do {
+                        let plain = try await client.completeDetailed(configuration: configuration, key: key,
+                            messages: messages + [correction], outputFormat: .text)
+                        try Task.checkCancellation()
+                        var turn = try Self.decodeTurn(plain.content, session: session, provider: provider)
+                        turn.formatRepairUsed = true; turn.jsonModeFallbackUsed = true
+                        return turn
+                    } catch is InterviewProtocolError {
+                        // Fall through and report the original failure with its finish reason.
+                    }
+                }
                 var final = error
                 let allowed = ["stop", "length", "content_filter", "tool_calls", "function_call"]
                 final.finishReason = repaired.finishReason.map { allowed.contains($0) ? $0 : "other" }

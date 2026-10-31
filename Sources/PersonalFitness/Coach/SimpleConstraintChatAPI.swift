@@ -36,7 +36,7 @@ struct SimpleConstraintChatAPI: Sendable {
         guard let extracted = ModelOutputRepair.extractJSONObject(content),
               let parsed = try? JSONSerialization.jsonObject(with: Data(extracted.utf8)),
               var root = parsed as? [String: Any] else {
-            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: message)
+            throw ModelOutputRejection.notJSON(content, detail: message)
         }
         // `gentleDateKey` is optional; the other eight are mandatory. Written explicitly rather than
         // derived from the array's order, so reordering the prompt list cannot silently change which
@@ -143,6 +143,18 @@ struct SimpleConstraintChatAPI: Sendable {
             try Task.checkCancellation()
             do { return try Self.accept(repaired, session: session) }
             catch let second as ModelOutputRejection {
+                // A model that answered in prose twice will not start emitting JSON because it was
+                // asked a third time in the same mode. One attempt in plain-text mode is the last
+                // chance; the same validator still decides, so nothing unsafe gets through.
+                if format == .jsonObject {
+                    let plain = try await client.complete(configuration: configuration, key: key,
+                        messages: messages + [correction], outputFormat: .text)
+                    try Task.checkCancellation()
+                    do { return try Self.accept(plain, session: session) }
+                    catch let third as ModelOutputRejection {
+                        throw CoreError.invalidInput(third.detail + "（原因：" + third.reason + "）")
+                    }
+                }
                 throw CoreError.invalidInput(second.detail + "（原因：" + second.reason + "）")
             }
         }

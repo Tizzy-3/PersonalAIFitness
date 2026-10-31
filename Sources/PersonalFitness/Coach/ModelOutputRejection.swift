@@ -8,11 +8,36 @@ import Foundation
 struct ModelOutputRejection: Error, LocalizedError, Equatable, Sendable {
     let reason: String
     let detail: String
+    /// A short, sanitised preview of what the model actually sent, when the failure was "not JSON".
+    /// Without it, "the reply was not JSON" is unactionable: a refusal, a truncated stream and a
+    /// wrong-endpoint HTML page all look identical. Trimmed to 120 characters and stripped of
+    /// newlines; never the whole reply.
+    var preview: String? = nil
 
-    var errorDescription: String? { detail }
+    var errorDescription: String? {
+        guard let preview, !preview.isEmpty else { return detail }
+        return "\(detail)\n\n模型实际返回的开头是：「\(preview)」"
+    }
 }
 
 extension ModelOutputRejection {
+    /// Builds a rejection for "the reply was not a JSON object", keeping a short preview so the
+    /// person and the log can tell a refusal from a truncation from a wrong endpoint.
+    static func notJSON(_ content: String, detail: String) -> ModelOutputRejection {
+        ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: detail,
+                             preview: sanitizedPreview(content))
+    }
+
+    /// First 120 printable characters, newlines collapsed. Deliberately not the full reply.
+    static func sanitizedPreview(_ content: String) -> String {
+        let collapsed = content
+            .replacingOccurrences(of: "\r\n", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !collapsed.isEmpty else { return "（空回复）" }
+        return String(collapsed.prefix(120))
+    }
+
     /// The correction turn for a rejected reply. Naming the specific defect matters: a model told
     /// "invalid" reproduces it, while a model told "these keys are not allowed: mode" does not.
     static func correction(reason: String, allowedKeys: [String], extraRules: String = "") -> String {

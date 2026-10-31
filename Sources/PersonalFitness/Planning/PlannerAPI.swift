@@ -71,7 +71,7 @@ struct PlannerAPI: Sendable {
     /// Extract, repair shape, then decode — the same acceptance path for both attempts.
     static func accept(_ content: String, options: [WeeklyPlanOption]) throws -> AISelection {
         guard let extracted = ModelOutputRepair.extractJSONObject(content) else {
-            throw ModelOutputRejection(reason: "返回内容不是 JSON 对象", detail: "计划选择没有返回约定格式，原计划未变。")
+            throw ModelOutputRejection.notJSON(content, detail: "计划选择没有返回约定格式，原计划未变。")
         }
         do {
             return try AISelection.decode(data: Data(extracted.utf8), options: options)

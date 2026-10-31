@@ -127,6 +127,31 @@ final class ModelOutputToleranceTests: XCTestCase {
         XCTAssertThrowsError(try SimpleConstraintChatAPI.decode(fractional))
     }
 
+    func testNonJSONFailureCarriesAShortPreview() {
+        // A refusal, a truncated stream and a wrong-endpoint HTML page all used to look identical.
+        let refusal = "抱歉，我需要更多信息才能整理。请告诉我具体的医生建议。"
+        XCTAssertThrowsError(try SimpleConstraintChatAPI.decode(refusal)) { error in
+            let rejection = error as? ModelOutputRejection
+            XCTAssertEqual(rejection?.reason, "返回内容不是 JSON 对象")
+            // The person can now see what came back instead of guessing.
+            XCTAssertTrue(error.localizedDescription.contains("模型实际返回的开头是"))
+            XCTAssertTrue(error.localizedDescription.contains("抱歉"))
+        }
+    }
+
+    func testPreviewIsTruncatedAndDoesNotEchoTheWholeReply() {
+        let long = String(repeating: "很长的说明文字", count: 200)
+        let preview = ModelOutputRejection.sanitizedPreview(long)
+        XCTAssertLessThanOrEqual(preview.count, 120)
+        XCTAssertLessThan(preview.count, long.count)
+        // Newlines are collapsed so the alert stays readable.
+        XCTAssertFalse(preview.contains("\n"))
+    }
+
+    func testEmptyReplyHasItsOwnPreview() {
+        XCTAssertEqual(ModelOutputRejection.sanitizedPreview("   \n  "), "（空回复）")
+    }
+
     func testNonJSONStillFails() {
         XCTAssertThrowsError(try SimpleConstraintChatAPI.decode("抱歉，我无法整理这些内容。"))
     }
