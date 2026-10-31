@@ -7,61 +7,104 @@ import UIKit
 /// change, a success pattern for a completed set, a warning for a safety prompt. The device decides
 /// whether it can deliver; nothing breaks when haptics are unavailable.
 ///
-/// `UIImpactFeedbackGenerator` is prepared before use so the tap lands with the animation instead of
-/// a few milliseconds after it, which is the difference between "feels connected" and "feels laggy".
+/// Generators are prepared before use so the tap lands with the animation rather than a few
+/// milliseconds after it, which is the difference between "feels connected" and "feels laggy".
+///
+/// `UIImpactFeedbackGenerator` is `@MainActor`-isolated, so the generators cannot be nonisolated
+/// static stored properties. They live in a small reference holder created on first use and kept
+/// alive between calls; the holder is only ever touched from `@MainActor` code.
+private final class HapticStore: @unchecked Sendable {
+    static let shared = HapticStore()
+    var light: UIImpactFeedbackGenerator?
+    var medium: UIImpactFeedbackGenerator?
+    var rigid: UIImpactFeedbackGenerator?
+    var notify: UINotificationFeedbackGenerator?
+    var selection: UISelectionFeedbackGenerator?
+}
+
+@MainActor
 enum Haptics {
-    private static let light = UIImpactFeedbackGenerator(style: .light)
-    private static let medium = UIImpactFeedbackGenerator(style: .medium)
-    private static let rigid = UIImpactFeedbackGenerator(style: .rigid)
-    private static let notify = UINotificationFeedbackGenerator()
-    private static let selection = UISelectionFeedbackGenerator()
+    private static let store = HapticStore.shared
+
+    private static func lightGenerator() -> UIImpactFeedbackGenerator {
+        if let existing = store.light { return existing }
+        let created = UIImpactFeedbackGenerator(style: .light); store.light = created; return created
+    }
+    private static func mediumGenerator() -> UIImpactFeedbackGenerator {
+        if let existing = store.medium { return existing }
+        let created = UIImpactFeedbackGenerator(style: .medium); store.medium = created; return created
+    }
+    private static func rigidGenerator() -> UIImpactFeedbackGenerator {
+        if let existing = store.rigid { return existing }
+        let created = UIImpactFeedbackGenerator(style: .rigid); store.rigid = created; return created
+    }
+    private static func notifyGenerator() -> UINotificationFeedbackGenerator {
+        if let existing = store.notify { return existing }
+        let created = UINotificationFeedbackGenerator(); store.notify = created; return created
+    }
+    private static func selectionGenerator() -> UISelectionFeedbackGenerator {
+        if let existing = store.selection { return existing }
+        let created = UISelectionFeedbackGenerator(); store.selection = created; return created
+    }
 
     /// Warm the generators up when a screen that will need them appears.
     static func prepare() {
-        light.prepare(); medium.prepare(); rigid.prepare()
-        notify.prepare(); selection.prepare()
+        lightGenerator().prepare(); mediumGenerator().prepare(); rigidGenerator().prepare()
+        notifyGenerator().prepare(); selectionGenerator().prepare()
     }
 
     /// A control responded: tab change, chip tap, small toggle.
     static func tap() {
-        selection.selectionChanged()
-        selection.prepare()
+        let generator = selectionGenerator()
+        generator.selectionChanged()
+        generator.prepare()
     }
 
     /// A set was completed. Slightly heavier than `tap` so it reads as progress, not as a click.
     static func setCompleted() {
-        rigid.impactOccurred(intensity: 0.85)
-        rigid.prepare()
+        let generator = rigidGenerator()
+        generator.impactOccurred(intensity: 0.85)
+        generator.prepare()
     }
 
     /// A set was un-completed (undo). Deliberately softer: going backwards should feel lighter.
     static func setReverted() {
-        light.impactOccurred(intensity: 0.6)
-        light.prepare()
+        let generator = lightGenerator()
+        generator.impactOccurred(intensity: 0.6)
+        generator.prepare()
     }
 
     /// Rest ended, or a timer reached zero.
     static func timerDone() {
-        notify.notificationOccurred(.success)
-        notify.prepare()
+        let generator = notifyGenerator()
+        generator.notificationOccurred(.success)
+        generator.prepare()
     }
 
     /// Something needs attention: a safety question, a rejected action, a failed save.
     static func warning() {
-        notify.notificationOccurred(.warning)
-        notify.prepare()
+        let generator = notifyGenerator()
+        generator.notificationOccurred(.warning)
+        generator.prepare()
     }
 
-    /// A workout was saved.
+    /// A workout was saved: one solid impact plus the success pattern, in that order, so the
+    /// completion is felt before the confirmation sound-like pattern.
     static func sessionSaved() {
-        medium.impactOccurred(intensity: 0.9)
-        notify.notificationOccurred(.success)
-        medium.prepare(); notify.prepare()
+        let impact = mediumGenerator()
+        impact.impactOccurred(intensity: 0.9)
+        let notification = notifyGenerator()
+        notification.notificationOccurred(.success)
+        impact.prepare(); notification.prepare()
     }
 }
 
 /// Plays a short success pattern when the value it is bound to changes from false to true, then
 /// resets itself. Used by set rows and the finish button.
+///
+/// Marked `@MainActor` because `onChange` already runs on the main actor and the haptic generators
+/// require it; this keeps the closure type honest instead of casting at the call site.
+@MainActor
 struct HapticOnCompletion: ViewModifier {
     let trigger: Bool
     let action: () -> Void
@@ -76,6 +119,7 @@ struct HapticOnCompletion: ViewModifier {
 }
 
 extension View {
+    /// Default action is a completed-set haptic; pass another for other transitions.
     func haptic(when trigger: Bool, _ action: @escaping () -> Void = Haptics.setCompleted) -> some View {
         modifier(HapticOnCompletion(trigger: trigger, action: action))
     }
