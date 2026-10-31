@@ -322,6 +322,7 @@ struct CoachConversationView: View {
     /// (push once, with something concrete; accept pain immediately), and a model would soften it
     /// into "rest if you need to" — which is exactly the collapse the person asked to avoid.
     /// Only clearly-negative messages are intercepted; everything else goes to the coach.
+    @MainActor
     private static func skipReply(for text: String, store: TrainingStore) -> String? {
         let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalized.count <= 40 else { return nil }
@@ -335,6 +336,7 @@ struct CoachConversationView: View {
         return message
     }
 
+    @MainActor
     private static func trainedYesterday(_ store: TrainingStore) -> Bool {
         let calendar = Calendar.current
         return store.sessions.contains {

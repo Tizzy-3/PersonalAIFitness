@@ -5,7 +5,12 @@ import FitnessCore
 ///
 /// Both are single calls with no menu in between: the person types, the coach answers, and when
 /// there is enough to work with a plan is drafted. Nothing here asks the person to choose a mode.
-struct CoachConversationService: Sendable {
+///
+/// Marked `@MainActor` because `TrainingStore` is main-actor isolated: `snapshot()`, `interview` and
+/// `savePlanningDraft` cannot be touched from a background executor. The network calls inside still
+/// suspend rather than block, so the main actor is not held while waiting for the model.
+@MainActor
+struct CoachConversationService {
     let client: CoachHTTPClient
     init(client: CoachHTTPClient = CoachHTTPClient()) { self.client = client }
 
