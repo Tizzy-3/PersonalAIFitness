@@ -99,32 +99,6 @@ enum Haptics {
     }
 }
 
-/// Plays a short success pattern when the value it is bound to changes from false to true, then
-/// resets itself. Used by set rows and the finish button.
-///
-/// Marked `@MainActor` because `onChange` already runs on the main actor and the haptic generators
-/// require it; this keeps the closure type honest instead of casting at the call site.
-@MainActor
-struct HapticOnCompletion: ViewModifier {
-    let trigger: Bool
-    let action: () -> Void
-    @State private var last = false
-
-    func body(content: Content) -> some View {
-        content.onChange(of: trigger) { _, now in
-            if now, !last { action() }
-            last = now
-        }
-    }
-}
-
-extension View {
-    /// Default action is a completed-set haptic; pass another for other transitions.
-    func haptic(when trigger: Bool, _ action: @escaping () -> Void = Haptics.setCompleted) -> some View {
-        modifier(HapticOnCompletion(trigger: trigger, action: action))
-    }
-}
-
 /// A number that rolls to its new value instead of swapping instantly. `contentTransition` handles
 /// the digits; the spring makes the roll feel weighted rather than mechanical.
 struct RollingNumber: View {
