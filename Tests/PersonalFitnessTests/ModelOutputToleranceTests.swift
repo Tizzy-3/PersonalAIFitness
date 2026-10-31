@@ -156,6 +156,34 @@ final class ModelOutputToleranceTests: XCTestCase {
         XCTAssertEqual(ModelOutputRejection.sanitizedPreview("   \n  "), "（空回复）")
     }
 
+    // MARK: - Conversation turn is separate from extraction
+
+    func testConversationTurnDecodesAndKeepsTheReplyVerbatim() throws {
+        let content = #"{"reply":"好，那周四我给你安排 15 分钟快走，可以吗？","topic":"周四安排"}"#
+        let turn = try SimpleConstraintChatAPI.decodeConversation(content)
+        XCTAssertEqual(turn.reply, "好，那周四我给你安排 15 分钟快走，可以吗？")
+        XCTAssertEqual(turn.topic, "周四安排")
+    }
+
+    func testConversationTurnAcceptsProseInAFence() throws {
+        let content = "好的：" + "\n```json\n" + #"{"reply":"你先说说哪里不舒服？"}"# + "\n```"
+        let turn = try SimpleConstraintChatAPI.decodeConversation(content)
+        XCTAssertEqual(turn.reply, "你先说说哪里不舒服？")
+        XCTAssertEqual(turn.topic, "")
+    }
+
+    func testConversationTurnRejectsAPlanOrExtraFields() {
+        let withPlan = #"{"reply":"好","plan":{"sets":3}}"#
+        XCTAssertThrowsError(try SimpleConstraintChatAPI.decodeConversation(withPlan)) { error in
+            XCTAssertEqual((error as? ModelOutputRejection)?.reason.contains("plan"), true)
+        }
+    }
+
+    func testConversationTurnRequiresANonEmptyReply() {
+        XCTAssertThrowsError(try SimpleConstraintChatAPI.decodeConversation(#"{"reply":"   ","topic":""}"#))
+        XCTAssertThrowsError(try SimpleConstraintChatAPI.decodeConversation(#"{"topic":"x"}"#))
+    }
+
     func testNonJSONStillFails() {
         XCTAssertThrowsError(try SimpleConstraintChatAPI.decode("抱歉，我无法整理这些内容。"))
     }

@@ -407,26 +407,54 @@ struct SimpleConstraintChatView: View {
             let token = UUID(); requestID = token; notice = nil; typing = false
             request = Task {
                 defer { if requestID == token { request = nil; requestID = nil } }
+                let api = SimpleConstraintChatAPI()
+                // Step 1: the coach talks. This step cannot fail on formatting, so the person always
+                // gets an answer. Step 2 (extraction) may fail without taking the conversation down.
+                let turn: CoachConversationTurn
                 do {
-                    let candidate = try await SimpleConstraintChatAPI().reply(session: start, legacyRestrictions: legacy,
-                        configuration: configuration, key: key)
+                    turn = try await api.converse(session: start, legacyRestrictions: legacy,
+                                                  configuration: configuration, key: key)
+                } catch is CancellationError { return }
+                catch {
+                    if requestID == token { issue = error.localizedDescription }
+                    return
+                }
+                try? Task.checkCancellation()
+                guard requestID == token, store.interview == start,
+                      var current = store.interview, var saved = current.constraintChat,
+                      saved.sourceText == savedChat.sourceText, saved.legacySourceText == savedChat.legacySourceText,
+                      saved.messages.filter({ $0.role == .user }).count == evidenceCount else {
+                    if requestID == token { issue = "刚才的资料有更新。这次回复没有覆盖新内容，请再发给教练。" }
+                    return
+                }
+                // Show the coach's line immediately; extraction is a separate, slower concern.
+                do { try saved.appendCoach(turn.reply, at: Date()) } catch { }
+                current.constraintChat = saved
+                try? store.saveInterview(current)
+
+                // Step 2: structure what has been said so far, including the line just shown. A
+                // failure here is reported quietly and the conversation stays usable — the person
+                // can keep talking or confirm later.
+                do {
+                    guard let latestSession = store.interview else { return }
+                    let candidate = try await api.reply(session: latestSession, legacyRestrictions: legacy,
+                                                        configuration: configuration, key: key)
                     try Task.checkCancellation()
-                    guard requestID == token, store.interview == start, store.profile.restrictions == legacy,
-                          var current = store.interview, var saved = current.constraintChat,
-                          saved.sourceText == savedChat.sourceText, saved.legacySourceText == savedChat.legacySourceText,
-                          saved.messages.filter({ $0.role == .user }).count == evidenceCount else {
-                        throw CoreError.invalidState("刚才的资料有更新。这次回复没有覆盖新内容，请再发给教练。")
-                    }
-                    try saved.receiveCandidate(candidate, evidenceCount: evidenceCount, at: Date())
-                    // Interpretations never inherit an old human classification of new information.
-                    if candidate.questions.isEmpty && candidate.unresolved.isEmpty { saved.setMode(nil) }
-                    if let question = (candidate.questions + candidate.unresolved).first {
-                        try saved.appendCoach(question, at: Date())
-                    }
-                    current.constraintChat = saved
-                    try store.saveInterview(current)
+                    guard requestID == token, var latest = store.interview, var chat = latest.constraintChat,
+                          chat.sourceText == savedChat.sourceText,
+                          chat.legacySourceText == savedChat.legacySourceText,
+                          chat.messages.filter({ $0.role == .user }).count == evidenceCount else { return }
+                    try chat.receiveCandidate(candidate, evidenceCount: evidenceCount, at: Date())
+                    if candidate.questions.isEmpty && candidate.unresolved.isEmpty { chat.setMode(nil) }
+                    latest.constraintChat = chat
+                    try store.saveInterview(latest)
                 } catch is CancellationError { }
-                catch { if requestID == token { issue = error.localizedDescription } }
+                catch {
+                    if requestID == token {
+                        // Not an alert: the conversation succeeded, only the bookkeeping did not.
+                        notice = "教练已经回答了你，但这次的整理没有完成。可以继续聊，或稍后再试。"
+                    }
+                }
             }
         } catch { issue = error.localizedDescription }
     }
