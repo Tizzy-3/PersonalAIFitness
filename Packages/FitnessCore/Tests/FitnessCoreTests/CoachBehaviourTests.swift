@@ -53,7 +53,8 @@ final class CoachBehaviourTests: XCTestCase {
         let review = YesterdayReview.make(session: value, feedback: nil, calories: nil,
                                           plan: try plan(), now: now)
         XCTAssertTrue(review.feltHard)
-        XCTAssertTrue(review.details.contains { $0.contains("哑铃卧推") })
+        // The catalogue name is 杠铃卧推; asserting the wrong label would pass only by luck.
+        XCTAssertTrue(review.details.contains { $0.contains("杠铃卧推") })
     }
 
     func testPainYesterdaySuppressesTheEncouragementToTrain() throws {
