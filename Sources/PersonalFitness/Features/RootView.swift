@@ -67,6 +67,10 @@ struct RootView: View {
                 .tabItem { Label("教练", systemImage: "bubble.left.and.text.bubble.right") }.tag(4)
         }
         .tint(FitnessTheme.accent)
+        // A tab change is a navigation, not a value edit; a light tap keeps it feeling responsive
+        // without the heavier "success" pattern that belongs to completing a set.
+        .onChange(of: selectedTab) { _, _ in Haptics.tap() }
+        .onAppear { Haptics.prepare() }
         .sheet(item: $planEditor) { route in NavigationStack { PlanEditorView(store: store, revising: route.plan) } }
         .sheet(isPresented: $settings) { NavigationStack { SettingsView(store: store) } }
         .sheet(isPresented: $capturePlanner) { NavigationStack { PlannerView(store: store) } }

@@ -174,17 +174,53 @@ struct WorkoutSetRow: View {
 
     private var kindButton: some View {
         Button { details = true } label: {
-            Text(set.kind == .warmup ? "W" : String(number)).font(.subheadline.weight(.semibold).monospacedDigit())
-                .foregroundStyle(FitnessTheme.ink).frame(width: 44, height: 44)
+            ZStack {
+                Circle()
+                    .fill(set.isCompleted ? FitnessTheme.tealTint
+                          : set.skipped ? FitnessTheme.sunken
+                          : FitnessTheme.blueTint)
+                    .frame(width: 30, height: 30)
+                Text(set.kind == .warmup ? "W" : String(number))
+                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                    .foregroundStyle(set.isCompleted ? FitnessTheme.teal : FitnessTheme.accent)
+                    .monospacedDigit()
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityLabel("第\(number)组，组别与可选强度")
             .disabled(!canEdit || set.isCompleted)
     }
 
+    /// A filled circle reads as "done" at a glance; the ring marks the row the person is on now.
+    /// The scale animation is what makes completing a set feel like a press, not a checkbox.
     private var completionButton: some View {
         Button { toggleCompletion() } label: {
-            Image(systemName: set.skipped ? "forward.end" : set.isCompleted ? "checkmark.square.fill" : "square")
-                .font(.system(size: 25, weight: .medium)).frame(width: 44, height: 44)
-                .foregroundStyle(set.isCompleted ? FitnessTheme.success : set.skipped ? Color.secondary : FitnessTheme.accent)
+            ZStack {
+                if set.isCompleted {
+                    Circle().fill(FitnessTheme.teal)
+                        .frame(width: 32, height: 32)
+                        .shadow(color: FitnessTheme.teal.opacity(0.35), radius: 6, y: 2)
+                    Image(systemName: set.skipped ? "forward.end.fill" : "checkmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
+                } else if set.skipped {
+                    Circle().fill(FitnessTheme.sunken).frame(width: 32, height: 32)
+                    Image(systemName: "forward.end")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(FitnessTheme.faint)
+                } else {
+                    Circle()
+                        .strokeBorder(FitnessTheme.accent.opacity(0.55), lineWidth: 2)
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(FitnessTheme.accent.opacity(0.55))
+                }
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+            .scaleEffect(set.isCompleted ? 1 : 0.96)
+            .animation(FitnessTheme.Motion.celebrate, value: set.isCompleted)
         }.buttonStyle(.plain).disabled(!canEdit || set.skipped)
             .accessibilityLabel(set.isCompleted ? "撤销本组完成" : "保存并完成本组")
             .accessibilityValue(set.skipped ? "已跳过" : set.isCompleted ? "已完成" : "未完成")
@@ -237,6 +273,7 @@ struct WorkoutSetRow: View {
         do {
             if set.isCompleted {
                 try store.updateSession(id: sessionID) { try $0.undoSet(exerciseID: item.id, setID: set.id) }
+                Haptics.setReverted()
             } else {
                 let value = try draft.applying(to: set, exercise: item.exercise)
                 try store.updateSession(id: sessionID) { current in
@@ -250,9 +287,11 @@ struct WorkoutSetRow: View {
                     current.exercises[itemIndex].sets[setIndex] = value
                     try current.completeSet(exerciseID: item.id, setID: set.id)
                 }
+                // Only after storage accepted it: a haptic for a save that failed would be a lie.
+                Haptics.setCompleted()
                 inputFocused = false
             }
-        } catch { issue = error.localizedDescription }
+        } catch { Haptics.warning(); issue = error.localizedDescription }
     }
 }
 

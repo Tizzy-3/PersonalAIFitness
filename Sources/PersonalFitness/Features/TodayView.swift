@@ -26,12 +26,12 @@ struct TodayView: View {
     var body: some View {
         let brief = store.todayBrief
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 18) {
                 header
-                weekStrip
                 CoachBriefCard(brief: brief,
                                onCheckIn: store.scheduledPlan() == nil ? nil : { showingCheckIn = true },
                                openCoach: openCoach)
+                streakStrip
                 if let proposal = store.pendingAdjustment, proposal.kind != .keep {
                     PendingAdjustmentCard(proposal: proposal,
                                           isStale: store.isAdjustmentStale(proposal),
@@ -43,59 +43,155 @@ struct TodayView: View {
                         HStack(spacing: 12) {
                             FitnessIconBadge(symbol: "calendar", color: FitnessTheme.teal)
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("我的每周安排").font(.subheadline.weight(.semibold)).foregroundStyle(FitnessTheme.ink)
-                                Text(program.selectedOption?.title ?? "已确认计划").font(.caption).foregroundStyle(FitnessTheme.muted)
+                                Text("我的每周安排").font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundStyle(FitnessTheme.ink)
+                                Text(program.selectedOption?.title ?? "已确认计划").font(.system(size: 12, design: .rounded)).foregroundStyle(FitnessTheme.faint)
                             }
-                            Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(FitnessTheme.muted)
-                        }.padding(14).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 15))
+                            Spacer(); Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(FitnessTheme.faint)
+                        }
+                        .padding(15)
+                        .background(RoundedRectangle(cornerRadius: FitnessTheme.Radius.card, style: .continuous)
+                            .fill(FitnessTheme.surface).shadow(color: FitnessTheme.cardShadow, radius: 10, y: 4))
                     }.buttonStyle(.plain)
                 }
                 healthCard
                 if let teaching { teachingCard(teaching) }
                 historyCard
-            }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 24)
+            }.padding(.horizontal, 20).padding(.top, 6).padding(.bottom, 28)
         }
         .background(FitnessTheme.canvas).navigationTitle("").navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingCheckIn) {
             NavigationStack { CheckInView(store: store) }
         }
+        .onAppear { Haptics.prepare() }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) { Text(Date.now, format: .dateTime.month().day().weekday()).font(.caption).foregroundStyle(FitnessTheme.muted) }
             ToolbarItem(placement: .topBarTrailing) {
-                Button(action: openSettings) { Image(systemName: "person.crop.circle").font(.title2).foregroundStyle(FitnessTheme.accent).frame(minWidth: 44, minHeight: 44) }
-                    .accessibilityLabel("设置与个人资料")
+                Button(action: openSettings) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(FitnessTheme.muted)
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+                .accessibilityLabel("设置与个人资料")
             }
         }
         .fitnessError($issue)
     }
 
+    /// Consecutive training days, this week's count, and a seven-dot week strip. Replaces the plain
+    /// date row: the point is momentum, and a bare calendar does not show it.
+    private var streakStrip: some View {
+        let weekCount = thisWeek.count
+        let streak = consecutiveDayCount
+        let planned = store.currentWeeklyProgram?.selectedOption?.days.filter { !$0.isRestDay }.count ?? 0
+        return HStack(spacing: 13) {
+            VStack(alignment: .leading, spacing: 1) {
+                RollingNumber(value: streak, size: 27, color: FitnessTheme.teal)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text("天连续训练").font(.system(size: 12.5, weight: .medium, design: .rounded))
+                    .foregroundStyle(FitnessTheme.teal)
+                Text(planned > 0 ? "本周已完成 \(weekCount) / \(planned) 次" : "本周已完成 \(weekCount) 次")
+                    .font(.system(size: 11.5, design: .rounded))
+                    .foregroundStyle(FitnessTheme.muted)
+            }
+            Spacer(minLength: 6)
+            weekDots
+        }
+        .padding(.horizontal, 16).padding(.vertical, 13)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(FitnessTheme.tealTint))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("连续训练 \(streak) 天，本周已完成 \(weekCount) 次")
+    }
+
+    private var weekDots: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<7, id: \.self) { offset in
+                let date = Calendar.current.date(byAdding: .day, value: offset, to: weekStart) ?? .now
+                let trained = store.sessions.contains {
+                    !$0.status.isOngoing && Calendar.current.isDate($0.startedAt, inSameDayAs: date)
+                        && $0.exercises.contains { $0.sets.contains(where: \.isCompleted) }
+                }
+                let isToday = Calendar.current.isDateInToday(date)
+                Circle()
+                    .fill(trained ? FitnessTheme.teal : (isToday ? FitnessTheme.surface : FitnessTheme.teal.opacity(0.22)))
+                    .frame(width: 8, height: 8)
+                    .overlay(Circle().stroke(isToday ? FitnessTheme.teal : .clear, lineWidth: 1.6))
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// Days in a row with a finished session, counting back from today (today counts if trained,
+    /// otherwise the streak is measured up to yesterday so an untrained morning does not reset it).
+    private var consecutiveDayCount: Int {
+        let calendar = Calendar.current
+        let days = Set(store.sessions.filter { !$0.status.isOngoing
+            && $0.exercises.contains { $0.sets.contains(where: \.isCompleted) } }
+            .map { calendar.startOfDay(for: $0.startedAt) })
+        guard !days.isEmpty else { return 0 }
+        var cursor = calendar.startOfDay(for: .now)
+        if !days.contains(cursor) {
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: cursor) else { return 0 }
+            cursor = yesterday
+        }
+        var count = 0
+        while days.contains(cursor) {
+            count += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = previous
+        }
+        return count
+    }
+
+    /// Greeting plus today's headline. The plan name is folded into the sentence, which is what makes
+    /// the screen read as "a coach talking to me" rather than "a dashboard".
     private var header: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text("今天").font(.title.bold()).foregroundStyle(FitnessTheme.ink)
-            Text("为自己，认真训练").font(.subheadline).foregroundStyle(FitnessTheme.muted)
+            Text(greeting).font(.system(size: 13, design: .rounded)).foregroundStyle(FitnessTheme.muted)
+            headline
+        }
+        .padding(.top, 4)
+    }
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: .now)
+        let part = hour < 6 ? "凌晨好" : hour < 11 ? "早上好" : hour < 14 ? "中午好" : hour < 18 ? "下午好" : "晚上好"
+        return "\(weekdayName)，\(part)"
+    }
+
+    private var weekdayName: String {
+        let names = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+        return names[Calendar.current.component(.weekday, from: .now) - 1]
+    }
+
+    @ViewBuilder private var headline: some View {
+        let plan = store.scheduledPlan()
+        let base = Font.system(size: 29, weight: .bold, design: .rounded)
+        if let plan {
+            (Text("今天练").font(base)
+             + Text(shortName(plan.name)).font(base).foregroundColor(FitnessTheme.accent)
+             + Text("，").font(base)
+             + Text("不着急。").font(base))
+                .foregroundStyle(FitnessTheme.ink)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+        } else if store.activeSession != nil {
+            Text("正在训练，继续。")
+                .font(base).foregroundStyle(FitnessTheme.ink)
+        } else if store.currentWeeklyProgram != nil {
+            Text("今天休息。")
+                .font(base).foregroundStyle(FitnessTheme.ink)
+        } else {
+            Text("先聊聊，再定计划。")
+                .font(base).foregroundStyle(FitnessTheme.ink)
         }
     }
-    private var weekStrip: some View {
-        Group {
-            if typeSize.isAccessibilitySize {
-                ScrollView(.horizontal, showsIndicators: false) { weekDays }
-            } else { weekDays }
-        }.background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 15))
-    }
-    private var weekDays: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<7) { offset in
-                let date = Calendar.current.date(byAdding: .day, value: offset, to: weekStart) ?? .now
-                let today = Calendar.current.isDateInToday(date)
-                VStack(spacing: 8) {
-                    Text(date, format: .dateTime.weekday(.narrow)).font(.caption2).foregroundStyle(FitnessTheme.muted)
-                    Text(date, format: .dateTime.day()).font(.subheadline.weight(.semibold).monospacedDigit())
-                        .frame(minWidth: 32, minHeight: 34)
-                        .foregroundStyle(today ? FitnessTheme.accentInk : FitnessTheme.ink)
-                        .background(today ? FitnessTheme.accent : .clear, in: RoundedRectangle(cornerRadius: 10))
-                }.frame(minWidth: typeSize.isAccessibilitySize ? 72 : 0, maxWidth: .infinity).accessibilityElement(children: .combine)
-            }
-        }.padding(.vertical, 12).padding(.horizontal, 6)
+
+    /// The plan name is often long ("上肢推拉 · 第 3 周"); the headline only needs the movement group.
+    private func shortName(_ name: String) -> String {
+        let trimmed = name.split(separator: "·").first.map(String.init) ?? name
+        return trimmed.trimmingCharacters(in: .whitespaces)
     }
 
     private var trainingCard: some View {

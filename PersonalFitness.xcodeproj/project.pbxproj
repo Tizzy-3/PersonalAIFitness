@@ -192,6 +192,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "00413222C503B2C1B99DC490";
 		};
+		"792A4DD65EB728B8F4F9CC22" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "FitnessInteraction.swift";
+			"path" = "Sources/PersonalFitness/Design/FitnessInteraction.swift";
+			"sourceTree" = "<group>";
+		};
+		"84339A49F19DA0CE68D9362E" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "792A4DD65EB728B8F4F9CC22";
+		};
 		"8D9692CE55029F252404034A" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -1053,6 +1064,7 @@
 				"3ECA900445E5F9CD7AFE7EF5",
 				"10CC259CF8A15E04D553BDBA",
 				"E1FBBA89727E1202D4E14DB1",
+				"84339A49F19DA0CE68D9362E",
 				"74CED60AB44B00D1B024E12B",
 				"7B0A2906A69338CDF6362E13",
 				"7A1C3850A48669D47C2F3124",
@@ -1152,6 +1164,7 @@
 				"F1C5918A326D70C0EC713632",
 				"1C64B436216F0903402D499D",
 				"00413222C503B2C1B99DC490",
+				"792A4DD65EB728B8F4F9CC22",
 				"8D9692CE55029F252404034A",
 				"00EEB50CEB93BA0D7A4BFF36",
 				"05DCE857DB7A2D346CDCEA9E",
@@ -1309,8 +1322,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.9.1";
-				"CURRENT_PROJECT_VERSION" = "75";
+				"MARKETING_VERSION" = "0.10.0";
+				"CURRENT_PROJECT_VERSION" = "80";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";
@@ -1338,8 +1351,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.9.1";
-				"CURRENT_PROJECT_VERSION" = "75";
+				"MARKETING_VERSION" = "0.10.0";
+				"CURRENT_PROJECT_VERSION" = "80";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";

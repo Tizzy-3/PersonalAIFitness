@@ -103,13 +103,20 @@ struct WorkoutView: View {
             Button("提前结束，保留已做记录") { finish(early: true) }
             Button("继续训练", role: .cancel) { }
         } message: { Text("已保存的组会保留；未完成组不会被标成完成。尚未保存的输入不算训练结果。") }
+        .onAppear { Haptics.prepare() }
         .fitnessError($issue)
     }
 
     private func metric(_ title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.title.weight(.bold).monospacedDigit()).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.system(size: 11, design: .rounded)).foregroundStyle(FitnessTheme.faint)
+            Text(value)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(FitnessTheme.ink)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(FitnessTheme.Motion.state, value: value)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -129,15 +136,31 @@ struct WorkoutView: View {
             }
             if session.status == .paused {
                 Label("训练已暂停，恢复后继续记录", systemImage: "pause.circle.fill")
-                    .font(.caption).foregroundStyle(FitnessTheme.orange)
+                    .font(.system(size: 12, design: .rounded)).foregroundStyle(FitnessTheme.orange)
             }
             if session.plannedWorkingSets > 0 {
-                ProgressView(value: Double(session.completedWorkingSets), total: Double(session.plannedWorkingSets))
-                    .tint(FitnessTheme.teal)
+                // Segmented bar instead of a thin system ProgressView: one segment per planned set,
+                // so progress is countable without reading the fraction.
+                setProgressBar(completed: session.completedWorkingSets,
+                               planned: session.plannedWorkingSets)
                     .accessibilityLabel("正式组进度")
                     .accessibilityValue("已完成\(session.completedWorkingSets)组，共\(session.plannedWorkingSets)组")
             }
-        }.padding(16).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
+        }.padding(16)
+            .background(RoundedRectangle(cornerRadius: FitnessTheme.Radius.card, style: .continuous)
+                .fill(FitnessTheme.surface)
+                .shadow(color: FitnessTheme.cardShadow, radius: 10, y: 4))
+    }
+
+    private func setProgressBar(completed: Int, planned: Int) -> some View {
+        HStack(spacing: 3) {
+            ForEach(0..<max(1, planned), id: \.self) { index in
+                Capsule()
+                    .fill(index < completed ? FitnessTheme.teal : FitnessTheme.line)
+                    .frame(height: 4)
+            }
+        }
+        .animation(FitnessTheme.Motion.state, value: completed)
     }
 
     private func pauseButton(_ session: WorkoutSession) -> some View {
@@ -196,51 +219,95 @@ struct WorkoutView: View {
         }.background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
     }
 
+    /// The rest dock: a countdown ring, the next set, and two thumb-sized shortcuts. The ring is the
+    /// whole point — a number alone does not tell you how much is left without reading it.
     private func restDock(_ session: WorkoutSession) -> some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let seconds = session.remainingRest(at: context.date)
+            let total = max(1, session.exercises.first?.restSeconds ?? 90)
+            let progress = seconds > 0 ? 1 - (seconds / total) : 1
             Group {
                 if dynamicTypeSize >= .xxLarge {
-                    VStack(alignment: .leading, spacing: 6) {
-                        restHeading(session, seconds: seconds)
-                        HStack { Text("休息操作").font(.caption); Spacer(); restControls(seconds: seconds) }
+                    VStack(alignment: .leading, spacing: 8) {
+                        restHeading(session, seconds: seconds, progress: progress)
+                        HStack { Text("休息操作").font(.system(size: 12, design: .rounded)); Spacer(); restControls(seconds: seconds) }
                     }
                 } else {
-                    HStack(spacing: 6) {
-                        restHeading(session, seconds: seconds)
+                    HStack(spacing: 12) {
+                        restRing(seconds: seconds, progress: progress)
+                        restHeading(session, seconds: seconds, progress: progress)
                         restControls(seconds: seconds)
                     }
                 }
-            }.padding(12).background(FitnessTheme.blueTint, in: RoundedRectangle(cornerRadius: 14))
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(seconds > 0 ? FitnessTheme.blueTint : FitnessTheme.sunken)
+            )
+            .onChange(of: seconds > 0) { wasRunning, running in
+                if wasRunning && !running { Haptics.timerDone() }
+            }
         }
     }
 
-    private func restHeading(_ session: WorkoutSession, seconds: Double) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "timer").font(.system(size: 19, weight: .medium)).foregroundStyle(FitnessTheme.accent)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("组间休息").font(.caption.weight(.semibold))
-                Text(seconds > 0 ? session.status == .paused ? "暂停中" : "计时中" : "完成一组后开始")
-                    .font(.caption2).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
-            Text(UIInput.duration(seconds)).font(.title3.weight(.semibold).monospacedDigit()).foregroundStyle(FitnessTheme.accent)
+    private func restRing(seconds: Double, progress: Double) -> some View {
+        ProgressRing(progress: progress, lineWidth: 3.5,
+                     tint: seconds > 0 ? FitnessTheme.accent : FitnessTheme.faint,
+                     track: FitnessTheme.accent.opacity(0.16)) {
+            Text(seconds > 0 ? UIInput.duration(seconds) : "0:00")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(seconds > 0 ? FitnessTheme.accent : FitnessTheme.faint)
+                .monospacedDigit()
         }
+        .frame(width: 46, height: 46)
+        .animation(FitnessTheme.Motion.quick, value: seconds > 0)
+    }
+
+    private func restHeading(_ session: WorkoutSession, seconds: Double, progress: Double) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(seconds > 0 ? (session.status == .paused ? "休息 · 已暂停" : "休息中") : "休息")
+                .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(seconds > 0 ? FitnessTheme.accent : FitnessTheme.faint)
+            Text(nextSetHint(session, seconds: seconds))
+                .font(.system(size: 13, design: .rounded))
+                .foregroundStyle(FitnessTheme.ink)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// What comes next, so the person does not have to scroll to find out during a rest.
+    private func nextSetHint(_ session: WorkoutSession, seconds: Double) -> String {
+        guard seconds > 0 else { return "完成一组后自动开始" }
+        for exercise in session.exercises where !exercise.skipped {
+            if let pending = exercise.sets.first(where: { !$0.isCompleted && !$0.skipped }) {
+                let load = pending.loadKG.map { UIInput.number($0) + "kg" } ?? ""
+                let reps = pending.reps.map { " × \($0)" } ?? ""
+                return "下一组 · \(exercise.exercise.name)\(load.isEmpty ? "" : " " + load)\(reps)"
+            }
+        }
+        return "全部组已完成"
     }
 
     private func restControls(seconds: Double) -> some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 6) {
+            Button { adjustRest(15) } label: {
+                Text("+15s")
+                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(FitnessTheme.accent)
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background(FitnessTheme.surface, in: Capsule())
+            }.accessibilityLabel("延长休息十五秒")
             Button { adjustRest(nil) } label: {
-                Image(systemName: "forward.end.fill").font(.system(size: 16)).frame(width: 44, height: 44)
+                Text("跳过")
+                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(FitnessTheme.muted)
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background(FitnessTheme.surface, in: Capsule())
             }.accessibilityLabel("跳过休息").disabled(seconds <= 0)
-            Menu {
-                Button("缩短 15 秒") { adjustRest(-15) }
-                Button("延长 15 秒") { adjustRest(15) }
-                Button("跳过休息") { adjustRest(nil) }
-            } label: {
-                Image(systemName: "slider.horizontal.3").font(.system(size: 18, weight: .medium)).frame(width: 44, height: 44)
-            }.accessibilityLabel("调整组间休息")
-        }.buttonStyle(.borderless).foregroundStyle(FitnessTheme.accent)
+        }
+        .buttonStyle(.plain)
     }
 
     private func mutate(_ action: (inout WorkoutSession) throws -> Void) {
@@ -291,8 +358,9 @@ struct WorkoutView: View {
     private func finish(early: Bool) {
         do {
             try store.updateSession(id: sessionID) { try $0.finish(early: early) }
+            Haptics.sessionSaved()
             pendingFeedback = PostWorkoutRoute(id: sessionID)
-        } catch { issue = error.localizedDescription }
+        } catch { Haptics.warning(); issue = error.localizedDescription }
     }
 }
 
