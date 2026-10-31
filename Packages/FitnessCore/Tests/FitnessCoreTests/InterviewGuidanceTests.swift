@@ -21,6 +21,35 @@ final class InterviewGuidanceTests: XCTestCase {
         XCTAssertEqual(step, .askCoach)
         XCTAssertTrue(step.shouldAskOnEntry(continueInDepth: false))
     }
+    func testPlanButtonReportsMissingFactsInsteadOfAskingAnotherQuestion() {
+        // Entering the interview should still ask (see the first test). The *button* must not.
+        let empty = InterviewSession(createdAt: now)
+        XCTAssertEqual(empty.nextGuidanceStep(at: now), .askCoach)
+        guard case .blocked(let reason) = empty.planButtonStep(at: now) else {
+            return XCTFail("按钮不能静默变成继续提问")
+        }
+        XCTAssertTrue(reason.contains("还缺这些资料"), reason)
+        // The message names the actual blockers, not a generic refusal.
+        XCTAssertTrue(reason.contains("主要目标"), reason)
+    }
+
+    func testPlanDumpedIntoTheTransitionNoteIsRejected() {
+        // A model told not to write a plan sometimes writes one into `note`, which used to render
+        // as a paragraph and never reached the app. It must be refused, not displayed.
+        let prescription = "好的，这是你的一周安排：" + "\n1. 周一 哑铃卧推 3组×10次\n2. 周三 单臂划船 3组×12次\n3. 周五 肩推 3组×8次"
+        XCTAssertTrue(InterviewTurn.looksLikeAPlan(prescription))
+        XCTAssertThrowsError(try InterviewTurn(createdAt: now, questions: [], note: prescription).validate())
+
+        // An ordinary transition sentence must not trip the detector.
+        let normal = "好的，我明白了。接下来我想先确认一下你平时能连续走多久？"
+        XCTAssertFalse(InterviewTurn.looksLikeAPlan(normal))
+        XCTAssertNoThrow(try InterviewTurn(createdAt: now, questions: [], note: normal).validate())
+    }
+
+    func testPlanButtonStillGeneratesWhenFactsAreComplete() {
+        XCTAssertEqual(ready().planButtonStep(at: now), .readyForPlan)
+    }
+
     func testEnoughFactsOffersPlanAndStillAllowsAIInitiatedDepth() {
         let step = ready().nextGuidanceStep(at: now)
         XCTAssertEqual(step, .readyForPlan)

@@ -172,7 +172,7 @@ jobs:
           (cd "$staging" && /usr/bin/zip -qry "$PF_OUTPUT/PersonalFitness-unsigned.ipa" Payload)
           shasum -a 256 "$PF_OUTPUT/PersonalFitness-unsigned.ipa" > "$PF_OUTPUT/SHA256.txt"
           printf '%s\n' \
-            'Personal Fitness 0.10.1 The coach now answers in ordinary language first and structures the conversation afterwards, so a formatting slip can no longer end the chat.' \
+            'Personal Fitness 0.10.2 The plan button now explains what is missing instead of silently asking another question, and a plan written into the coach note is refused rather than shown as text.' \
             "Source commit: $GITHUB_SHA" \
             "Workflow run: $GITHUB_RUN_ID / $GITHUB_RUN_ATTEMPT" \
             'Minimum iOS: 27.0. Unsigned IPA: sign before installation.' \
@@ -184,7 +184,7 @@ jobs:
             'Not implemented: automatic progressive/cycle proposal generation, personal physiological baselines, general clinical adaptation beyond confirmed limited constraints, history correction, teaching videos for every movement. The separate trends tab was intentionally replaced by history.' \
             'CI and Simulator success do not prove device signing or HealthKit access.' \
             > "$PF_OUTPUT/BUILD-INFO.txt"
-          { echo '### Personal Fitness 0.10.1'; echo 'Historical compiled-schema probes, Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'Actual on-device erasure, signing, AI-provider connection and HealthKit access remain unverified.'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '### Personal Fitness 0.10.2'; echo 'Historical compiled-schema probes, Core and iOS Simulator tests completed before packaging.'; echo 'Download **PersonalFitness-unsigned-ipa** and sign it yourself.'; echo 'Actual on-device erasure, signing, AI-provider connection and HealthKit access remain unverified.'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

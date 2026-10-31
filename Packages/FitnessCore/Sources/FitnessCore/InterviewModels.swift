@@ -261,6 +261,30 @@ public struct InterviewTurn: Identifiable, Codable, Equatable, Sendable {
             try CoreValidation.unique(extractionIssues.map(\.topic), name: "待澄清抽取主题")
         }
         guard note.count <= 2_000 else { throw CoreError.invalidInput("说明过长。") }
+        // `note` is a one-line transition ("好的，我明白了"), not a place to write a workout. A model
+        // that dumps a plan here produces a paragraph that looks like an answer, cannot become a
+        // plan, and leaves the person believing the app ignored them. Reject it instead.
+        guard !Self.looksLikeAPlan(note) else {
+            throw CoreError.invalidInput("教练把计划写进了过渡说明，这不是计划。请重新请求；计划只能由“生成训练计划”产生。")
+        }
+    }
+
+    /// Detects plan-shaped prose: repeated sets×reps patterns, or a list of prescribed movements.
+    /// Deliberately conservative — an ordinary sentence about training must not trip it.
+    static func looksLikeAPlan(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 40 else { return false }
+        // "3组×10次" / "3 组 x 10" — the shape of a prescription.
+        if trimmed.range(of: #"\d+\s*组\s*[×xX*]\s*\d+"#, options: .regularExpression) != nil { return true }
+        if trimmed.range(of: #"\d+\s*[×xX]\s*\d+\s*(次|个|下)"#, options: .regularExpression) != nil { return true }
+        // Several line-broken movement entries, which is how a dumped plan usually arrives.
+        let lines = trimmed.split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        let bulleted = lines.filter {
+            let line = $0.trimmingCharacters(in: .whitespaces)
+            return line.hasPrefix("•") || line.hasPrefix("-") || line.hasPrefix("·")
+                || line.range(of: #"^\d+[.、)]"#, options: .regularExpression) != nil
+        }
+        return bulleted.count >= 3
     }
 }
 

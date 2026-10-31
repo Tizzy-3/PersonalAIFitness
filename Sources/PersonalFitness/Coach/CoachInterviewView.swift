@@ -369,7 +369,7 @@ struct CoachInterviewView: View {
         guard request == nil, let current = store.interview else { return }
         deepeningInterview = false
         planAfterSkipping = false
-        switch nextStep() {
+        switch planButtonStep() {
         case .readyForPlan: generatePlan(current)
         case .clarifyLimits: clarifyingLimits = true
         case .askCoach: Task { await askNext() }
@@ -378,7 +378,21 @@ struct CoachInterviewView: View {
             if current.profile.isReadyForPlanning { planAfterSkipping = true; reviewingEarly = true }
             else { status = "先回答教练正在问的具体问题。回答后会自动继续。" }
         case .resume: setPaused(false); advanceAfterReply()
-        case .blocked(let reason): issue = reason
+        case .blocked(let reason):
+            // Names the missing facts, so pressing the button explains itself instead of silently
+            // turning into another interview question.
+            status = reason
+        }
+    }
+
+    /// The button's own step: it never answers "ask another question".
+    private func planButtonStep() -> InterviewGuidanceStep {
+        guard let current = store.interview ?? session else { return .askCoach }
+        do {
+            return current.planButtonStep(legacyRestrictions: store.profile.restrictions,
+                                          snapshot: try store.snapshot())
+        } catch {
+            return .blocked("暂时无法读取已有资料，请稍后重试。")
         }
     }
 
