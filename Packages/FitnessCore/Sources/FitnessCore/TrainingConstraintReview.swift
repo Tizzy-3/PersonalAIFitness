@@ -224,7 +224,14 @@ extension InterviewSession {
             _ = try PlannerEngine.options(for: input)
             return .init(canGenerate: true, title: "可以生成计划", message: "资料和训练边界已核对；先生成草案，你确认后才生效。")
         } catch {
+            // Only route into the review flow when there is something the person can actually
+            // resolve: an existing review that went stale, injury/treatment wording, or free text
+            // too vague to translate. A recognisable posture preference is planned around directly.
+            let restrictionText = profile.restrictions.value ?? ""
+            let recognizablePreference = !inferredPreferences(restrictionText).positions.isEmpty
             let needsReview = profile.constraintReview != nil
+                || readsAsMedicalLimit(restrictionText)
+                || (!isNoRestrictionText(restrictionText, allowingEmpty: true) && !recognizablePreference)
             return .init(canGenerate: false, title: needsReview ? "待核对训练约束" : "还需调整条件",
                          message: error.localizedDescription, needsConstraintReview: needsReview)
         }
@@ -315,10 +322,13 @@ extension PlanningInput {
                 throw CoreError.invalidInput("旧档案限制或今日状态已变化，请重新核对；不会以新声明覆盖原限制。")
             }
         }
-        // Otherwise an un-reviewed free-text limit is *not* a blocker any more. Most of these are
-        // preferences ("不能有跪姿动作"), and demanding a clinical confirmation for them made a
-        // simple "tell me about yourself and I'll plan" conversation impossible to finish.
-        // Callers that genuinely need a movement restriction resolved still check
-        // `constraintReview == nil` themselves — see `planningEligibility`.
+        // A free-text limit that is *only* a recognisable posture preference is planned around
+        // directly; anything vaguer or medically worded still needs the review, because guessing
+        // what it means would be worse than asking.
+        else if !TrainingConstraintReview.isNoRestrictionText(text, allowingEmpty: true),
+                TrainingConstraintReview.readsAsMedicalLimit(text)
+                    || TrainingConstraintReview.inferredPreferences(text).positions.isEmpty {
+            throw CoreError.invalidInput("原档案仍有未核对的限制，请将它整理成可执行约束后再制定计划。")
+        }
     }
 }

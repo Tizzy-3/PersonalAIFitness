@@ -246,8 +246,16 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
         let normalized = restrictionText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let noRestriction = Set(["无", "无已知限制", "无运动限制", "没有已知限制", "none"])
         if constraintReview == nil, !noRestriction.contains(normalized) {
-            guard !TrainingConstraintReview.readsAsMedicalLimit(normalized) else {
+            // Three cases, in order of how much we can act on them:
+            // 1. Injury/treatment wording — must be reviewed, guessing here is unsafe.
+            // 2. A posture preference we can translate into exclusions — use it directly.
+            // 3. Anything else ("保留本人描述的安排与动作限制") is too vague to act on and too
+            //    risky to ignore, so it keeps the review requirement.
+            if TrainingConstraintReview.readsAsMedicalLimit(normalized) {
                 throw CoreError.invalidInput("档案里的限制涉及身体或治疗，需要先核对成具体动作范围。")
+            }
+            guard !TrainingConstraintReview.inferredPreferences(restrictionText).positions.isEmpty else {
+                throw CoreError.invalidInput("资料已齐全，还需核对限制：请保留原文，明确动作、日期和当前状态后再生成。")
             }
         }
         return input

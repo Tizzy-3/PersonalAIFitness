@@ -55,7 +55,9 @@ final class RestrictionClassificationTests: XCTestCase {
         profile.experience = .init(value: .beginner, provenance: .stated, confirmedAt: now)
         profile.weekdays = .init(value: [1, 2, 4, 5], provenance: .stated, confirmedAt: now)
         profile.minutesPerSession = .init(value: 30, provenance: .stated, confirmedAt: now)
-        profile.equipment = .init(value: [.dumbbells, .kettlebells], provenance: .stated, confirmedAt: now)
+        // Fat loss wants a light-cardio day, so a walking space is needed for the plan to exist at all.
+        profile.equipment = .init(value: [.dumbbells, .kettlebells, .walkingSpace],
+                                  provenance: .stated, confirmedAt: now)
         profile.restrictions = .init(value: restriction, provenance: .stated, confirmedAt: now)
         return profile
     }
