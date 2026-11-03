@@ -108,7 +108,10 @@ final class ConstraintSuggestionTests: XCTestCase {
         profile.weekdays = .init(value: [1, 4], provenance: .stated, confirmedAt: date)
         profile.minutesPerSession = .init(value: 30, provenance: .stated, confirmedAt: date)
         profile.equipment = .init(value: [.bodyweight, .walkingSpace], provenance: .stated, confirmedAt: date)
-        profile.restrictions = .init(value: "避开跪姿", provenance: .stated, confirmedAt: date)
+        // Vague text, not a recognisable posture preference: this is what still has to stop both
+        // entry points. 「避开跪姿」 would be planned around directly now, so it cannot stand in for
+        // the "pending constraint gate" this test is about.
+        profile.restrictions = .init(value: "按专业人士给的范围安排", provenance: .stated, confirmedAt: date)
         let session = InterviewSession(createdAt: date, profile: profile)
         let snapshot = AppSnapshot(interview: session)
         let eligibility = session.planningEligibility(legacyRestrictions: snapshot.profile.restrictions, at: date, snapshot: snapshot)
