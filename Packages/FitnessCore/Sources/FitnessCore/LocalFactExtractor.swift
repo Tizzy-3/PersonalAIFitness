@@ -9,10 +9,10 @@ import Foundation
 /// Anything recognised here is marked `stated` only for facts that are unambiguous in the sentence
 /// ("家里有哑铃和壶铃"). Everything else stays unknown, so this can fill a profile but never invent
 /// one: a sentence that does not mention pain does not become "no pain".
-enum LocalFactExtractor {
+public enum LocalFactExtractor {
 
     /// Equipment, matched by the words people actually use, including common variants.
-    static let equipmentAliases: [PlanningEquipment: [String]] = [
+    public static let equipmentAliases: [PlanningEquipment: [String]] = [
         .dumbbells: ["哑铃", "哑铃片", "可调节哑铃", "dumbbell", "dumbbells"],
         .kettlebells: ["壶铃", "kettlebell", "kettlebells"],
         .barbell: ["杠铃", "奥杆", "barbell"],
@@ -34,7 +34,7 @@ enum LocalFactExtractor {
     ]
 
     /// Weekday names as written in Chinese.
-    static let weekdayAliases: [Int: [String]] = [
+    public static let weekdayAliases: [Int: [String]] = [
         1: ["周一", "星期一", "礼拜一", "周1"],
         2: ["周二", "星期二", "礼拜二", "周2"],
         3: ["周三", "星期三", "礼拜三", "周3"],
@@ -45,7 +45,7 @@ enum LocalFactExtractor {
     ]
 
     /// Equipment mentioned in the text. Empty when nothing matches.
-    static func equipment(in text: String) -> Set<PlanningEquipment> {
+    public static func equipment(in text: String) -> Set<PlanningEquipment> {
         let lower = text.lowercased()
         var found: Set<PlanningEquipment> = []
         for (equipment, aliases) in equipmentAliases where aliases.contains(where: { lower.contains($0.lowercased()) }) {
@@ -61,7 +61,7 @@ enum LocalFactExtractor {
     }
 
     /// Weekdays the person says they can train. Handles 「周一周三周五」 and 「周二、周四」.
-    static func weekdays(in text: String) -> [Int] {
+    public static func weekdays(in text: String) -> [Int] {
         let lower = text.lowercased()
         var found: Set<Int> = []
         for (weekday, aliases) in weekdayAliases where aliases.contains(where: { lower.contains($0) }) {
@@ -71,7 +71,7 @@ enum LocalFactExtractor {
     }
 
     /// A per-session minute budget. Only the number attached to a time unit is taken.
-    static func minutesPerSession(in text: String) -> Int? {
+    public static func minutesPerSession(in text: String) -> Int? {
         // 30分钟 / 每次30分 / 40 min
         for pattern in [#"(\d{1,3})\s*分钟"#, #"(\d{1,3})\s*分(?!钟)"#, #"(\d{1,3})\s*(?:min|minutes)"#] {
             if let match = firstMatch(pattern, in: text), let value = Int(match), (15...120).contains(value) {
@@ -82,7 +82,7 @@ enum LocalFactExtractor {
     }
 
     /// Explicit goal wording. Only clear statements are taken.
-    static func goal(in text: String) -> PlanningGoal? {
+    public static func goal(in text: String) -> PlanningGoal? {
         let lower = text.lowercased()
         if ["减脂", "减肥", "瘦", "掉秤", "降低体重"].contains(where: { lower.contains($0) }) { return .fatLoss }
         if ["增肌", "长肌肉", "变壮"].contains(where: { lower.contains($0) }) { return .muscleGain }
@@ -93,7 +93,7 @@ enum LocalFactExtractor {
     }
 
     /// Experience wording, only when unambiguous.
-    static func experience(in text: String) -> PlanningExperience? {
+    public static func experience(in text: String) -> PlanningExperience? {
         let lower = text.lowercased()
         if ["没练过", "零基础", "从没", "没有经验", "完全新手"].contains(where: { lower.contains($0) }) { return .beginner }
         // A hedge such as 「不知道算不算有经验」 must not be read as a claim of experience.
@@ -109,7 +109,7 @@ enum LocalFactExtractor {
     ///
     /// Only an explicit denial counts. Silence is not "no pain", and a sentence mentioning pain is not
     /// a denial — that distinction is why this cannot simply look for the word 疼痛.
-    static func deniesPainNow(in text: String) -> Bool {
+    public static func deniesPainNow(in text: String) -> Bool {
         let lower = text.lowercased()
         let denials = ["没有疼痛", "无疼痛", "不疼", "没有不适", "无不适", "没有不舒服", "没啥不适", "没有任何不适"]
         let hasDenial = denials.contains { lower.contains($0) }

@@ -98,7 +98,7 @@ struct CoachConversationService {
 
         if applied > 0 {
             session.updatedAt = Date()
-            try saveInterview(session)
+            try store.saveInterview(session)
         }
         return applied
     }
