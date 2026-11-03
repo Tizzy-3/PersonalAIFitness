@@ -62,7 +62,9 @@ struct RootView: View {
             }
             .tabItem { Label("今天", systemImage: "house") }.tag(0)
             NavigationStack {
-                TrainingHistoryCalendarView(store: store, openWorkout: { workout = WorkoutRoute(id: $0) })
+                TrainingHistoryCalendarView(store: store,
+                                            openWorkout: { workout = WorkoutRoute(id: $0) },
+                                            editPlan: { planEditor = PlanEditorRoute(plan: $0) })
             }
             .tabItem { Label("记录", systemImage: "clock.arrow.circlepath") }.tag(1)
             NavigationStack { CoachConversationView(store: store) }

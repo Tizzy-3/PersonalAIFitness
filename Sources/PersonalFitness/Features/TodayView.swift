@@ -64,6 +64,18 @@ struct TodayView: View {
         }
         .onAppear { Haptics.prepare() }
         .toolbar {
+            // The library was reachable only from inside 动作教学, which does not appear when no
+            // movement has licensed media — so on a fresh install the whole library was
+            // unreachable. A permanent toolbar entry removes that dependency.
+            ToolbarItem(placement: .topBarLeading) {
+                NavigationLink { ExerciseLibraryView(store: store) } label: {
+                    Image(systemName: "books.vertical")
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundStyle(FitnessTheme.muted)
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+                .accessibilityLabel("动作库")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: openSettings) {
                     Image(systemName: "person.crop.circle")
@@ -322,7 +334,7 @@ struct TodayView: View {
     }
     private var historyCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NavigationLink { TrainingHistoryCalendarView(store: store, openWorkout: openWorkout) } label: {
+            NavigationLink { TrainingHistoryCalendarView(store: store, openWorkout: openWorkout, editPlan: editPlan) } label: {
                 HStack { Label("本周 \(thisWeek.count) 次训练", systemImage: "calendar"); Spacer(); Text("月历历史").font(.caption); Image(systemName: "chevron.right").font(.caption2) }
                     .font(.subheadline).padding(14).background(FitnessTheme.blueTint, in: RoundedRectangle(cornerRadius: 13))
             }.buttonStyle(.plain).foregroundStyle(FitnessTheme.accent)

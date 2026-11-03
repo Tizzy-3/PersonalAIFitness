@@ -7,6 +7,8 @@ import FitnessCore
 struct TrainingHistoryCalendarView: View {
     let store: TrainingStore
     var openWorkout: ((UUID) -> Void)? = nil
+    /// Presenting the plan library needs an editor; when nil the toolbar entry is hidden.
+    var editPlan: ((PlanVersion?) -> Void)? = nil
     @State private var displayedDate: Date
     @State private var selectedDate: Date
     @State private var showDatePicker = false
@@ -74,6 +76,16 @@ struct TrainingHistoryCalendarView: View {
         .background(FitnessTheme.canvas)
         .navigationTitle("历史").navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // Cutting the tab bar to three items removed the only route to the plan library, so a
+            // confirmed plan could not be browsed afterwards. Restored as a leading entry.
+            if let editPlan, let openWorkout {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink { PlansAndHistoryView(store: store, openWorkout: openWorkout, editPlan: editPlan) } label: {
+                        Text("计划")
+                    }
+                    .accessibilityLabel("计划库")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("设置", systemImage: "gearshape") { showSettings = true }
             }

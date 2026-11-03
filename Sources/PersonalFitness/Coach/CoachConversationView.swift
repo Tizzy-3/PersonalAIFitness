@@ -18,6 +18,7 @@ struct CoachConversationView: View {
     @State private var sending = false
     @State private var showingProfile = false
     @State private var showingSettings = false
+    @State private var infoHint: String?
     @State private var pendingPlanDraftID: UUID?
     @State private var planState: PlanState = .idle
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -250,6 +251,12 @@ struct CoachConversationView: View {
 
     private var composer: some View {
         VStack(spacing: 8) {
+            if let infoHint {
+                Text(infoHint)
+                    .font(.system(size: 12.5, design: .rounded))
+                    .foregroundStyle(FitnessTheme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if case .ready = planState {
                 Button { /* sheet already presented */ } label: {
                     Label("看看这份计划", systemImage: "calendar.badge.checkmark")
@@ -353,7 +360,13 @@ struct CoachConversationView: View {
         let eligibility = (try? store.snapshot()).map {
             session.planningEligibility(legacyRestrictions: $0.profile.restrictions, snapshot: $0)
         }
-        guard eligibility?.canGenerate == true else { return }
+        guard eligibility?.canGenerate == true else {
+            // Silently returning was the bug: the person finished talking and saw nothing. State
+            // what is still missing so "聊完就出计划" is honest about why it has not yet.
+            infoHint = eligibility?.message
+            return
+        }
+        infoHint = nil
         planState = .generating
         do {
             let draftID = try await CoachConversationService().draftPlan(store: store)
