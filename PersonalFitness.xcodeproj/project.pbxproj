@@ -236,6 +236,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "1C64B436216F0903402D499D";
 		};
+		"703C35FFE0E5866BDE17FF5C" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "CoachMarkdownText.swift";
+			"path" = "Sources/PersonalFitness/Design/CoachMarkdownText.swift";
+			"sourceTree" = "<group>";
+		};
+		"81611538FF32B923C0D737BA" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "703C35FFE0E5866BDE17FF5C";
+		};
 		"00413222C503B2C1B99DC490" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -775,6 +786,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "4A09F25F2EB737D7C128AA3F";
 		};
+		"92ED4390573A1887A5E05B9D" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "CoachMarkdownTests.swift";
+			"path" = "Tests/PersonalFitnessTests/CoachMarkdownTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"BE2FADC2043974DB0315DBCC" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "92ED4390573A1887A5E05B9D";
+		};
 		"0589385FE446254AEBE7870F" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -1134,6 +1156,7 @@
 				"D1BAFBCA35A403583F0955E4",
 				"3ECA900445E5F9CD7AFE7EF5",
 				"10CC259CF8A15E04D553BDBA",
+				"81611538FF32B923C0D737BA",
 				"E1FBBA89727E1202D4E14DB1",
 				"84339A49F19DA0CE68D9362E",
 				"74CED60AB44B00D1B024E12B",
@@ -1190,6 +1213,7 @@
 				"E8900A0362FD1684FBE02400",
 				"82BE56E004741CAA910E5BA8",
 				"6D31AD4620AE30142F597D7F",
+				"BE2FADC2043974DB0315DBCC",
 				"BC44CF2E19AA7881FCB03B5F",
 				"EFE1E141255D042378E39CBC",
 				"3A86B64746C685740F4D7FD0",
@@ -1240,6 +1264,7 @@
 				"94BF881E98A75BAE8B75EC07",
 				"F1C5918A326D70C0EC713632",
 				"1C64B436216F0903402D499D",
+				"703C35FFE0E5866BDE17FF5C",
 				"00413222C503B2C1B99DC490",
 				"792A4DD65EB728B8F4F9CC22",
 				"8D9692CE55029F252404034A",
@@ -1296,6 +1321,7 @@
 				"96E27C20C247E2BD2972D5A6",
 				"62F75C8295352B5E91AEFD38",
 				"4A09F25F2EB737D7C128AA3F",
+				"92ED4390573A1887A5E05B9D",
 				"0589385FE446254AEBE7870F",
 				"BBFF0361712C58CA0DB2D28C",
 				"8D82CFFCDAE046BBD34BE595",
@@ -1400,8 +1426,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.12.1";
-				"CURRENT_PROJECT_VERSION" = "113";
+				"MARKETING_VERSION" = "0.12.2";
+				"CURRENT_PROJECT_VERSION" = "116";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";
@@ -1429,8 +1455,8 @@
 				"PRODUCT_NAME" = "PersonalFitness";
 				"PRODUCT_MODULE_NAME" = "PersonalFitness";
 				"PRODUCT_BUNDLE_IDENTIFIER" = "com.personalfitness.private";
-				"MARKETING_VERSION" = "0.12.1";
-				"CURRENT_PROJECT_VERSION" = "113";
+				"MARKETING_VERSION" = "0.12.2";
+				"CURRENT_PROJECT_VERSION" = "116";
 				"TARGETED_DEVICE_FAMILY" = "1";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"INFOPLIST_FILE" = "Sources/PersonalFitness/Resources/Info.plist";

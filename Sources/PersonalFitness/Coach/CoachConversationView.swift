@@ -216,11 +216,10 @@ struct CoachConversationView: View {
         HStack(alignment: .top, spacing: 8) {
             if line.isCoach { coachAvatar } else { Spacer(minLength: 40) }
             VStack(alignment: .leading, spacing: 4) {
-                Text(line.text)
-                    .font(.system(size: 15, design: .rounded))
-                    .foregroundStyle(line.isCoach ? FitnessTheme.ink : .white)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
+                // Models answer in Markdown whether or not they are asked to, so the bubble renders
+                // it rather than showing literal ** and - markers.
+                CoachMessageText(text: line.text, size: 15,
+                                 color: line.isCoach ? FitnessTheme.ink : .white)
             }
             .padding(.horizontal, 14).padding(.vertical, 11)
             .background(
