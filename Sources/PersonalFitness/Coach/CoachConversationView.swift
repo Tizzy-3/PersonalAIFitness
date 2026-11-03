@@ -19,6 +19,8 @@ struct CoachConversationView: View {
     @State private var showingProfile = false
     @State private var showingSettings = false
     @State private var infoHint: String?
+    @State private var needsConstraintReview = false
+    @State private var showingConstraintReview = false
     @State private var pendingPlanDraftID: UUID?
     @State private var planState: PlanState = .idle
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -62,14 +64,29 @@ struct CoachConversationView: View {
         .sheet(item: planSheetItem) { item in
             NavigationStack { PlanningDraftDetailView(store: store, draftID: item.id) }
         }
+        .sheet(isPresented: $showingConstraintReview) {
+            NavigationStack { SimpleConstraintChatView(store: store) }
+        }
+        .onChange(of: showingConstraintReview) { _, open in
+            // Returning from the constraint review is the moment the restriction became usable, so
+            // try the plan again instead of making the person repeat themselves.
+            guard !open else { return }
+            Task { await offerPlanIfPossible() }
+        }
+
         .onAppear { Haptics.prepare() }
         .fitnessError($issue)
     }
 
+    /// The draft id stays available after the sheet closes, so 「看看这份计划」 can re-open the same
+    /// pending draft instead of making the person talk through it again.
+    /// Drives the plan sheet from `pendingPlanDraftID`, which is cleared only when the person
+    /// dismisses it. The draft itself stays saved, so 「看看这份计划」 re-opens the same one instead
+    /// of starting over.
     private var planSheetItem: Binding<PlanSheetItem?> {
         Binding(
-            get: { if case .ready(let id) = planState { return PlanSheetItem(id: id) } else { return nil } },
-            set: { if $0 == nil, case .ready = planState { planState = .idle } })
+            get: { pendingPlanDraftID.map(PlanSheetItem.init) },
+            set: { if $0 == nil { pendingPlanDraftID = nil } })
     }
 
     // MARK: - Transcript
@@ -258,8 +275,15 @@ struct CoachConversationView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if case .ready = planState {
-                Button { /* sheet already presented */ } label: {
+                Button { if case .ready(let id) = planState { pendingPlanDraftID = id } } label: {
                     Label("看看这份计划", systemImage: "calendar.badge.checkmark")
+                }
+                .buttonStyle(FitnessPrimaryButtonStyle())
+            } else if needsConstraintReview {
+                // The profile has the facts it needs but the recorded restriction is still raw text.
+                // Without this the coach could only ever say "去核对限制" with no way to do it.
+                Button { showingConstraintReview = true } label: {
+                    Label("先核对训练限制", systemImage: "checkmark.shield")
                 }
                 .buttonStyle(FitnessPrimaryButtonStyle())
             }
@@ -367,15 +391,18 @@ struct CoachConversationView: View {
             session.planningEligibility(legacyRestrictions: $0.profile.restrictions, snapshot: $0)
         }
         guard eligibility?.canGenerate == true else {
-            // Not silent: say what is still missing, and where to answer it.
+            // Not silent: say what is still missing, and offer the action that resolves it.
             infoHint = eligibility?.message
+            needsConstraintReview = eligibility?.needsConstraintReview == true
             return
         }
+        needsConstraintReview = false
         infoHint = nil
         planState = .generating
         do {
             let draftID = try await service.draftPlan(store: store)
             planState = .ready(draftID)
+            pendingPlanDraftID = draftID
             Haptics.sessionSaved()
         } catch {
             // A failed draft must not look like a failed conversation.
