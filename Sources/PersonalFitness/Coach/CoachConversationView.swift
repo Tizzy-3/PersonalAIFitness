@@ -21,6 +21,7 @@ struct CoachConversationView: View {
     @State private var infoHint: String?
     @State private var needsConstraintReview = false
     @State private var showingConstraintReview = false
+    @State private var showingRecurringRestDay = false
     @State private var pendingPlanDraftID: UUID?
     @State private var planState: PlanState = .idle
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -63,6 +64,12 @@ struct CoachConversationView: View {
         }
         .sheet(item: planSheetItem) { item in
             NavigationStack { PlanningDraftDetailView(store: store, draftID: item.id) }
+        }
+        .sheet(isPresented: $showingRecurringRestDay) {
+            NavigationStack { RecurringRestDayView(store: store) }
+        }
+        .onChange(of: showingRecurringRestDay) { _, open in
+            if !open { Task { await offerPlanIfPossible() } }
         }
         .sheet(isPresented: $showingConstraintReview) {
             NavigationStack { SimpleConstraintChatView(store: store) }
@@ -280,6 +287,12 @@ struct CoachConversationView: View {
                 }
                 .buttonStyle(FitnessPrimaryButtonStyle())
             } else if needsConstraintReview {
+                // A fortnightly appointment is a calendar fact, not a physical restriction; offering
+                // the calendar editor first saves the person from a clinical flow they cannot complete.
+                Button { showingRecurringRestDay = true } label: {
+                    Label("登记固定休息日", systemImage: "calendar.badge.minus")
+                }
+                .buttonStyle(FitnessSecondaryButtonStyle())
                 // The profile has the facts it needs but the recorded restriction is still raw text.
                 // Without this the coach could only ever say "去核对限制" with no way to do it.
                 Button { showingConstraintReview = true } label: {

@@ -44,6 +44,9 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
     public var restScopeConfirmed: Bool?
     public var deferredClinicalQuestions: [String]?
     public var temporaryActivity: TemporaryActivityConstraint?
+    /// Fortnightly or otherwise recurring days off (e.g. a TCM appointment). Optional so
+    /// sessions saved before this existed still decode.
+    public var recurringRestDays: [RecurringRestDay]?
 
     public init(sourceText: String, legacySourceText: String = "", mode: ConstraintReviewMode = .practicalOnly,
                 excludedWeekdays: [Int] = [], restDateKeys: [String] = [], excludedExerciseIDs: [String] = [],
@@ -52,7 +55,8 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
                 allLimitsRepresentedConfirmed: Bool = false, professionalGuidanceNote: String = "",
                 confirmedAt: Date = Date(), rulesVersion: String = TrainingConstraintReview.currentRulesVersion,
                 restScopeConfirmed: Bool? = nil, deferredClinicalQuestions: [String]? = nil,
-                temporaryActivity: TemporaryActivityConstraint? = nil) {
+                temporaryActivity: TemporaryActivityConstraint? = nil,
+                recurringRestDays: [RecurringRestDay]? = nil) {
         self.rulesVersion = rulesVersion; self.sourceText = sourceText; self.legacySourceText = legacySourceText; self.mode = mode
         self.excludedWeekdays = excludedWeekdays.sorted(); self.restDateKeys = restDateKeys.sorted()
         self.excludedExerciseIDs = excludedExerciseIDs.sorted(); self.avoidedPositions = avoidedPositions
@@ -61,6 +65,7 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
         self.professionalGuidanceNote = professionalGuidanceNote; self.confirmedAt = confirmedAt
         self.restScopeConfirmed = restScopeConfirmed; self.deferredClinicalQuestions = deferredClinicalQuestions
         self.temporaryActivity = temporaryActivity
+        self.recurringRestDays = recurringRestDays
     }
 
     public static let currentRulesVersion = "training-constraints-3"
@@ -96,8 +101,23 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
         }
         guard sourceText.count <= 2_000, legacySourceText.count <= 2_000,
               professionalGuidanceNote.count <= 2_000 else { throw CoreError.invalidInput("训练约束原文或说明过长。") }
-        guard painFreeConfirmed else { throw CoreError.invalidInput("请本人确认当前没有疼痛或异常不适；有或不确定时先继续澄清。") }
-        guard allLimitsRepresentedConfirmed else { throw CoreError.invalidInput("尚有未表达完整的限制，请先补充，不自动猜测训练许可。") }
+        // A record that only carries calendar entries (a fortnightly appointment) makes no claim about
+        // pain or about completeness of physical limits, so it must not be forced to assert either.
+        // Requiring those flags is what kept a simple "every other Wednesday I'm busy" from ever being
+        // saved, and therefore kept plan generation blocked.
+        // `sourceText` must also be free of restriction wording: a record that still quotes "右膝术后"
+        // is not calendar-only, and must keep demanding the safety confirmation.
+        let calendarOnly = !(recurringRestDays ?? []).isEmpty
+            && Self.isNoRestrictionText(sourceText, allowingEmpty: true)
+            && Self.isNoRestrictionText(legacySourceText, allowingEmpty: true)
+            && excludedExerciseIDs.isEmpty && allowedExerciseIDs == nil
+            && avoidedPositions.isEmpty && temporaryActivity == nil
+            && excludedWeekdays.isEmpty && restDateKeys.isEmpty
+            && maxSessionMinutes == nil && professionalGuidanceNote.isEmpty
+        if !calendarOnly {
+            guard painFreeConfirmed else { throw CoreError.invalidInput("请本人确认当前没有疼痛或异常不适；有或不确定时先继续澄清。") }
+            guard allLimitsRepresentedConfirmed else { throw CoreError.invalidInput("尚有未表达完整的限制，请先补充，不自动猜测训练许可。") }
+        }
         guard excludedWeekdays.count <= 7, excludedWeekdays.allSatisfy({ (1...7).contains($0) }),
               restDateKeys.count <= 366, restDateKeys.allSatisfy(Self.isValidDateKey),
               maxSessionMinutes.map({ (15...120).contains($0) }) ?? true else {
@@ -105,6 +125,10 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
         }
         try CoreValidation.unique(excludedWeekdays, name: "休息星期")
         try CoreValidation.unique(restDateKeys, name: "休息日期")
+        if let recurringRestDays {
+            guard recurringRestDays.count <= 10 else { throw CoreError.invalidInput("重复休息日过多。") }
+            for value in recurringRestDays { try value.validate() }
+        }
         try CoreValidation.unique(avoidedPositions, name: "避免姿势")
         try CoreValidation.unique(excludedExerciseIDs, name: "约束排除动作")
         if let allowedExerciseIDs { try CoreValidation.unique(allowedExerciseIDs, name: "明确允许动作") }
@@ -142,7 +166,10 @@ public struct TrainingConstraintReview: Codable, Equatable, Sendable {
     public func isRestDate(_ date: Date, calendar: Calendar = .current) -> Bool {
         var civil = Calendar(identifier: .gregorian); civil.timeZone = calendar.timeZone
         let weekday = ((civil.component(.weekday, from: date) + 5) % 7) + 1
-        return excludedWeekdays.contains(weekday) || restDateKeys.contains(Self.dateKey(date, calendar: civil))
+        if excludedWeekdays.contains(weekday) { return true }
+        if restDateKeys.contains(Self.dateKey(date, calendar: civil)) { return true }
+        // Fortnightly and similar appointments are days off, not movement restrictions.
+        return (recurringRestDays ?? []).contains { $0.applies(on: date, calendar: civil) }
     }
 
     public static func isValidDateKey(_ value: String) -> Bool {
@@ -219,7 +246,7 @@ extension InterviewSession {
 }
 
 extension TrainingConstraintReview {
-    static func isNoRestrictionText(_ text: String, allowingEmpty: Bool = false) -> Bool {
+    public static func isNoRestrictionText(_ text: String, allowingEmpty: Bool = false) -> Bool {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return (allowingEmpty && value.isEmpty) || ["无", "无已知限制", "无运动限制", "没有已知限制", "none"].contains(value)
     }
