@@ -14,8 +14,24 @@ struct CoachConversationService {
     let client: CoachHTTPClient
     init(client: CoachHTTPClient = CoachHTTPClient()) { self.client = client }
 
-    /// The coach's reply to one message, using the same consented context and safety rules as the
-    /// question-answer screen.
+    /// The coach's reply to one message.
+    ///
+    /// Deliberately plain text, not the structured `CoachAPI.reply`. That protocol requires the model
+    /// to emit `{answer, evidence, limitations, proposal}`, and a general chat endpoint answers in
+    /// prose — which then failed as "返回内容不是 JSON 对象" after the coach had visibly already
+    /// replied. A conversation does not need a schema.
+    ///
+    /// The structured screen still exists for the cases that genuinely need evidence IDs and a
+    /// validated proposal; this is the conversational path.
+    static let conversationSystemPrompt = """
+    你是本人的私人健身教练，用自然、具体、简短的中文说话，像真人教练。
+    你会看到本人已确认的档案、最近的训练记录和统计；只依据这些真实资料作答，没有的数据就说不知道，不要编造。
+    不要输出 JSON、字段列表或 Markdown 标题。回答控制在三五句话内。
+    涉及伤病、疼痛或医生限制时，不要给运动许可、不要诊断，请本人先确认或就医。
+    不要声称已经改动计划；计划由本人单独确认后才生效。
+    本人说不想练时，先问一句原因；如果是累或没时间，给一个更小的起步方案；如果说了疼，就让他休息。
+    """
+
     func reply(to question: String, store: TrainingStore) async throws -> String {
         guard let configuration = try AIConfigurationStorage.load() else {
             throw CoachClientError.configuration("先配置 AI 接口，教练才能回答。")
@@ -24,9 +40,20 @@ struct CoachConversationService {
             throw CoachClientError.configuration("还没有填写本机密钥，先到设置里填写。")
         }
         let context = try CoachContext.make(snapshot: store.snapshot()).withMovementKnowledge(for: question)
-        let reply = try await CoachAPI().reply(question: question, context: context,
-                                               configuration: configuration, key: key)
-        return reply.answer
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let contextJSON = String(decoding: try encoder.encode(context), as: UTF8.self)
+        let content = try await client.complete(
+            configuration: configuration, key: key,
+            messages: [CoachMessage(role: "system", content: Self.conversationSystemPrompt),
+                       CoachMessage(role: "user", content: "资料：\(contextJSON)
+
+本人说：\(question)")],
+            outputFormat: .text)
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw CoachClientError.invalidResponse }
+        return trimmed
     }
 
     /// Pulls structured facts out of the free conversation.
@@ -37,6 +64,48 @@ struct CoachConversationService {
     ///
     /// Only *stated* facts are written, and ambiguous ones stay pending for the profile screen to
     /// confirm — the same provenance rules the interview uses.
+    /// Fills the profile from the person's own words using local rules.
+    ///
+    /// This runs before any model call, and is the reason a chat-only endpoint can still produce a
+    /// plan: a sentence like 「家里有哑铃和壶铃，每次 30 分钟」 is readable without an LLM. Only
+    /// unmistakable statements are taken; everything else stays unknown.
+    @discardableResult
+    func extractFactsLocally(store: TrainingStore) throws -> Int {
+        guard var session = store.interview else { return 0 }
+        var applied = 0
+        let text = (session.narratives ?? []).map(\.text).joined(separator: "
+")
+        guard !text.isEmpty else { return 0 }
+
+        func setIfMissing<T>(_ keyPath: WritableKeyPath<StructuredProfile, ProfileField<T>>, _ value: T?) {
+            guard let value, !session.profile[keyPath: keyPath].isUsable else { return }
+            session.profile[keyPath: keyPath] = .init(value: value, provenance: .stated,
+                                                      confirmedAt: Date(), note: "本人原话")
+            applied += 1
+        }
+
+        let equipment = LocalFactExtractor.equipment(in: text)
+        if !equipment.isEmpty, !session.profile.equipment.isUsable {
+            session.profile.equipment = .init(value: equipment.sorted { $0.rawValue < $1.rawValue },
+                                              provenance: .stated, confirmedAt: Date(), note: "本人原话")
+            applied += 1
+        }
+        let days = LocalFactExtractor.weekdays(in: text)
+        if !days.isEmpty, !session.profile.weekdays.isUsable {
+            session.profile.weekdays = .init(value: days, provenance: .stated, confirmedAt: Date(), note: "本人原话")
+            applied += 1
+        }
+        setIfMissing(\.minutesPerSession, LocalFactExtractor.minutesPerSession(in: text))
+        setIfMissing(\.primaryGoal, LocalFactExtractor.goal(in: text))
+        setIfMissing(\.experience, LocalFactExtractor.experience(in: text))
+
+        if applied > 0 {
+            session.updatedAt = Date()
+            try saveInterview(session)
+        }
+        return applied
+    }
+
     @discardableResult
     func extractFacts(store: TrainingStore) async throws -> Int {
         guard let configuration = try AIConfigurationStorage.load() else {

@@ -398,6 +398,9 @@ struct CoachConversationView: View {
         // profile. Extracting first is what makes "聊完就出计划" actually reachable — without it the
         // profile never fills and this could only ever report missing facts.
         let service = CoachConversationService()
+        // Local rules first: they never fail on format, so a chat-only endpoint can still fill the
+        // profile. The model-based pass is a best-effort addition for anything the rules missed.
+        _ = try? service.extractFactsLocally(store: store)
         _ = try? await service.extractFacts(store: store)
         guard let session = store.interview else { return }
         let eligibility = (try? store.snapshot()).map {
