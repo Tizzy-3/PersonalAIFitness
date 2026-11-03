@@ -29,6 +29,37 @@ struct CoachConversationService {
         return reply.answer
     }
 
+    /// Pulls structured facts out of the free conversation.
+    ///
+    /// The chat only stores what the person said as narrative text; planning needs the structured
+    /// profile (`primaryGoal`, `equipment`, `weekdays`…). Without this step the conversation could
+    /// never produce a plan, which is exactly the "聊完什么都没发生" symptom.
+    ///
+    /// Only *stated* facts are written, and ambiguous ones stay pending for the profile screen to
+    /// confirm — the same provenance rules the interview uses.
+    @discardableResult
+    func extractFacts(store: TrainingStore) async throws -> Int {
+        guard let configuration = try AIConfigurationStorage.load() else {
+            throw CoachClientError.configuration("先配置 AI 接口，教练才能整理资料。")
+        }
+        guard let key = try AIKeychain.load(for: configuration) else {
+            throw CoachClientError.configuration("还没有填写本机密钥，先到设置里填写。")
+        }
+        guard var session = store.interview else { return 0 }
+        let turn = try await InterviewAPI().nextTurn(session: session, configuration: configuration,
+                                                     key: key, legacyRestrictions: store.profile.restrictions)
+        let accepted = try session.appendTurn(turn)
+        var applied = 0
+        for extraction in accepted.extractions {
+            // `applyExtraction` stores it as inferred unless the person already stated it, so nothing
+            // here can turn a guess into a confirmed fact.
+            try session.applyExtraction(extraction, at: Date())
+            applied += 1
+        }
+        try store.saveInterview(session)
+        return applied
+    }
+
     /// Drafts a plan from everything confirmed so far and saves it as a draft. Returns the draft id;
     /// the draft is *not* active until the person confirms it on the detail screen.
     func draftPlan(store: TrainingStore) async throws -> UUID {

@@ -356,20 +356,25 @@ struct CoachConversationView: View {
     /// Drafts a plan when the coach has enough facts, and silently does nothing when it does not —
     /// the conversation simply continues, which is what "聊完就生成" means in practice.
     private func offerPlanIfPossible() async {
+        guard store.interview != nil else { return }
+        // The chat stores what the person said as narrative text; planning needs the structured
+        // profile. Extracting first is what makes "聊完就出计划" actually reachable — without it the
+        // profile never fills and this could only ever report missing facts.
+        let service = CoachConversationService()
+        _ = try? await service.extractFacts(store: store)
         guard let session = store.interview else { return }
         let eligibility = (try? store.snapshot()).map {
             session.planningEligibility(legacyRestrictions: $0.profile.restrictions, snapshot: $0)
         }
         guard eligibility?.canGenerate == true else {
-            // Silently returning was the bug: the person finished talking and saw nothing. State
-            // what is still missing so "聊完就出计划" is honest about why it has not yet.
+            // Not silent: say what is still missing, and where to answer it.
             infoHint = eligibility?.message
             return
         }
         infoHint = nil
         planState = .generating
         do {
-            let draftID = try await CoachConversationService().draftPlan(store: store)
+            let draftID = try await service.draftPlan(store: store)
             planState = .ready(draftID)
             Haptics.sessionSaved()
         } catch {

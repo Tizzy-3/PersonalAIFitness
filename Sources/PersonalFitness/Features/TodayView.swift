@@ -280,7 +280,11 @@ struct TodayView: View {
             .background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 17))
     }
     private var interviewButton: some View {
-        NavigationLink { CoachInterviewView(store: store) } label: { Text("让教练了解我") }.buttonStyle(FitnessPrimaryButtonStyle())
+        // The interview screen is an implementation detail now: talking to the coach and getting a
+        // plan both happen in CoachConversationView, so the entry point must not drop the person into
+        // the old JSON-shaped interview.
+        NavigationLink { CoachConversationView(store: store) } label: { Text("让教练了解我") }
+            .buttonStyle(FitnessPrimaryButtonStyle())
     }
     private var manualButton: some View {
         Button("手动创建") { editPlan(nil) }.font(.body.weight(.semibold)).padding(.horizontal, 16)

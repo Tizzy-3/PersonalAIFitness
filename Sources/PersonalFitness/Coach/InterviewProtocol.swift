@@ -17,12 +17,16 @@ struct InterviewProtocolError: Error, LocalizedError, Equatable, Sendable {
 enum InterviewProtocol {
     static func decode(_ content: String, provider: InterviewProvider?) throws -> InterviewTurn {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: "\u{feff}")))
-        var text = CoachAPI.unfencedJSON(trimmed)
+        // Share the same extraction the other protocols use: a model that wraps its JSON in a
+        // sentence, a fence or an extra trailing comma should not end the interview. Previously this
+        // only stripped a fence and then required the *whole* reply to be JSON, so an ordinary
+        // preamble ("好的，我明白了…") failed as "不是一个完整 JSON 对象".
+        var text = ModelOutputRepair.extractJSONObject(trimmed) ?? CoachAPI.unfencedJSON(trimmed)
         var object: Any
         do {
             object = try JSONSerialization.jsonObject(with: Data(text.utf8), options: [.fragmentsAllowed])
             if let encoded = object as? String {
-                text = CoachAPI.unfencedJSON(encoded)
+                text = ModelOutputRepair.extractJSONObject(encoded) ?? CoachAPI.unfencedJSON(encoded)
                 object = try JSONSerialization.jsonObject(with: Data(text.utf8), options: [.fragmentsAllowed])
             }
         } catch { throw failure("$", "一个完整JSON对象", "invalid_json") }
