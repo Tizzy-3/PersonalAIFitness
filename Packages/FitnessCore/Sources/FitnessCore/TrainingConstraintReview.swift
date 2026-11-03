@@ -227,11 +227,13 @@ extension InterviewSession {
             // Only route into the review flow when there is something the person can actually
             // resolve: an existing review that went stale, injury/treatment wording, or free text
             // too vague to translate. A recognisable posture preference is planned around directly.
+            // These are static members of TrainingConstraintReview; this closure lives in the
+            // InterviewSession extension, so they need the type name.
             let restrictionText = profile.restrictions.value ?? ""
-            let recognizablePreference = !inferredPreferences(restrictionText).positions.isEmpty
+            let recognizablePreference = !TrainingConstraintReview.inferredPreferences(restrictionText).positions.isEmpty
             let needsReview = profile.constraintReview != nil
-                || readsAsMedicalLimit(restrictionText)
-                || (!isNoRestrictionText(restrictionText, allowingEmpty: true) && !recognizablePreference)
+                || TrainingConstraintReview.readsAsMedicalLimit(restrictionText)
+                || (!TrainingConstraintReview.isNoRestrictionText(restrictionText, allowingEmpty: true) && !recognizablePreference)
             return .init(canGenerate: false, title: needsReview ? "待核对训练约束" : "还需调整条件",
                          message: error.localizedDescription, needsConstraintReview: needsReview)
         }
