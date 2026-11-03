@@ -76,9 +76,19 @@ final class InterviewGuidanceTests: XCTestCase {
         XCTAssertFalse(session.planningEligibility(at: now).canGenerate)
     }
     func testUnreviewedLimitsRouteToGuidedClarificationInsteadOfPlanOrGenericChat() {
+        // A floor-work preference is not inferred: only the person can decide how far it reaches, so
+        // it still routes into the guided clarification.
         var session = ready()
         session.profile.restrictions = .init(value: "不做地面动作", provenance: .stated, confirmedAt: now)
         XCTAssertEqual(session.nextGuidanceStep(at: now), .clarifyLimits)
+    }
+
+    func testKneelingPreferenceIsPlannedAroundWithoutAClarificationRound() {
+        // The one preference the planner can honour on its own: 「不能跪」 means exactly two movements.
+        var session = ready()
+        session.profile.restrictions = .init(value: "不能有跪姿动作", provenance: .stated, confirmedAt: now)
+        XCTAssertEqual(session.nextGuidanceStep(at: now), .readyForPlan)
+        XCTAssertNoThrow(try session.profile.planningInput(at: now))
     }
     func testPausedConversationDoesNotAutoSendOrLoseExistingProgress() throws {
         var session = ready()

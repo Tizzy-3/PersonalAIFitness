@@ -276,14 +276,17 @@ extension TrainingConstraintReview {
     ///
     /// Only positions the catalogue models are extracted; anything else is left to the person rather
     /// than guessed from prose.
+    /// Preferences expressed in free text, converted to movement rules the planner can honour.
+    ///
+    /// Only `kneeling` is inferred here, and deliberately so. Kneeling and floor work are separate
+    /// categories — someone who cannot kneel can usually still press, plank and do floor work — and
+    /// guessing that "不能跪姿" also means "躺下趴下都不行" would take away movements the person never
+    /// excluded. `floorWork` therefore stays a choice the person makes explicitly in the review.
     public static func inferredPreferences(_ text: String) -> (positions: [ConstraintAvoidance], note: String) {
         let lower = text.lowercased()
         var positions: [ConstraintAvoidance] = []
-        if ["跪姿", "跪着", "跪地", "膝盖着地"].contains(where: { lower.contains($0) }) {
+        if ["跪姿", "跪着", "跪地", "膝盖着地", "不能跪"].contains(where: { lower.contains($0) }) {
             positions.append(.kneeling)
-        }
-        if ["地面动作", "地上", "躺地", "地板", "趴下"].contains(where: { lower.contains($0) }) {
-            positions.append(.floorWork)
         }
         return (positions, text)
     }

@@ -21,9 +21,17 @@ final class RestrictionClassificationTests: XCTestCase {
         XCTAssertTrue(inferred.positions.flatMap(\.exerciseIDs).contains("builtin.knee-push-up"))
     }
 
-    func testFloorPreferenceIsRecognisedSeparately() {
-        let inferred = TrainingConstraintReview.inferredPreferences("尽量不要躺地上的动作")
-        XCTAssertEqual(inferred.positions, [.floorWork])
+    func testFloorWorkIsNotInferredFromKneelingOrFromLyingDown() {
+        // Kneeling and floor work are different: someone who cannot kneel can usually still press and
+        // plank. Inferring floor work from "不能跪姿" would remove movements nobody excluded.
+        XCTAssertEqual(TrainingConstraintReview.inferredPreferences("不能有跪姿动作").positions, [.kneeling])
+
+        // "躺下趴下都可以" states the opposite of an exclusion — it must not produce one either.
+        XCTAssertTrue(TrainingConstraintReview.inferredPreferences("躺着趴着都可以").positions.isEmpty)
+        XCTAssertTrue(TrainingConstraintReview.inferredPreferences("地面动作也行").positions.isEmpty)
+
+        // A floor-work preference is left for the person to choose explicitly in the review.
+        XCTAssertTrue(TrainingConstraintReview.inferredPreferences("尽量不做地面动作").positions.isEmpty)
     }
 
     func testUnrecognisedPreferenceIsLeftAlone() {
