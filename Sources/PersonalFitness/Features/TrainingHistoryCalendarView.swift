@@ -16,9 +16,11 @@ struct TrainingHistoryCalendarView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .caption) private var accessibleDayWidth: CGFloat = 44
 
-    init(store: TrainingStore, openWorkout: ((UUID) -> Void)? = nil) {
+    init(store: TrainingStore, openWorkout: ((UUID) -> Void)? = nil,
+         editPlan: ((PlanVersion?) -> Void)? = nil) {
         self.store = store
         self.openWorkout = openWorkout
+        self.editPlan = editPlan
         var initial = Date()
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--capture-history") { initial = HistoryValidationData.referenceDate }

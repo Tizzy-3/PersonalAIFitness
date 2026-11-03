@@ -110,6 +110,52 @@ def _top_level_labels(text):
     return labels
 
 
+def _view_property_init_mismatches(content, pathname):
+    """Report views whose hand-written init cannot accept a stored property.
+
+    Swift synthesises a memberwise initialiser only when the struct has none. Once a view
+    declares ``init(...)``, adding a stored property without adding it to that init makes every
+    call site a compile error ("extra argument"), which is easy to miss locally because the
+    property itself still reads fine.
+    """
+    problems = []
+    for match in re.finditer(r'struct\s+(\w+)\s*:\s*(?:@\w+\s+)?View\s*\{', content):
+        name = match.group(1)
+        start = match.end()
+        depth, i = 1, start
+        while i < len(content) and depth:
+            if content[i] == '{':
+                depth += 1
+            elif content[i] == '}':
+                depth -= 1
+            i += 1
+        body = content[start:i]
+        init = re.search(r'\n\s*init\s*\(([^)]*)\)\s*\{', body)
+        if not init:
+            continue
+        params = set(re.findall(r'(\w+)\s*:', init.group(1)))
+        stored = []
+        for line in body.splitlines():
+            stripped = line.strip()
+            if stripped.startswith(('@State', '@Environment', '@ScaledMetric', '@FocusState',
+                                    '@Binding', '@Query', '@StateObject', '@ObservedObject')):
+                continue
+            # Only optional properties matter here: they are the ones added later as an
+            # opt-in, which is exactly the case this check exists for. A required property
+            # without an init parameter is already a compile error everywhere.
+            prop = re.match(r'(?:let|var)\s+(\w+)\s*:\s*[^=]+=\s*nil', stripped)
+            if prop:
+                stored.append(prop.group(1))
+        init_body = body[init.end():init.end() + 2_500]
+        assigned = set(re.findall(r'self\.(\w+)\s*=', init_body))
+        assigned |= set(re.findall(r'_(\w+)\s*=\s*State', init_body))
+        missing = [n for n in stored if n not in params and n not in assigned]
+        if missing:
+            problems.append('%s: %s declares init but does not accept %s'
+                            % (pathname, name, ', '.join(missing)))
+    return problems
+
+
 def main():
     errors = []
     swift = list((ROOT / 'Sources').rglob('*.swift')) + list((ROOT / 'Packages').rglob('*.swift')) + list((ROOT / 'Tests').rglob('*.swift'))
@@ -121,6 +167,7 @@ def main():
             errors.append('Unrecoverable error path in ' + str(path.relative_to(ROOT)))
         if re.search(r'ghp_[A-Za-z0-9]{20}|github_pat_[A-Za-z0-9_]{20}|BEGIN (?:RSA |EC )?PRIVATE KEY', content):
             errors.append('Possible credential in source: ' + str(path.relative_to(ROOT)))
+        errors.extend(_view_property_init_mismatches(content, str(path.relative_to(ROOT))))
         for type_name, order in CALL_ARGUMENT_ORDER.items():
             rank = {label: position for position, label in enumerate(order)}
             for body in _call_bodies(content, type_name):
