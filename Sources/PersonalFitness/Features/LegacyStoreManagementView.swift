@@ -22,8 +22,6 @@ struct LegacyStoreManagementView: View {
     @State private var review: LegacyStoreErasure.Review?
     @State private var loadingIssue: String?
     @State private var issue: String?
-    @State private var phrase = ""
-    @State private var understood = false
     @State private var confirming = false
     @State private var completed = false
     @State private var restartRequired = false
@@ -66,10 +64,14 @@ struct LegacyStoreManagementView: View {
                     }
                 }
                 Section {
-                    Toggle("我理解原库记录将永久删除", isOn: $understood)
-                    TextField("输入：删除原库", text: $phrase).autocorrectionDisabled()
+                    // One explicit tap plus a system confirmation. The previous flow also required a
+                    // toggle and typing 「删除原库」, which is friction without added safety: the
+                    // scope is already listed above, and the dialog still says it cannot be undone.
                     Button("彻底删除原库", role: .destructive) { confirming = true }
-                        .frame(minHeight: 44).disabled(!understood || phrase != "删除原库")
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .disabled(review.files.isEmpty)
+                    Text("删除后无法恢复。上方的范围会逐项列出究竟删除哪些文件。")
+                        .font(.footnote).foregroundStyle(FitnessTheme.muted)
                 }
             } else if !completed {
                 Section {
@@ -94,11 +96,16 @@ struct LegacyStoreManagementView: View {
             review = try LegacyStoreErasure.prepare(location: LegacyStoreErasure.defaultLocation())
             loadingIssue = nil
         } catch { review = nil; loadingIssue = error.localizedDescription }
-        phrase = ""; understood = false
     }
+
     private func erase() {
-        guard let review, understood, phrase == "删除原库", let perform = erasure.perform else {
-            issue = "删除条件尚未确认，未清理文件。"; return
+        // Each precondition reports itself. Collapsing them into one message was why "删除条件尚未确认"
+        // appeared with no way to tell whether the file list had been lost or the action had not been
+        // wired up.
+        guard let review else { issue = "没有可删除的文件清单，请点“重新检查”。"; return }
+        guard let perform = erasure.perform else {
+            issue = "删除功能未连接到数据层（内部错误），文件未改动。请重新打开 App 再试。"
+            return
         }
         do {
             switch try perform(review) {

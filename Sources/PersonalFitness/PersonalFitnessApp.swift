@@ -117,10 +117,16 @@ struct PersonalFitnessApp: App {
             }
           }
           .tint(FitnessTheme.accent)
-          .environment(\.legacyErasureAction, LegacyErasureAction(perform: { review in try eraseLegacy(review) }))
           .sheet(isPresented: $managingLegacy) {
+              // The action must be injected *inside* the sheet. A modifier applied above `.sheet`
+              // does not reach presented content, so the environment arrived as the empty default:
+              // the button was enabled but `perform` was nil, and every confirmation ended with
+              // "删除条件尚未确认" even though the toggle and phrase were correct.
               NavigationStack { LegacyStoreManagementView(currentStoreURL: store?.storageURL) }
+                  .environment(\.legacyErasureAction,
+                               LegacyErasureAction(perform: { review in try eraseLegacy(review) }))
           }
+          .environment(\.legacyErasureAction, LegacyErasureAction(perform: { review in try eraseLegacy(review) }))
         }
     }
 
