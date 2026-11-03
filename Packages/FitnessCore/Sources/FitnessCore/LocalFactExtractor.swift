@@ -28,7 +28,8 @@ enum LocalFactExtractor {
         .rowingErgometer: ["划船机", "rowing"],
         .elliptical: ["椭圆机"],
         .resistanceBand: ["弹力带", "阻力带", "橡皮筋"],
-        .walkingSpace: ["走路", "步行空间", "小区", "家里空间", "客厅"],
+        // 「家里」 alone is a place, not equipment; only an explicit walking/space phrase counts.
+        .walkingSpace: ["走路", "步行空间", "小区", "客厅空间"],
         .runningSpace: ["跑步", "跑步机"]
     ]
 
@@ -50,8 +51,10 @@ enum LocalFactExtractor {
         for (equipment, aliases) in equipmentAliases where aliases.contains(where: { lower.contains($0.lowercased()) }) {
             found.insert(equipment)
         }
-        // "家里练" / "居家" with no named tool still means bodyweight is available.
-        if found.isEmpty, lower.contains("居家") || lower.contains("家里") || lower.contains("徒手") {
+        // "在家练" / "徒手" with no named tool still means bodyweight work is possible. This runs
+        // only when nothing else matched, so naming real equipment is not overridden.
+        if found.isEmpty,
+           lower.contains("居家") || lower.contains("在家") || lower.contains("徒手") || lower.contains("家里练") {
             found.insert(.bodyweight)
         }
         return found
@@ -93,7 +96,11 @@ enum LocalFactExtractor {
     static func experience(in text: String) -> PlanningExperience? {
         let lower = text.lowercased()
         if ["没练过", "零基础", "从没", "没有经验", "完全新手"].contains(where: { lower.contains($0) }) { return .beginner }
-        if ["练了几年", "老手", "有经验", "练过一阵", "经常练"].contains(where: { lower.contains($0) }) { return .regular }
+        // A hedge such as 「不知道算不算有经验」 must not be read as a claim of experience.
+        let hedged = ["不知道", "算不算", "说不清", "不确定"].contains { lower.contains($0) }
+        if !hedged, ["练了几年", "老手", "有经验", "练过一阵", "经常练"].contains(where: { lower.contains($0) }) {
+            return .regular
+        }
         if ["练过一点", "有点经验", "不多", "偶尔练", "初中级"].contains(where: { lower.contains($0) }) { return .beginner }
         return nil
     }

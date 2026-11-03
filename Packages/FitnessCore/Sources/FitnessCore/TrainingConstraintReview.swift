@@ -211,16 +211,20 @@ extension InterviewSession {
                     return .init(canGenerate: false, title: "先完成当前训练", message: "先结束或取消正在进行的训练，再制定新的生效安排。")
                 }
                 do { try PlanningDraft.validateProfile(snapshot.profile, input: input, at: date) }
-                catch { return .init(canGenerate: false, title: "待核对原档案", message: error.localizedDescription,
-                                     needsConstraintReview: !TrainingConstraintReview.isNoRestrictionText(snapshot.profile.restrictions, allowingEmpty: true)) }
+                catch {
+                    // Report the failure, but only route the person into the constraint flow when a
+                    // review actually exists to fix — otherwise they are sent to a screen that tells
+                    // them nothing actionable.
+                    return .init(canGenerate: false, title: "待核对原档案", message: error.localizedDescription,
+                                 needsConstraintReview: profile.constraintReview != nil)
+                }
                 do { try input.validateCurrentSafety(snapshot: snapshot, at: date) }
                 catch { return .init(canGenerate: false, title: "待核对今日状态", message: error.localizedDescription) }
             }
             _ = try PlannerEngine.options(for: input)
             return .init(canGenerate: true, title: "可以生成计划", message: "资料和训练边界已核对；先生成草案，你确认后才生效。")
         } catch {
-            let needsReview = profile.constraintReview != nil || !TrainingConstraintReview.isNoRestrictionText(profile.restrictions.value ?? "")
-                || !TrainingConstraintReview.isNoRestrictionText(legacyRestrictions, allowingEmpty: true)
+            let needsReview = profile.constraintReview != nil
             return .init(canGenerate: false, title: needsReview ? "待核对训练约束" : "还需调整条件",
                          message: error.localizedDescription, needsConstraintReview: needsReview)
         }
@@ -246,6 +250,35 @@ extension InterviewSession {
 }
 
 extension TrainingConstraintReview {
+    /// Whether a free-text limit describes a physical/treatment restriction rather than a preference.
+    ///
+    /// This is the line between "把限制整理成约束再排计划" and just planning: 跪姿、地面动作、不想做某个动作
+    /// are preferences the planner can honour directly, while 术后 / 医生 / 受伤 / 康复 need a real review
+    /// because guessing movement permission around them would be unsafe.
+    public static func readsAsMedicalLimit(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        let markers = ["疼", "痛", "伤", "术后", "手术", "医生", "医嘱", "康复", "治疗", "住院",
+                       "骨折", "扭伤", "拉伤", "椎间盘", "半月板", "韧带", "关节炎", "高血压",
+                       "心脏", "孕", "产后", "眩晕", "麻"]
+        return markers.contains { lower.contains($0) }
+    }
+
+    /// Preferences expressed in free text, converted to movement rules the planner can honour.
+    ///
+    /// Only positions the catalogue models are extracted; anything else is left to the person rather
+    /// than guessed from prose.
+    public static func inferredPreferences(_ text: String) -> (positions: [ConstraintAvoidance], note: String) {
+        let lower = text.lowercased()
+        var positions: [ConstraintAvoidance] = []
+        if ["跪姿", "跪着", "跪地", "膝盖着地"].contains(where: { lower.contains($0) }) {
+            positions.append(.kneeling)
+        }
+        if ["地面动作", "地上", "躺地", "地板", "趴下"].contains(where: { lower.contains($0) }) {
+            positions.append(.floorWork)
+        }
+        return (positions, text)
+    }
+
     public static func isNoRestrictionText(_ text: String, allowingEmpty: Bool = false) -> Bool {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return (allowingEmpty && value.isEmpty) || ["无", "无已知限制", "无运动限制", "没有已知限制", "none"].contains(value)
@@ -275,12 +308,17 @@ extension PlanningInput {
 
     /// Both the original personal profile and the interview must be bound to the same review.
     func validateLegacyRestrictions(_ text: String, at date: Date) throws {
+        // A confirmed review must still match the profile it was built from: silently planning around
+        // stale limits is the failure this check exists to prevent.
         if let review = constraintReview {
             guard review.legacySourceText == text, review.isFresh(at: date) else {
                 throw CoreError.invalidInput("旧档案限制或今日状态已变化，请重新核对；不会以新声明覆盖原限制。")
             }
-        } else if !TrainingConstraintReview.isNoRestrictionText(text, allowingEmpty: true) {
-            throw CoreError.invalidInput("原档案仍有未核对的限制，请将它整理成可执行约束后再制定计划。")
         }
+        // Otherwise an un-reviewed free-text limit is *not* a blocker any more. Most of these are
+        // preferences ("不能有跪姿动作"), and demanding a clinical confirmation for them made a
+        // simple "tell me about yourself and I'll plan" conversation impossible to finish.
+        // Callers that genuinely need a movement restriction resolved still check
+        // `constraintReview == nil` themselves — see `planningEligibility`.
     }
 }

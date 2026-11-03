@@ -224,19 +224,31 @@ public struct StructuredProfile: Codable, Equatable, Sendable {
                 throw CoreError.invalidInput("限制原文或今日状态已变化，请重新核对训练约束。")
             }
         }
+        let inferredPreferenceExclusions: [String] = constraintReview == nil
+            ? TrainingConstraintReview.inferredPreferences(restrictionText).positions.flatMap(\.exerciseIDs)
+            : []
         let input = PlanningInput(goal: goal, experience: experience, weekdays: days.filter { !(constraintReview?.excludedWeekdays.contains($0) ?? false) }.sorted(),
                                   minutesPerSession: min(minutes, constraintReview?.maxSessionMinutes ?? minutes), equipment: Set(gear),
                                   adultConfirmed: adult, safety: constraintReview == nil ? .noKnownRestrictions : .reviewedConstraints,
                                   painToday: false,
-                                  excludedExerciseIDs: Array(Set((excludedExerciseIDs.value ?? []) + (constraintReview?.effectiveExcludedExerciseIDs ?? []))).sorted(),
+                                  excludedExerciseIDs: Array(Set((excludedExerciseIDs.value ?? [])
+                                      + (constraintReview?.effectiveExcludedExerciseIDs ?? [])
+                                      // A stated preference ("不能有跪姿动作") is honoured directly
+                                      // instead of being queued behind a review the person cannot act on.
+                                      + inferredPreferenceExclusions)).sorted(),
                                   completedSessionsLast28Days: 0, daysSinceLastTraining: nil, constraintReview: constraintReview)
         try input.validate()
-        // The deterministic engine already refuses a profile that records restrictions; surface the
-        // same rule here so the caller gets one clear message instead of two different ones.
+        // A free-text limit used to be a hard stop unless it was reviewed into movement rules. Most
+        // recorded text is a preference ("不能有跪姿动作"), and demanding a clinical confirmation for
+        // that made "tell me about yourself and I'll plan" impossible to finish. Preferences are now
+        // read into exclusions automatically; only text that reads like a medical/treatment limit
+        // still needs the review flow.
         let normalized = restrictionText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let noRestriction = Set(["无", "无已知限制", "无运动限制", "没有已知限制", "none"])
-        guard constraintReview != nil || noRestriction.contains(normalized) else {
-            throw CoreError.invalidInput("资料已齐全，还需核对限制：请保留原文，明确动作、日期和当前状态后再生成。")
+        if constraintReview == nil, !noRestriction.contains(normalized) {
+            guard !TrainingConstraintReview.readsAsMedicalLimit(normalized) else {
+                throw CoreError.invalidInput("档案里的限制涉及身体或治疗，需要先核对成具体动作范围。")
+            }
         }
         return input
     }
