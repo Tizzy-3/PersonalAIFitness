@@ -47,9 +47,7 @@ struct CoachConversationService {
         let content = try await client.complete(
             configuration: configuration, key: key,
             messages: [CoachMessage(role: "system", content: Self.conversationSystemPrompt),
-                       CoachMessage(role: "user", content: "资料：\(contextJSON)
-
-本人说：\(question)")],
+                       CoachMessage(role: "user", content: "资料：\(contextJSON)\n\n本人说：\(question)")],
             outputFormat: .text)
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw CoachClientError.invalidResponse }
@@ -73,8 +71,7 @@ struct CoachConversationService {
     func extractFactsLocally(store: TrainingStore) throws -> Int {
         guard var session = store.interview else { return 0 }
         var applied = 0
-        let text = (session.narratives ?? []).map(\.text).joined(separator: "
-")
+        let text = (session.narratives ?? []).map(\.text).joined(separator: "\n")
         guard !text.isEmpty else { return 0 }
 
         func setIfMissing<T>(_ keyPath: WritableKeyPath<StructuredProfile, ProfileField<T>>, _ value: T?) {
