@@ -50,6 +50,36 @@ final class AdjustmentExecutionTests: XCTestCase {
     }
 
     @MainActor
+    func testGentleAlternativeKeepsWeeklyProgramAndDoesNotReuseOtherExerciseNotes() throws {
+        let store = try TrainingStore(inMemory: true)
+        let profileDate = Date()
+        var interview = try store.startInterview(at: profileDate)
+        interview.profile.equipment = ProfileField(value: [.bodyweight, .walkingSpace], provenance: .stated, confirmedAt: profileDate)
+        interview.profile.restrictions = ProfileField(value: "无已知限制", provenance: .stated, confirmedAt: profileDate)
+        try store.saveInterview(interview)
+        let weekday = ((Calendar.current.component(.weekday, from: Date()) + 5) % 7) + 1
+        let input = PlanningInput(goal: .generalFitness, experience: .beginner, weekdays: [weekday],
+            minutesPerSession: 30, equipment: [.bodyweight, .walkingSpace], adultConfirmed: true,
+            safety: .noKnownRestrictions, painToday: false)
+        let draft = try PlanningDraft.make(input: input, snapshot: store.snapshot())
+        try store.savePlanningDraft(draft)
+        let program = try store.confirmWeeklyProgram(draftID: draft.id, optionID: XCTUnwrap(draft.options.first).id)
+        let now = Date()
+        let original = try XCTUnwrap(store.scheduledPlan(on: now))
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: now, energy: 3, painReported: false,
+                                                note: "今天不宜剧烈运动"))
+        let proposal = try store.proposeGentleToday(lightActivityConfirmed: true, limitsCompleteConfirmed: true, at: now)
+        try store.acceptAdjustment(id: proposal.id, at: now)
+        let session = try store.startWorkout(plan: original, at: now)
+        XCTAssertEqual(session.exercises.first?.exercise.id, "builtin.walking")
+        XCTAssertEqual(store.currentWeeklyProgram?.id, program.id)
+        XCTAssertEqual(store.scheduledPlan(on: now), original)
+        if !original.items.contains(where: { $0.exercise.id == "builtin.walking" }) {
+            XCTAssertTrue(session.exercises.first?.note.isEmpty == true)
+        }
+    }
+
+    @MainActor
     private func fixture() throws -> (TrainingStore, PlanVersion, AdjustmentProposal, Date) {
         let store = try TrainingStore(inMemory: true)
         let exercise = try XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.bodyweight-squat"))
