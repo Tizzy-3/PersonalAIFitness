@@ -8,6 +8,18 @@ final class InterviewClientTests: XCTestCase {
         InterviewSession(createdAt: Date(timeIntervalSince1970: 1_790_000_000))
     }
 
+    func testNumericQuestionsRequireACompatibleTopicOrAnExplicitFollowUp() throws {
+        let activity = #"{"questions":[{"topic":"dailyActivity","kind":"number","prompt":"每天走多久？","unit":"分钟"}]}"#
+        XCTAssertEqual(try InterviewAPI.decodeTurn(activity, session: session(), provider: nil).questions.first?.kind, .number)
+        let wrongTopic = #"{"questions":[{"topic":"restrictions","kind":"number","prompt":"有什么限制？"}]}"#
+        XCTAssertThrowsError(try InterviewAPI.decodeTurn(wrongTopic, session: session(), provider: nil)) {
+            XCTAssertEqual(($0 as? InterviewProtocolError)?.path, "$.questions[0].kind")
+        }
+        let detail = #"{"questions":[{"topic":"schedule","kind":"number","prompt":"每周几次？","detailKey":"schedule.sessions_per_week"}]}"#
+        XCTAssertEqual(try InterviewAPI.decodeTurn(detail, session: session(), provider: nil).questions.first?.detailKey,
+                       "schedule.sessions_per_week")
+    }
+
     func testNumberStringsNullFieldsAndJSONStringOptionsAreCanonicalized() throws {
         let text = #"{"questions":[{"topic":"minutes","kind":"number","prompt":"每次多久？","minimum":"15","maximum":"120","unit":"分钟","options":null}],"extractions":null,"note":null}"#
         let turn = try InterviewAPI.decodeTurn(text, session: session(), provider: nil)

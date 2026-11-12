@@ -358,6 +358,27 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
 
     private mutating func applyAnswer(_ answer: InterviewAnswer, for question: InterviewQuestion,
                                      at date: Date) throws {
+        if question.topic.storesDescriptiveAnswer {
+            let description: String?
+            switch question.kind {
+            case .text: description = answer.text
+            case .singleChoice: description = answer.choice
+            case .multiChoice: description = answer.choices.isEmpty ? nil : answer.choices.joined(separator: "、")
+            case .number:
+                description = answer.number.map { number in
+                    let raw = String(number)
+                    let value = raw.hasSuffix(".0") ? String(raw.dropLast(2)) : raw
+                    let unit = question.unit?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    return unit.isEmpty ? value : "\(value) \(unit)"
+                }
+            case .boolean:
+                description = answer.boolean.map { "\(question.prompt) \($0 ? "是" : "否")" }
+            }
+            if let description {
+                try apply(.text(description), for: question.topic, provenance: .stated, at: date)
+                return
+            }
+        }
         switch question.kind {
         case .singleChoice:
             guard let choice = answer.choice else { throw CoreError.invalidInput("缺少选择结果。") }
@@ -370,7 +391,7 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
         case .text:
             guard let text = answer.text else { throw CoreError.invalidInput("缺少文字结果。") }
             // Natural words for goal/equipment/schedule are evidence, not enum raw values.
-            if [.capability, .venue, .restrictions, .sleep, .dailyActivity, .adherence].contains(question.topic) {
+            if question.topic == .restrictions {
                 try apply(.text(text), for: question.topic, provenance: .stated, at: date)
             }
         case .boolean:

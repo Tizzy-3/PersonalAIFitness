@@ -54,6 +54,22 @@ public enum InterviewQuestionKind: String, Codable, Equatable, Sendable {
     case singleChoice, multiChoice, number, text, boolean
 }
 
+extension InterviewTopic {
+    var storesDescriptiveAnswer: Bool {
+        switch self {
+        case .capability, .venue, .sleep, .dailyActivity, .adherence: return true
+        default: return false
+        }
+    }
+
+    public var acceptsNumericBaseAnswer: Bool {
+        switch self {
+        case .age, .height, .weight, .minutes: return true
+        default: return storesDescriptiveAnswer
+        }
+    }
+}
+
 /// A validated question. The AI proposes the content; the app decides whether it is legal.
 public struct InterviewQuestion: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID

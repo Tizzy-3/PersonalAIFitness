@@ -24,6 +24,7 @@ struct InterviewAPI: Sendable {
     每个问题包含topic/kind/prompt，选择题提供字符串options；number给unit和有限minimum/maximum；非数值题数值字段为null；不需要的options为[]。
     可用topic：\(InterviewTopic.allCases.map(\.rawValue).joined(separator: ","))
     kind仅为singleChoice,multiChoice,number,text,boolean；age用整数岁，height用厘米，weight用公斤。年龄1..120，身高50..250，体重15..400只是输入边界，不是健康目标。
+    基础数值题仅用于age、height、weight、minutes、capability、venue、sleep、dailyActivity、adherence。日常步行时长用dailyActivity并给单位，不要当成单次训练时长minutes。其他主题的数值细节须使用detailKey追问，限制主题应直接询问限制原文。
     抽取rawValue编码：primaryGoal和secondaryGoals用\(PlanningGoal.allCases.map(\.rawValue).joined(separator: ","))；experience用\(PlanningExperience.allCases.map(\.rawValue).joined(separator: ","))；equipment用\(PlanningEquipment.allCases.map(\.rawValue).joined(separator: ","))；schedule用1=周一...7=周日的逗号列表；minutes用15..120整数；age/height/weight用数字；preferences/exclusions仅可用candidateExercises中的真实id。
     仅返回一个JSON对象，禁止计划/工具调用/Markdown，字段仅为：
     {"questions":[{"topic":"capability","kind":"text","prompt":"具体问题","detailKey":"capability.daily_movement","options":[],"unit":null,"minimum":null,"maximum":null}],"extractions":[{"topic":"minutes","rawValue":"30","rationale":"根据本人叙述提出，仍待确认"}],"note":"简短过渡，不写诊断或已生效计划"}

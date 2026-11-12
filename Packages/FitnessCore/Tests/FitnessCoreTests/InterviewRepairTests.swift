@@ -54,6 +54,26 @@ final class InterviewRepairTests: XCTestCase {
         XCTAssertThrowsError(try session.profile.planningInput())
     }
 
+    func testSavedNumericDailyActivityAndAdherenceChoiceCanCompleteTogether() throws {
+        let walking = InterviewQuestion(topic: .dailyActivity, kind: .number,
+            prompt: "你平均每天走多少分钟？", unit: "分钟", minimum: 0, maximum: 1440)
+        let adherence = InterviewQuestion(topic: .adherence, kind: .singleChoice,
+            prompt: "什么会打断你的训练？", options: ["不确定动作怎么做", "没时间"])
+        var previous = InterviewSession(createdAt: start, profile: readyProfile())
+        try previous.appendTurn(InterviewTurn(questions: [walking, adherence]), at: start)
+        var reopened = try JSONDecoder().decode(InterviewSession.self, from: JSONEncoder().encode(previous))
+        try reopened.answer([
+            InterviewAnswer(questionID: walking.id, number: 30, answeredAt: start),
+            InterviewAnswer(questionID: adherence.id, choice: "不确定动作怎么做", answeredAt: start)
+        ], at: start)
+        XCTAssertEqual(reopened.profile.dailyActivityNote.value, "30 分钟")
+        XCTAssertEqual(reopened.profile.dailyActivityNote.provenance, .stated)
+        XCTAssertEqual(reopened.profile.adherenceBarriers.value, "不确定动作怎么做")
+        XCTAssertEqual(reopened.profile.minutesPerSession, previous.profile.minutesPerSession)
+        XCTAssertTrue(reopened.unansweredQuestions.isEmpty)
+        XCTAssertTrue(reopened.planningEligibility(at: start).canGenerate)
+    }
+
     func testPartialAnswerCannotBeHiddenByAppendingAnotherTurn() throws {
         var session = InterviewSession(createdAt: start)
         let sleep = question(.sleep)

@@ -59,6 +59,9 @@ enum InterviewProtocol {
                 detailKey: try optionalString(row["detailKey"], at: path + ".detailKey"))
             do { try question.validate() }
             catch { throw failure(path, "主题一致、题型完整且边界合法的问题", "invalid_question") }
+            if question.kind == .number, !question.isFollowUp, !topic.acceptsNumericBaseAnswer {
+                throw failure(path + ".kind", "该主题支持的题型，数值细节可作为带 detailKey 的追问", "unsupported_numeric_topic")
+            }
             questions.append(question)
         }
         let extractionRows = try array(root["extractions"], at: "$.extractions")
