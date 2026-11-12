@@ -85,7 +85,8 @@ struct RootView: View {
                 NavigationStack {
                     PreWorkoutConversationView(store: store, plan: plan, openWorkout: { _ in })
                         .safeAreaInset(edge: .top) {
-                            Text("界面验证数据 · 隔离内存 · 不保存").font(.caption).foregroundStyle(FitnessTheme.orange).padding(8)
+                            Text("界面验证数据 · 隔离内存 · 不保存").font(.caption).foregroundStyle(FitnessTheme.orange)
+                                .dynamicTypeSize(.medium).padding(8)
                         }
                 }
             }

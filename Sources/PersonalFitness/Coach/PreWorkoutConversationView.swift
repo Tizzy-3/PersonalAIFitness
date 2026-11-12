@@ -9,6 +9,7 @@ struct PreWorkoutConversationView: View {
     let openWorkout: (UUID) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .body) private var messageSize: CGFloat = 15
     @State private var energy: Int?
     @State private var pain: Bool?
     @State private var soreness: Int?
@@ -118,7 +119,7 @@ struct PreWorkoutConversationView: View {
     }
 
     private func message(_ text: String) -> some View {
-        CoachMessageText(text: text, size: 15, color: FitnessTheme.ink)
+        CoachMessageText(text: text, size: messageSize, color: FitnessTheme.ink)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
     }
