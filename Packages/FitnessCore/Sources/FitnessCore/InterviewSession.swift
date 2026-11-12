@@ -115,9 +115,17 @@ public struct InterviewSession: Identifiable, Codable, Equatable, Sendable {
     /// field before planning. It never silently overwrites that field or assumes absence of pain.
     public var needsSafetyReview: Bool {
         guard let reviewedAt = profile.restrictions.confirmedAt, profile.restrictions.isUsable else { return false }
-        return (narratives ?? []).contains { $0.recordedAt > reviewedAt }
+        return (narratives ?? []).contains { $0.recordedAt > reviewedAt && !Self.isPlanRequest($0.text) }
             || dialogueEvidence.contains { $0.topic == .restrictions && $0.detailKey != nil
                 && $0.answer.outcome == .answered && $0.answer.answeredAt > reviewedAt }
+    }
+
+    /// A standalone request to produce a draft carries no new profile or safety information.
+    public static func isPlanRequest(_ text: String) -> Bool {
+        let command = text.lowercased().filter { !$0.isWhitespace && !$0.isPunctuation }
+        return ["生成计划", "生成训练计划", "生成周计划", "生成一周计划", "制定一周计划",
+                "重新制定一周计划", "ok生成计划", "好的生成计划", "请生成计划", "帮我生成计划",
+                "先这么定", "ok先这么定", "就按这个生成计划"].contains(command)
     }
 
     public mutating func addNarrative(_ text: String, at date: Date = Date()) throws {

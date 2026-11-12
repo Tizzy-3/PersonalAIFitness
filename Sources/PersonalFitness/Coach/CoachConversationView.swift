@@ -17,6 +17,7 @@ struct CoachConversationView: View {
     @State private var issue: String?
     @State private var sending = false
     @State private var showingProfile = false
+    @State private var showingInterview = false
     @State private var showingSettings = false
     @State private var infoHint: String?
     @State private var needsConstraintReview = false
@@ -28,10 +29,25 @@ struct CoachConversationView: View {
 
     /// What the plan-generation step is doing, so the composer can say so instead of going quiet.
     private enum PlanState: Equatable {
-        case idle, interviewing, generating, ready(UUID), failed(String)
+        case idle, interviewing, generating, failed(String), planFailed(String)
     }
 
     private var conversation: [CoachConversationLine] { store.conversationLines }
+    private var isPlanning: Bool { planState == .interviewing || planState == .generating }
+
+    private func usableDraftID(in snapshot: AppSnapshot) -> UUID? {
+        guard let draft = store.planningDrafts.first(where: {
+            $0.personalization != nil && $0.decision == .pending && $0.matches(snapshot: snapshot)
+        }), let session = snapshot.interview,
+        session.planningEligibility(legacyRestrictions: snapshot.profile.restrictions, snapshot: snapshot).canGenerate
+        else { return nil }
+        return draft.id
+    }
+
+    private var usableDraftID: UUID? {
+        guard let snapshot = try? store.snapshot() else { return nil }
+        return usableDraftID(in: snapshot)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -56,8 +72,11 @@ struct CoachConversationView: View {
                 .accessibilityLabel("教练接口设置")
             }
         }
-        .sheet(isPresented: $showingProfile) {
+        .sheet(isPresented: $showingProfile, onDismiss: retryAfterReview) {
             NavigationStack { CoachProfileReviewView(store: store) }
+        }
+        .sheet(isPresented: $showingInterview, onDismiss: retryAfterReview) {
+            NavigationStack { CoachInterviewView(store: store) }
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack { AISettingsView() }
@@ -114,6 +133,9 @@ struct CoachConversationView: View {
                     }
                     if case .failed(let text) = planState {
                         failureNote(text)
+                    }
+                    if case .planFailed(let text) = planState {
+                        Text(text).font(.footnote).foregroundStyle(FitnessTheme.orange)
                     }
                     Color.clear.frame(height: 1).id("bottom")
                 }
@@ -273,15 +295,19 @@ struct CoachConversationView: View {
     // MARK: - Composer
 
     private var composer: some View {
-        VStack(spacing: 8) {
+        let draftID = usableDraftID
+        return VStack(spacing: 8) {
             if let infoHint {
                 Text(infoHint)
                     .font(.system(size: 12.5, design: .rounded))
                     .foregroundStyle(FitnessTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            if case .ready = planState {
-                Button { if case .ready(let id) = planState { pendingPlanDraftID = id } } label: {
+            if isPlanning {
+                Label(planState == .generating ? "正在生成一周计划…" : "正在核对生成计划所需的资料…", systemImage: "calendar")
+                    .font(.footnote)
+            } else if let draftID {
+                Button { pendingPlanDraftID = draftID } label: {
                     Label("看看这份计划", systemImage: "calendar.badge.checkmark")
                 }
                 .buttonStyle(FitnessPrimaryButtonStyle())
@@ -298,10 +324,16 @@ struct CoachConversationView: View {
                     Label("先核对训练限制", systemImage: "checkmark.shield")
                 }
                 .buttonStyle(FitnessPrimaryButtonStyle())
-            } else if store.currentWeeklyProgram != nil {
-                Button("重新制定一周计划") { Task { await offerPlanIfPossible() } }
-                    .font(.footnote)
-                    .disabled(sending || planState == .generating || planState == .interviewing)
+            } else if infoHint != nil {
+                Button("继续核对资料") { showingInterview = true }
+                    .buttonStyle(FitnessSecondaryButtonStyle())
+            }
+            if !isPlanning && draftID == nil && (store.interview != nil || store.currentWeeklyProgram != nil) {
+                Button(store.currentWeeklyProgram == nil ? "生成一周计划" : "重新制定一周计划") {
+                    Task { await offerPlanIfPossible() }
+                }
+                .font(.footnote)
+                .disabled(sending)
             }
             HStack(alignment: .bottom, spacing: 8) {
                 TextField("想跟教练说什么…", text: $input, axis: .vertical)
@@ -309,7 +341,7 @@ struct CoachConversationView: View {
                     .font(.system(size: 15, design: .rounded))
                     .padding(.horizontal, 14).padding(.vertical, 11)
                     .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(FitnessTheme.sunken))
-                    .disabled(sending)
+                    .disabled(sending || isPlanning)
                     .accessibilityLabel("给教练的消息")
                 Button { send(input) } label: {
                     Image(systemName: "arrow.up")
@@ -327,22 +359,25 @@ struct CoachConversationView: View {
     }
 
     private var canSend: Bool {
-        !sending && !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !sending && !isPlanning && !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - Sending
 
-    /// One send does both jobs: the coach answers, and once there is enough to plan, the plan is
-    /// drafted and offered. There is no separate "生成训练计划" button to find.
+    /// Explicit plan requests run the same draft flow as the button. Other messages remain in chat.
     private func send(_ raw: String) {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !sending else { return }
+        guard !text.isEmpty, !sending, !isPlanning else { return }
         input = ""
         sending = true
         planState = .idle
         Task {
             defer { sending = false }
             do {
+                if InterviewSession.isPlanRequest(text) {
+                    await offerPlanIfPossible()
+                    return
+                }
                 try await store.appendCoachConversationUser(text)
                 // A "don't feel like it" message gets a handled answer rather than being handed
                 // straight to the model, so encouragement is consistent and never becomes nagging.
@@ -354,7 +389,7 @@ struct CoachConversationView: View {
                 }
                 try await store.appendCoachConversationCoach(reply)
                 Haptics.tap()
-                if store.currentWeeklyProgram == nil || Self.requestsWeeklyReplan(text) {
+                if Self.requestsWeeklyReplan(text) || (store.currentWeeklyProgram == nil && usableDraftID == nil) {
                     await offerPlanIfPossible()
                 }
             } catch is CancellationError {
@@ -363,6 +398,11 @@ struct CoachConversationView: View {
                 planState = .failed(error.localizedDescription)
             }
         }
+    }
+
+    private func retryAfterReview() {
+        guard infoHint != nil, !sending, !isPlanning else { return }
+        Task { await offerPlanIfPossible() }
     }
 
     static func requestsWeeklyReplan(_ text: String) -> Bool {
@@ -402,39 +442,43 @@ struct CoachConversationView: View {
         }
     }
 
-    /// Drafts a plan when the coach has enough facts, and silently does nothing when it does not —
-    /// the conversation simply continues, which is what "聊完就生成" means in practice.
+    /// Opens an applicable saved draft or generates one from the reviewed profile.
     private func offerPlanIfPossible() async {
-        guard store.interview != nil else { return }
-        // The chat stores what the person said as narrative text; planning needs the structured
-        // profile. Extracting first is what makes "聊完就出计划" actually reachable — without it the
-        // profile never fills and this could only ever report missing facts.
-        let service = CoachConversationService()
-        // Local rules first: they never fail on format, so a chat-only endpoint can still fill the
-        // profile. The model-based pass is a best-effort addition for anything the rules missed.
-        _ = try? service.extractFactsLocally(store: store)
-        _ = try? await service.extractFacts(store: store)
-        guard let session = store.interview else { return }
-        let eligibility = (try? store.snapshot()).map {
-            session.planningEligibility(legacyRestrictions: $0.profile.restrictions, snapshot: $0)
-        }
-        guard eligibility?.canGenerate == true else {
-            // Not silent: say what is still missing, and offer the action that resolves it.
-            infoHint = eligibility?.message
-            needsConstraintReview = eligibility?.needsConstraintReview == true
-            return
-        }
-        needsConstraintReview = false
+        guard !isPlanning else { return }
+        planState = .interviewing
+        defer { if isPlanning { planState = .idle } }
         infoHint = nil
-        planState = .generating
+        needsConstraintReview = false
+        let service = CoachConversationService()
         do {
+            let snapshot = try store.snapshot()
+            if let draftID = usableDraftID(in: snapshot) {
+                pendingPlanDraftID = draftID
+                return
+            }
+            if store.interview == nil { _ = try store.startInterview() }
+            _ = try service.extractFactsLocally(store: store)
+            if let session = store.interview, !session.profile.isReadyForPlanning,
+               session.pendingInferences.isEmpty, session.canContinueInterview,
+               !(session.narratives ?? []).isEmpty {
+                do { _ = try await service.extractFacts(store: store) }
+                catch { infoHint = "暂时没能从聊天整理资料。\(error.localizedDescription)" }
+            }
+            let latest = try store.snapshot()
+            guard let session = store.interview else { return }
+            let eligibility = session.planningEligibility(legacyRestrictions: latest.profile.restrictions, snapshot: latest)
+            guard eligibility.canGenerate else {
+                infoHint = [infoHint, eligibility.message].compactMap { $0 }.joined(separator: "\n")
+                needsConstraintReview = eligibility.needsConstraintReview
+                return
+            }
+            infoHint = nil
+            planState = .generating
             let draftID = try await service.draftPlan(store: store)
-            planState = .ready(draftID)
             pendingPlanDraftID = draftID
             Haptics.sessionSaved()
         } catch {
-            // A failed draft must not look like a failed conversation.
-            planState = .failed("对话记下了，但这次没能整理成计划：" + error.localizedDescription)
+            planState = .planFailed("这次没能生成一周计划。" + error.localizedDescription)
         }
     }
 }

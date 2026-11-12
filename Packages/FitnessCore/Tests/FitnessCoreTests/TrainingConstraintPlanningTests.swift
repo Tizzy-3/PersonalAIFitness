@@ -37,6 +37,19 @@ final class TrainingConstraintPlanningTests: XCTestCase {
         XCTAssertThrowsError(try session.profile.planningInput(at: now))
     }
 
+    func testSavedPlanCommandsDoNotInvalidateReviewedLimitsButMixedRequestsDo() throws {
+        var session = try reviewed()
+        let later = now.addingTimeInterval(30)
+        try session.addNarrative("ok 先这么定", at: later)
+        try session.addNarrative("OK，生成计划！", at: later.addingTimeInterval(1))
+        XCTAssertFalse(session.needsSafetyReview)
+        XCTAssertTrue(session.planningEligibility(at: later.addingTimeInterval(1)).canGenerate)
+        XCTAssertFalse(InterviewSession.isPlanRequest("不要生成计划"))
+        let changed = later.addingTimeInterval(2)
+        try session.addNarrative("生成计划，今天膝盖有新的不适", at: changed)
+        XCTAssertTrue(session.planningEligibility(at: changed).needsConstraintReview)
+    }
+
     func testConfirmedPracticalBoundariesProduceARealPlanWithoutErasingOriginalText() throws {
         var boundaries = review()
         boundaries.excludedWeekdays = [3]
