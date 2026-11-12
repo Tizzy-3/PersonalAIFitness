@@ -131,6 +131,17 @@ jobs:
           xcrun simctl io "$device_id" screenshot "$PF_OUTPUT/native-history-large.png"
           xcrun simctl ui "$device_id" content_size large
 
+          xcrun simctl terminate "$device_id" com.personalfitness.private >/dev/null 2>&1 || true
+          xcrun simctl launch "$device_id" com.personalfitness.private --capture-preworkout
+          sleep 3
+          xcrun simctl io "$device_id" screenshot "$PF_OUTPUT/native-preworkout-validation.png"
+          xcrun simctl ui "$device_id" content_size accessibility-extra-extra-extra-large
+          xcrun simctl terminate "$device_id" com.personalfitness.private >/dev/null 2>&1 || true
+          xcrun simctl launch "$device_id" com.personalfitness.private --capture-preworkout
+          sleep 3
+          xcrun simctl io "$device_id" screenshot "$PF_OUTPUT/native-preworkout-large.png"
+          xcrun simctl ui "$device_id" content_size large
+
           for variant in male female; do
             xcrun simctl terminate "$device_id" com.personalfitness.private >/dev/null 2>&1 || true
             if [ "$variant" = female ]; then

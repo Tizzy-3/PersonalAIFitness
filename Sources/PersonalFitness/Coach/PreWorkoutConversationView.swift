@@ -25,9 +25,11 @@ struct PreWorkoutConversationView: View {
             VStack(alignment: .leading, spacing: 16) {
                 message("今天原定「\(plan.name)」。开始前先聊聊你现在的状态，我再看看今天需不需要调整。")
                 message("现在精力怎么样？")
-                HStack {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 48), spacing: 6)], alignment: .leading) {
                     ForEach(1...5, id: \.self) { value in
-                        Button("\(value)") { energy = value; proposal = nil }
+                        Button { energy = value; proposal = nil } label: {
+                            Text("\(value)").frame(maxWidth: .infinity)
+                        }
                             .buttonStyle(.borderedProminent)
                             .tint(energy == value ? FitnessTheme.accent : FitnessTheme.faint)
                     }
@@ -179,8 +181,8 @@ struct PreWorkoutConversationView: View {
             }
             _ = try store.acceptAdjustment(id: proposal.id)
             let session = try store.startWorkout(plan: plan)
-            dismiss()
             openWorkout(session.id)
+            dismiss()
         } catch { issue = error.localizedDescription }
     }
 }

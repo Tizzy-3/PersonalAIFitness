@@ -22,6 +22,7 @@ struct RootView: View {
     @State private var captureLibrary = false
     @State private var captureConstraintReview = false
     @State private var captureConstraintDraft = false
+    @State private var capturePreWorkout = false
 
     init(store: TrainingStore) {
         self.store = store
@@ -29,6 +30,7 @@ struct RootView: View {
         // CI captures actual empty-state screens, without adding fabricated user data.
         let arguments = ProcessInfo.processInfo.arguments
         _capturePlanner = State(initialValue: arguments.contains("--capture-planner"))
+        _capturePreWorkout = State(initialValue: arguments.contains("--capture-preworkout"))
         _captureInterview = State(initialValue: arguments.contains("--capture-interview"))
         if arguments.contains("--capture-constraint-interview") { _captureInterview = State(initialValue: true) }
         _captureConstraintReview = State(initialValue: arguments.contains("--capture-constraint-review") || arguments.contains("--capture-constraint-readback") || arguments.contains("--capture-constraint-deferred") || arguments.contains("--capture-constraint-deferred-readback") || arguments.contains("--capture-constraint-gentle-readback"))
@@ -78,6 +80,16 @@ struct RootView: View {
         .sheet(item: $planEditor) { route in NavigationStack { PlanEditorView(store: store, revising: route.plan) } }
         .sheet(isPresented: $settings) { NavigationStack { SettingsView(store: store) } }
         .sheet(isPresented: $capturePlanner) { NavigationStack { PlannerView(store: store) } }
+        .sheet(isPresented: $capturePreWorkout) {
+            if let plan = store.currentPlan {
+                NavigationStack {
+                    PreWorkoutConversationView(store: store, plan: plan, openWorkout: { _ in })
+                        .safeAreaInset(edge: .top) {
+                            Text("界面验证数据 · 隔离内存 · 不保存").font(.caption).foregroundStyle(FitnessTheme.orange).padding(8)
+                        }
+                }
+            }
+        }
         .sheet(isPresented: $captureInterview) {
             NavigationStack { CoachInterviewView(store: store).safeAreaInset(edge: .top) { validationLabel } }
         }

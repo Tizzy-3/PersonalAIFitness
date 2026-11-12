@@ -11,6 +11,7 @@ struct TodayView: View {
     @State private var issue: String?
     @State private var showingCheckIn = false
     @State private var showingPreWorkout = false
+    @State private var pendingWorkoutID: UUID?
     @Environment(\.dynamicTypeSize) private var typeSize
 
     private var teaching: Exercise? { store.allExercises.first { ExerciseDetails.details(for: $0.id)?.media != nil } }
@@ -63,9 +64,11 @@ struct TodayView: View {
         .sheet(isPresented: $showingCheckIn) {
             NavigationStack { CheckInView(store: store) }
         }
-        .sheet(isPresented: $showingPreWorkout) {
+        .sheet(isPresented: $showingPreWorkout, onDismiss: {
+            if let id = pendingWorkoutID { pendingWorkoutID = nil; openWorkout(id) }
+        }) {
             if let plan = store.scheduledPlan() {
-                NavigationStack { PreWorkoutConversationView(store: store, plan: plan, openWorkout: openWorkout) }
+                NavigationStack { PreWorkoutConversationView(store: store, plan: plan, openWorkout: { pendingWorkoutID = $0 }) }
             }
         }
         .onAppear { Haptics.prepare() }

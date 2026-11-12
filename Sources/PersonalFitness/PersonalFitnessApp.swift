@@ -29,6 +29,12 @@ struct PersonalFitnessApp: App {
             #if DEBUG
             if ConstraintValidationData.isActive {
                 _store = State(initialValue: try ConstraintValidationData.makeStore())
+            } else if ProcessInfo.processInfo.arguments.contains("--capture-preworkout") {
+                let isolated = try TrainingStore(inMemory: true)
+                if let exercise = isolated.allExercises.first(where: { $0.id == "builtin.bodyweight-squat" }) {
+                    _ = try isolated.confirmPlan(name: "界面验证 · 不保存", items: [.init(exercise: exercise)])
+                }
+                _store = State(initialValue: isolated)
             } else if ProcessInfo.processInfo.arguments.contains("--capture-workout") {
                 let isolated = try TrainingStore(inMemory: true)
                 if let exercise = isolated.allExercises.first(where: { $0.id == "builtin.barbell-bench-press" }) {

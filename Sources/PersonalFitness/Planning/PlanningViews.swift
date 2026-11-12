@@ -65,6 +65,7 @@ struct WeeklyProgramDetailView: View {
     var openWorkout: ((UUID) -> Void)? = nil
     @State private var workoutID: UUID?
     @State private var preWorkoutPlan: PlanVersion?
+    @State private var pendingWorkoutID: UUID?
     @State private var issue: String?
 
     private var program: WeeklyProgram? { store.weeklyPrograms.first { $0.id == programID } }
@@ -146,8 +147,10 @@ struct WeeklyProgramDetailView: View {
         }
         .navigationTitle("每周安排").navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $workoutID) { id in WorkoutView(store: store, sessionID: id) }
-        .sheet(item: $preWorkoutPlan) { plan in
-            NavigationStack { PreWorkoutConversationView(store: store, plan: plan, openWorkout: show) }
+        .sheet(item: $preWorkoutPlan, onDismiss: {
+            if let id = pendingWorkoutID { pendingWorkoutID = nil; show(id) }
+        }) { plan in
+            NavigationStack { PreWorkoutConversationView(store: store, plan: plan, openWorkout: { pendingWorkoutID = $0 }) }
         }
         .fitnessError($issue)
     }
