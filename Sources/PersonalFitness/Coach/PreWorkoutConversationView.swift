@@ -8,6 +8,7 @@ struct PreWorkoutConversationView: View {
     let plan: PlanVersion
     let openWorkout: (UUID) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var energy: Int?
     @State private var pain: Bool?
     @State private var soreness: Int?
@@ -25,7 +26,7 @@ struct PreWorkoutConversationView: View {
             VStack(alignment: .leading, spacing: 16) {
                 message("今天原定「\(plan.name)」。开始前先聊聊你现在的状态，我再看看今天需不需要调整。")
                 message("现在精力怎么样？")
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 48), spacing: 6)], alignment: .leading) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 120 : 48), spacing: 6)], alignment: .leading) {
                     ForEach(1...5, id: \.self) { value in
                         Button { energy = value; proposal = nil } label: {
                             Text("\(value)").frame(maxWidth: .infinity)
@@ -37,7 +38,7 @@ struct PreWorkoutConversationView: View {
                 Text("1 很疲惫 · 5 精力很好").font(.caption).foregroundStyle(.secondary)
                 if energy != nil {
                     message("今天肌肉酸痛明显吗？")
-                    HStack {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 280 : 140), spacing: 6)], alignment: .leading) {
                         Button("不明显") { soreness = 1; proposal = nil }.buttonStyle(.borderedProminent)
                             .tint(soreness == 1 ? FitnessTheme.accent : FitnessTheme.faint)
                         Button("比较明显") { soreness = 4; proposal = nil }.buttonStyle(.borderedProminent)
@@ -46,7 +47,7 @@ struct PreWorkoutConversationView: View {
                 }
                 if soreness != nil {
                     message("今天有没有疼痛或异常不适？")
-                    HStack {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 280 : 140), spacing: 6)], alignment: .leading) {
                         Button("没有") { pain = false; proposal = nil }.buttonStyle(.borderedProminent)
                             .tint(pain == false ? FitnessTheme.accent : FitnessTheme.faint)
                         Button("有") { pain = true; proposal = nil }.buttonStyle(.borderedProminent)
@@ -59,7 +60,7 @@ struct PreWorkoutConversationView: View {
                         .textFieldStyle(.roundedBorder)
                         .onChange(of: minutes) { _, _ in proposal = nil }
                     message("今天还有其他会影响训练的情况吗？比如刚做过治疗或有特别的活动限制。")
-                    HStack {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 280 : 140), spacing: 6)], alignment: .leading) {
                         Button("没有") { otherConcern = false; proposal = nil }.buttonStyle(.borderedProminent)
                             .tint(otherConcern == false ? FitnessTheme.accent : FitnessTheme.faint)
                             .disabled(!discussion.isEmpty || askingCoach)
