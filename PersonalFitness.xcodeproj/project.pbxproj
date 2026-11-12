@@ -192,6 +192,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "3B8A8D95424B1DC36838ABC4";
 		};
+		"9C78A1C1D103EB1B34B09033" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "PreWorkoutConversationView.swift";
+			"path" = "Sources/PersonalFitness/Coach/PreWorkoutConversationView.swift";
+			"sourceTree" = "<group>";
+		};
+		"8C4156CE933F448BBD1BD26F" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "9C78A1C1D103EB1B34B09033";
+		};
 		"CCD9858773133900BF8DA6C8" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -775,6 +786,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "62F75C8295352B5E91AEFD38";
 		};
+		"E59775C59AF46943FB33AFF9" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"name" = "CoachFlowTests.swift";
+			"path" = "Tests/PersonalFitnessTests/CoachFlowTests.swift";
+			"sourceTree" = "<group>";
+		};
+		"4C1E7346C073B6BF109B8A95" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "E59775C59AF46943FB33AFF9";
+		};
 		"4A09F25F2EB737D7C128AA3F" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -1152,6 +1174,7 @@
 				"35BE0DE60526646C911EC1F0",
 				"B2DA373B84965B524484BE60",
 				"CA0BDEFF90DED4CB37E05FDD",
+				"8C4156CE933F448BBD1BD26F",
 				"8540D9B6E60406553B2D341C",
 				"D1BAFBCA35A403583F0955E4",
 				"3ECA900445E5F9CD7AFE7EF5",
@@ -1212,6 +1235,7 @@
 				"24EF2F607B4CBA42AA098508",
 				"E8900A0362FD1684FBE02400",
 				"82BE56E004741CAA910E5BA8",
+				"4C1E7346C073B6BF109B8A95",
 				"6D31AD4620AE30142F597D7F",
 				"BE2FADC2043974DB0315DBCC",
 				"BC44CF2E19AA7881FCB03B5F",
@@ -1260,6 +1284,7 @@
 				"84B136824BA796785766C2AF",
 				"4A96A35B63BDBC5A711C8DBD",
 				"3B8A8D95424B1DC36838ABC4",
+				"9C78A1C1D103EB1B34B09033",
 				"CCD9858773133900BF8DA6C8",
 				"94BF881E98A75BAE8B75EC07",
 				"F1C5918A326D70C0EC713632",
@@ -1320,6 +1345,7 @@
 				"ACD5E2B0A808C7D8F548B5E9",
 				"96E27C20C247E2BD2972D5A6",
 				"62F75C8295352B5E91AEFD38",
+				"E59775C59AF46943FB33AFF9",
 				"4A09F25F2EB737D7C128AA3F",
 				"92ED4390573A1887A5E05B9D",
 				"0589385FE446254AEBE7870F",

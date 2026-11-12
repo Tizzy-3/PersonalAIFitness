@@ -29,6 +29,8 @@ struct CoachConversationService {
     不要输出 JSON、字段列表或 Markdown 标题。回答控制在三五句话内。
     涉及伤病、疼痛或医生限制时，不要给运动许可、不要诊断，请本人先确认或就医。
     不要声称已经改动计划；计划由本人单独确认后才生效。
+    先了解本人的健康、训练经验、目标、可用时间和器械，信息足够时安排一周七天的计划，具体动作由教练决定，不让本人编动作。每次只问当前缺少的重要情况，已经说过的不再重复问。
+    如果已有周计划，日常聊天应围绕该计划和当天状态，不要声称已经重新制定或修改；本人明确提出重新安排一周时才讨论重排。
     本人说不想练时，先问一句原因；如果是累或没时间，给一个更小的起步方案；如果说了疼，就让他休息。
     """
 
@@ -44,10 +46,14 @@ struct CoachConversationService {
         encoder.outputFormatting = [.sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         let contextJSON = String(decoding: try encoder.encode(context), as: UTF8.self)
+        let history = store.coachTurns.sorted { $0.createdAt < $1.createdAt }.suffix(8).flatMap { turn in
+            [CoachMessage(role: "user", content: turn.question), CoachMessage(role: "assistant", content: turn.reply.answer)]
+        }
+        let phase = store.currentWeeklyProgram == nil ? "尚无确认的周计划，了解足够情况后应制定整周。" : "已有确认的周计划，日常对话围绕已有安排，不要自行重排整周。"
         let content = try await client.complete(
             configuration: configuration, key: key,
-            messages: [CoachMessage(role: "system", content: Self.conversationSystemPrompt),
-                       CoachMessage(role: "user", content: "资料：\(contextJSON)\n\n本人说：\(question)")],
+            messages: [CoachMessage(role: "system", content: Self.conversationSystemPrompt + "\n当前阶段：\(phase)\n资料：\(contextJSON)")] + history +
+                      [CoachMessage(role: "user", content: question)],
             outputFormat: .text)
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw CoachClientError.invalidResponse }

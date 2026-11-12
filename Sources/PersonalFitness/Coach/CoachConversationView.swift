@@ -141,7 +141,7 @@ struct CoachConversationView: View {
                     .foregroundStyle(FitnessTheme.ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Text("直接说你今天想怎么练、身体哪里不舒服、或者让我安排。聊够了我会给出计划，你确认后才生效。")
+            Text("先告诉我你的目标、身体情况和训练条件。我会安排一周的训练，确认后生效；每天开练前再看看当天状态。")
                 .font(.system(size: 12.5, design: .rounded))
                 .foregroundStyle(FitnessTheme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -197,7 +197,7 @@ struct CoachConversationView: View {
     }
 
     private var greetingLine: String {
-        if store.currentWeeklyProgram != nil { return "今天想练点什么？" }
+        if store.currentWeeklyProgram != nil { return "我们按一周的安排来，有什么变化随时告诉我。" }
         return "先跟我说说你的情况，我来安排。"
     }
 
@@ -298,6 +298,10 @@ struct CoachConversationView: View {
                     Label("先核对训练限制", systemImage: "checkmark.shield")
                 }
                 .buttonStyle(FitnessPrimaryButtonStyle())
+            } else if store.currentWeeklyProgram != nil {
+                Button("重新制定一周计划") { Task { await offerPlanIfPossible() } }
+                    .font(.footnote)
+                    .disabled(sending || planState == .generating || planState == .interviewing)
             }
             HStack(alignment: .bottom, spacing: 8) {
                 TextField("想跟教练说什么…", text: $input, axis: .vertical)
@@ -350,13 +354,21 @@ struct CoachConversationView: View {
                 }
                 try await store.appendCoachConversationCoach(reply)
                 Haptics.tap()
-                await offerPlanIfPossible()
+                if store.currentWeeklyProgram == nil || Self.requestsWeeklyReplan(text) {
+                    await offerPlanIfPossible()
+                }
             } catch is CancellationError {
                 // Nothing to say: the person cancelled.
             } catch {
                 planState = .failed(error.localizedDescription)
             }
         }
+    }
+
+    static func requestsWeeklyReplan(_ text: String) -> Bool {
+        let period = ["一周", "整周", "周计划", "每周"].contains(where: text.contains)
+        let change = ["重新", "重排", "调整", "修改", "换", "制定"].contains(where: text.contains)
+        return period && change
     }
 
     /// Recognises a "I don't want to train" message and answers it locally.

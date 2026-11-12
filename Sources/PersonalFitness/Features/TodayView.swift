@@ -10,6 +10,7 @@ struct TodayView: View {
     let openCoach: () -> Void
     @State private var issue: String?
     @State private var showingCheckIn = false
+    @State private var showingPreWorkout = false
     @Environment(\.dynamicTypeSize) private var typeSize
 
     private var teaching: Exercise? { store.allExercises.first { ExerciseDetails.details(for: $0.id)?.media != nil } }
@@ -61,6 +62,11 @@ struct TodayView: View {
         .background(FitnessTheme.canvas).navigationTitle("").navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingCheckIn) {
             NavigationStack { CheckInView(store: store) }
+        }
+        .sheet(isPresented: $showingPreWorkout) {
+            if let plan = store.scheduledPlan() {
+                NavigationStack { PreWorkoutConversationView(store: store, plan: plan, openWorkout: openWorkout) }
+            }
         }
         .onAppear { Haptics.prepare() }
         .toolbar {
@@ -249,7 +255,10 @@ struct TodayView: View {
                     NavigationLink("先记录今天的身体状态") { CheckInView(store: store) }
                         .font(.callout)
                 }
-                Button("开始今天的训练") { start(plan) }.buttonStyle(FitnessPrimaryButtonStyle())
+                Button(store.currentWeeklyProgram == nil ? "开始今天的训练" : "开练前和教练聊聊") {
+                    if store.currentWeeklyProgram == nil { start(plan) }
+                    else { showingPreWorkout = true }
+                }.buttonStyle(FitnessPrimaryButtonStyle())
                 if store.canProposeReduction(for: plan) {
                     NavigationLink { AdjustmentReviewView(store: store, proposeOnOpen: true) } label: {
                         Text("今天少一点（看方案）")

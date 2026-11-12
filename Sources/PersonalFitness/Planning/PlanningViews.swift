@@ -64,6 +64,7 @@ struct WeeklyProgramDetailView: View {
     let programID: UUID
     var openWorkout: ((UUID) -> Void)? = nil
     @State private var workoutID: UUID?
+    @State private var preWorkoutPlan: PlanVersion?
     @State private var issue: String?
 
     private var program: WeeklyProgram? { store.weeklyPrograms.first { $0.id == programID } }
@@ -112,8 +113,8 @@ struct WeeklyProgramDetailView: View {
                             .font(.footnote).foregroundStyle(.secondary)
                         NavigationLink("记录今天的身体状态") { CheckInView(store: store) }
                         Button("开始这天的活动", systemImage: "play.fill") {
-                            do { show(try store.startWorkout(plan: temporary).id) }
-                            catch { issue = error.localizedDescription }
+                            if store.scheduledPlan()?.id == temporary.id { preWorkoutPlan = temporary }
+                            else { issue = "这份活动只适用于已确认的日期。" }
                         }.disabled(store.activeSession != nil)
                     }
                 }
@@ -145,6 +146,9 @@ struct WeeklyProgramDetailView: View {
         }
         .navigationTitle("每周安排").navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $workoutID) { id in WorkoutView(store: store, sessionID: id) }
+        .sheet(item: $preWorkoutPlan) { plan in
+            NavigationStack { PreWorkoutConversationView(store: store, plan: plan, openWorkout: show) }
+        }
         .fitnessError($issue)
     }
 
@@ -153,7 +157,8 @@ struct WeeklyProgramDetailView: View {
             guard let id = program.dayPlanVersionIDs[day.weekday], let plan = store.planVersions.first(where: { $0.id == id }) else {
                 throw CoreError.notFound("这天的训练计划")
             }
-            show(try store.startWorkout(plan: plan).id)
+            if store.scheduledPlan()?.id == plan.id { preWorkoutPlan = plan }
+            else { show(try store.startWorkout(plan: plan).id) }
         } catch { issue = error.localizedDescription }
     }
 
