@@ -56,7 +56,8 @@ extension TrainingStore {
     /// True when the stored proposal no longer matches today's facts, so the card can say so instead
     /// of offering a change that confirmation would immediately refuse.
     func isAdjustmentStale(_ proposal: AdjustmentProposal, now: Date = Date()) -> Bool {
-        guard let current = try? adjustmentFingerprint(now: now) else { return true }
+        let selected = proposal.basePlanVersionID.flatMap { id in planVersions.first { $0.id == id } }
+        guard let current = try? adjustmentFingerprint(now: now, selectedPlan: selected) else { return true }
         return AdjustmentEngine.isStale(proposal, currently: current, now: now)
     }
 

@@ -167,18 +167,34 @@ extension TrainingStore {
 
     // MARK: - Adjustments
 
-    func adjustmentFingerprint(readiness: ReadinessAssessment? = nil, now: Date = Date()) throws -> AdjustmentFingerprint {
+    func canDiscussBeforeWorkout(_ plan: PlanVersion, at date: Date = Date()) -> Bool {
+        guard planVersions.contains(plan), !deletedPlanIDs.contains(plan.planID) else { return false }
+        if scheduledPlan(on: date)?.id == plan.id { return true }
+        guard let program = visibleWeeklyPrograms.first(where: { $0.dayPlanVersionIDs.values.contains(plan.id) }),
+              program.draft.input.constraintReview?.isRestDate(date, calendar: .current) != true,
+              program.temporaryPlanVersionIDs?[TrainingConstraintReview.dateKey(date)] == nil else { return false }
+        return true
+    }
+
+    func adjustmentFingerprint(readiness: ReadinessAssessment? = nil, now: Date = Date(),
+                               selectedPlan: PlanVersion? = nil) throws -> AdjustmentFingerprint {
         let assessment = try readiness ?? currentReadiness(now: now)
-        var fingerprint = AdjustmentEngine.fingerprint(planVersionID: scheduledPlan(on: now)?.id, sessions: sessions,
+        if let selectedPlan, !canDiscussBeforeWorkout(selectedPlan, at: now) {
+            throw CoreError.invalidState("这份训练安排已变化，请重新选择。")
+        }
+        var fingerprint = AdjustmentEngine.fingerprint(planVersionID: selectedPlan?.id ?? scheduledPlan(on: now)?.id, sessions: sessions,
                                      checkIn: todaysCheckIn(now: now), health: healthSnapshot,
                                      profile: interview?.profile ?? StructuredProfile(),
                                      readiness: assessment, sessionFeedback: sessionFeedbackRecords)
         struct ProfileInputs: Encodable {
             let structured: StructuredProfile
             let manual: PersonalProfile
+            let activeWeeklyProgramID: UUID?
+            let activePlanVersionID: UUID?
         }
         fingerprint.profileDigest = AdjustmentFingerprint.contentDigest(
-            ProfileInputs(structured: interview?.profile ?? StructuredProfile(), manual: profile))
+            ProfileInputs(structured: interview?.profile ?? StructuredProfile(), manual: profile,
+                          activeWeeklyProgramID: activeWeeklyProgramID, activePlanVersionID: activePlanVersionID))
         return fingerprint
     }
 
@@ -190,7 +206,8 @@ extension TrainingStore {
 
     /// Proposes the conservative adjustment the rules allow right now and stores it as pending.
     @discardableResult
-    func proposeAdjustment(readiness: ReadinessAssessment, at date: Date = Date()) throws -> AdjustmentProposal {
+    func proposeAdjustment(readiness: ReadinessAssessment, at date: Date = Date(),
+                           selectedPlan: PlanVersion? = nil) throws -> AdjustmentProposal {
         guard activeSession == nil else { throw StorageError.activeSessionExists }
         guard latestReadiness == readiness, Calendar.current.isDate(readiness.createdAt, inSameDayAs: date),
               readiness.createdAt <= date.addingTimeInterval(300) else {
@@ -201,8 +218,8 @@ extension TrainingStore {
         guard fresh == readiness else {
             throw CoreError.invalidState("状态评估的依据已变化，请重新评估后再生成建议。")
         }
-        let fingerprint = try adjustmentFingerprint(readiness: readiness, now: date)
-        let proposal = try AdjustmentEngine.proposeForToday(readiness: readiness, basePlan: scheduledPlan(on: date),
+        let fingerprint = try adjustmentFingerprint(readiness: readiness, now: date, selectedPlan: selectedPlan)
+        let proposal = try AdjustmentEngine.proposeForToday(readiness: readiness, basePlan: selectedPlan ?? scheduledPlan(on: date),
                                                            fingerprint: fingerprint, createdAt: date,
                                                            availableMinutes: todaysCheckIn(now: date)?.availableMinutes)
         var updated = adjustments
@@ -220,9 +237,10 @@ extension TrainingStore {
     /// A confirmed, one-session gentle alternative. It never changes the weekly program.
     @discardableResult
     func proposeGentleToday(lightActivityConfirmed: Bool, limitsCompleteConfirmed: Bool,
-                            at date: Date = Date()) throws -> AdjustmentProposal {
+                            at date: Date = Date(), selectedPlan: PlanVersion? = nil) throws -> AdjustmentProposal {
         guard lightActivityConfirmed, limitsCompleteConfirmed,
-              activeSession == nil, let plan = scheduledPlan(on: date),
+              activeSession == nil, let plan = selectedPlan ?? scheduledPlan(on: date),
+              canDiscussBeforeWorkout(plan, at: date),
               let checkIn = todaysCheckIn(now: date), checkIn.painReported == false,
               !checkIn.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let interview, !interview.needsSafetyReview,
@@ -249,7 +267,7 @@ extension TrainingStore {
             throw CoreError.missingReference("轻松活动")
         }
         let readiness = try refreshReadiness(now: date)
-        let fingerprint = try adjustmentFingerprint(readiness: readiness, now: date)
+        let fingerprint = try adjustmentFingerprint(readiness: readiness, now: date, selectedPlan: plan)
         let planned = PlannedExercise(exercise: exercise, setCount: 1, targetReps: nil,
                                       targetSeconds: item.targetSeconds, restSeconds: 0)
         let proposal = AdjustmentProposal(createdAt: date, kind: .todayOnly, basePlanVersionID: plan.id,
@@ -279,7 +297,8 @@ extension TrainingStore {
         }
         let proposal = adjustments[index]
         guard activeSession == nil else { throw StorageError.activeSessionExists }
-        let current = try adjustmentFingerprint(now: date)
+        let selected = proposal.basePlanVersionID.flatMap { id in planVersions.first { $0.id == id } }
+        let current = try adjustmentFingerprint(now: date, selectedPlan: selected)
         guard !AdjustmentEngine.isStale(proposal, currently: current, now: date) else {
             throw CoreError.invalidState("这段时间的记录已经变化，请重新生成建议后再确认。")
         }

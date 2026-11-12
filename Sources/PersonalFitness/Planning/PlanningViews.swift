@@ -160,8 +160,10 @@ struct WeeklyProgramDetailView: View {
             guard let id = program.dayPlanVersionIDs[day.weekday], let plan = store.planVersions.first(where: { $0.id == id }) else {
                 throw CoreError.notFound("这天的训练计划")
             }
-            if store.scheduledPlan()?.id == plan.id { preWorkoutPlan = plan }
-            else { show(try store.startWorkout(plan: plan).id) }
+            guard store.canDiscussBeforeWorkout(plan) else {
+                throw CoreError.invalidState("今天的训练安排或注意事项已变化，请先核对。")
+            }
+            preWorkoutPlan = plan
         } catch { issue = error.localizedDescription }
     }
 

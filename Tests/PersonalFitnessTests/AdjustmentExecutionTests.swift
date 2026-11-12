@@ -4,6 +4,55 @@ import FitnessCore
 
 final class AdjustmentExecutionTests: XCTestCase {
     @MainActor
+    func testExplicitlySelectedOtherWeekdayGetsItsOwnOneSessionAdjustment() throws {
+        let store = try TrainingStore(inMemory: true)
+        let today = ((Calendar.current.component(.weekday, from: Date()) + 5) % 7) + 1
+        let selectedWeekday = today % 7 + 1
+        let input = PlanningInput(goal: .generalFitness, experience: .beginner, weekdays: [selectedWeekday],
+            minutesPerSession: 30, equipment: [.bodyweight], adultConfirmed: true,
+            safety: .noKnownRestrictions, painToday: false)
+        let draft = try PlanningDraft.make(input: input, snapshot: store.snapshot())
+        try store.savePlanningDraft(draft)
+        let program = try store.confirmWeeklyProgram(draftID: draft.id, optionID: XCTUnwrap(draft.options.first).id)
+        let selectedID = try XCTUnwrap(program.dayPlanVersionIDs[selectedWeekday])
+        let plan = try XCTUnwrap(store.planVersions.first { $0.id == selectedID })
+        let now = Date()
+        XCTAssertNil(store.scheduledPlan(on: now))
+        XCTAssertTrue(store.canDiscussBeforeWorkout(plan, at: now))
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: now, energy: 1, painReported: false))
+        let readiness = try store.refreshReadiness(now: now)
+        let proposal = try store.proposeAdjustment(readiness: readiness, at: now, selectedPlan: plan)
+        XCTAssertEqual(proposal.kind, .todayOnly)
+        try store.acceptAdjustment(id: proposal.id, at: now)
+        let session = try store.startWorkout(plan: plan, at: now)
+        XCTAssertEqual(session.exercises.map { $0.sets.count }, proposal.todayItems?.map(\.setCount))
+        XCTAssertEqual(store.currentWeeklyProgram?.id, program.id)
+        XCTAssertEqual(store.planVersions.first { $0.id == plan.id }, plan)
+    }
+
+    @MainActor
+    func testDeletingSelectedWeekInvalidatesItsPendingAdjustment() throws {
+        let store = try TrainingStore(inMemory: true)
+        let today = ((Calendar.current.component(.weekday, from: Date()) + 5) % 7) + 1
+        let selectedWeekday = today % 7 + 1
+        let input = PlanningInput(goal: .generalFitness, experience: .beginner, weekdays: [selectedWeekday],
+            minutesPerSession: 30, equipment: [.bodyweight], adultConfirmed: true,
+            safety: .noKnownRestrictions, painToday: false)
+        let draft = try PlanningDraft.make(input: input, snapshot: store.snapshot())
+        try store.savePlanningDraft(draft)
+        let program = try store.confirmWeeklyProgram(draftID: draft.id, optionID: XCTUnwrap(draft.options.first).id)
+        let selectedID = try XCTUnwrap(program.dayPlanVersionIDs[selectedWeekday])
+        let plan = try XCTUnwrap(store.planVersions.first { $0.id == selectedID })
+        let now = Date()
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: now, energy: 1, painReported: false))
+        let readiness = try store.refreshReadiness(now: now)
+        let proposal = try store.proposeAdjustment(readiness: readiness, at: now, selectedPlan: plan)
+        try store.deleteWeeklyProgram(id: program.id)
+        XCTAssertFalse(store.canDiscussBeforeWorkout(plan, at: now))
+        XCTAssertThrowsError(try store.acceptAdjustment(id: proposal.id, at: now))
+    }
+
+    @MainActor
     func testGentleAlternativeChangesOnlyOneExecutionAfterConfirmation() throws {
         let store = try TrainingStore(inMemory: true)
         let profileDate = Date()

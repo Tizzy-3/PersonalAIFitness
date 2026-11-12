@@ -127,7 +127,7 @@ struct PreWorkoutConversationView: View {
     private func assess() {
         do {
             guard let energy, let soreness, let pain, otherConcern == false,
-                  store.scheduledPlan()?.id == plan.id else {
+                  store.canDiscussBeforeWorkout(plan) else {
                 throw CoreError.invalidState("今天的安排已经变化，请返回后重新开始。")
             }
             let available = try UIInput.integer(minutes, label: "可用分钟数")
@@ -135,7 +135,7 @@ struct PreWorkoutConversationView: View {
                                                     painReported: pain, availableMinutes: available))
             let assessment = try store.refreshReadiness()
             verdict = assessment.verdict
-            proposal = try store.proposeAdjustment(readiness: assessment)
+            proposal = try store.proposeAdjustment(readiness: assessment, selectedPlan: plan)
         } catch { issue = error.localizedDescription }
     }
 
@@ -165,21 +165,21 @@ struct PreWorkoutConversationView: View {
 
     private func suggestGentleActivity() {
         do {
-            guard let energy, let soreness, pain == false, store.scheduledPlan()?.id == plan.id else {
+            guard let energy, let soreness, pain == false, store.canDiscussBeforeWorkout(plan) else {
                 throw CoreError.invalidState("今天的安排已经变化，请返回后重新开始。")
             }
             let statements = discussion.filter { $0.role == "user" }.map(\.content).joined(separator: "\n")
             let available = try UIInput.integer(minutes, label: "可用分钟数")
             try store.saveCheckIn(PreWorkoutCheckIn(energy: energy, sorenessLevel: soreness,
                 painReported: false, availableMinutes: available, note: statements))
-            proposal = try store.proposeGentleToday(lightActivityConfirmed: true, limitsCompleteConfirmed: true)
+            proposal = try store.proposeGentleToday(lightActivityConfirmed: true, limitsCompleteConfirmed: true, selectedPlan: plan)
             verdict = .conservative
         } catch { issue = error.localizedDescription }
     }
 
     private func acceptAndStart() {
         do {
-            guard let proposal, store.scheduledPlan()?.id == plan.id else {
+            guard let proposal, store.canDiscussBeforeWorkout(plan) else {
                 throw CoreError.invalidState("今天的安排已经变化，请返回后重新开始。")
             }
             _ = try store.acceptAdjustment(id: proposal.id)

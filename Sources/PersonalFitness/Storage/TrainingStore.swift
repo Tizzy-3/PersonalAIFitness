@@ -254,8 +254,8 @@ final class TrainingStore {
                 }
             }
             var executionPlan = plan
-            if scheduledPlan(on: date)?.id == plan.id {
-                let current = try adjustmentFingerprint(now: date)
+            if canDiscussBeforeWorkout(plan, at: date) {
+                let current = try adjustmentFingerprint(now: date, selectedPlan: plan)
                 consuming = adjustments.indices.first { index in
                     let proposal = adjustments[index]
                     return proposal.kind == .todayOnly && proposal.decision == .accepted
