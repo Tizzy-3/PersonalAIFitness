@@ -366,6 +366,7 @@ struct CoachConversationView: View {
     }
 
     static func requestsWeeklyReplan(_ text: String) -> Bool {
+        guard !["不要", "不想", "不用", "别", "无需", "不需要", "保持"].contains(where: text.contains) else { return false }
         let period = ["一周", "整周", "周计划", "每周"].contains(where: text.contains)
         let change = ["重新", "重排", "调整", "修改", "换", "制定"].contains(where: text.contains)
         return period && change

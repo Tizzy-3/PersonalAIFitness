@@ -81,9 +81,9 @@ struct PreWorkoutConversationView: View {
                         .disabled(askingCoach || concernText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .buttonStyle(FitnessPrimaryButtonStyle())
                     if !discussion.isEmpty {
-                        Text("如果你确认今天可以轻松活动，且已说清所有已知限制，我会为今天安排一个轻松的方案，再请你确认。")
+                        Text("如果你现在没有疼痛或异常不适，按已知医嘱可以轻松活动，且已说清所有已知限制，我会安排一个轻松的方案，再请你确认。")
                             .font(.footnote).foregroundStyle(.secondary)
-                        Button("可以轻松活动，已说明限制", action: suggestGentleActivity)
+                        Button("现在没有不适，可以轻松活动，已说明限制", action: suggestGentleActivity)
                             .disabled(askingCoach || pain != false || !concernText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                             .buttonStyle(.bordered)
                     }
