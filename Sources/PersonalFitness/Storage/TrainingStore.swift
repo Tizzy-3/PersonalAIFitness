@@ -272,8 +272,10 @@ final class TrainingStore {
            let program = weeklyPrograms.first(where: { $0.dayPlanVersionIDs.values.contains(id) }),
            let weekday = program.dayPlanVersionIDs.first(where: { $0.value == id })?.key,
            let day = program.selectedOption?.days.first(where: { $0.weekday == weekday }) {
-            for index in session.exercises.indices where day.items.indices.contains(index) {
-                session.exercises[index].note = day.items[index].notes.joined(separator: "\n")
+            for index in session.exercises.indices {
+                if let item = day.items.first(where: { $0.exerciseID == session.exercises[index].exercise.id }) {
+                    session.exercises[index].note = item.notes.joined(separator: "\n")
+                }
             }
         }
         try validateExercises(session.exercises.map(\.exercise))

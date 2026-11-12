@@ -217,6 +217,58 @@ extension TrainingStore {
         return proposal
     }
 
+    /// A confirmed, one-session gentle alternative. It never changes the weekly program.
+    @discardableResult
+    func proposeGentleToday(lightActivityConfirmed: Bool, limitsCompleteConfirmed: Bool,
+                            at date: Date = Date()) throws -> AdjustmentProposal {
+        guard lightActivityConfirmed, limitsCompleteConfirmed,
+              activeSession == nil, let plan = scheduledPlan(on: date),
+              let checkIn = todaysCheckIn(now: date), checkIn.painReported == false,
+              !checkIn.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let interview, !interview.needsSafetyReview,
+              interview.profile.equipment.isUsable, let equipment = interview.profile.equipment.value,
+              interview.profile.restrictions.isUsable, let restriction = interview.profile.restrictions.value else {
+            throw CoreError.invalidState("请先确认今天的情况、没有疼痛或异常不适，以及可以轻松活动；已有训练限制也需要先核对。")
+        }
+        let review = interview.profile.constraintReview
+        if !TrainingConstraintReview.isNoRestrictionText(restriction, allowingEmpty: false)
+            || !TrainingConstraintReview.isNoRestrictionText(profile.restrictions, allowingEmpty: true) {
+            guard let review, review.sourceText == restriction,
+                  review.legacySourceText == profile.restrictions else {
+                throw CoreError.invalidState("已有训练注意事项需要先核对，不能猜测哪些活动适合。")
+            }
+            try review.validate()
+        }
+        let excluded = (interview.profile.excludedExerciseIDs.isUsable ? interview.profile.excludedExerciseIDs.value : nil) ?? []
+        let activity = TemporaryActivityConstraint(dateKey: TrainingConstraintReview.dateKey(date),
+                                                   lightActivityAllowed: true, hasConcerningSymptoms: false)
+        let item = try GentleDayPlanner.suggestedActivity(for: activity, equipment: Set(equipment),
+            excludedExerciseIDs: excluded + (review?.effectiveExcludedExerciseIDs ?? []),
+            allowedExerciseIDs: review?.allowedExerciseIDs)
+        guard let exercise = ExerciseCatalog.exercise(id: item.exerciseID) else {
+            throw CoreError.missingReference("轻松活动")
+        }
+        let readiness = try refreshReadiness(now: date)
+        let fingerprint = try adjustmentFingerprint(readiness: readiness, now: date)
+        let planned = PlannedExercise(exercise: exercise, setCount: 1, targetReps: nil,
+                                      targetSeconds: item.targetSeconds, restSeconds: 0)
+        let proposal = AdjustmentProposal(createdAt: date, kind: .todayOnly, basePlanVersionID: plan.id,
+            reason: "根据你刚才说的情况，以及本人确认可以轻松活动、没有遗漏的已知限制。",
+            evidenceIDs: readiness.evidence.map(\.id),
+            summary: "今天改为 5 分钟轻松活动，只用于这一次；感觉不适就停止。其他日期不变。",
+            todayItems: [planned], basedOn: fingerprint)
+        var updated = adjustments
+        updated.removeAll { $0.decision == .pending }
+        updated.insert(proposal, at: 0)
+        var candidate = try snapshot()
+        candidate.adjustments = updated
+        try candidate.validate()
+        let data = try RecordCodec.encode(updated)
+        try write { metadata.adjustmentsData = data; metadata.revision += 1 }
+        adjustments = updated.sorted { $0.createdAt > $1.createdAt }
+        return proposal
+    }
+
     /// Accepts a pending proposal. A `todayOnly` change never alters the long-term plan; a long-term
     /// change creates a new plan version through the normal confirmation path.
     @discardableResult

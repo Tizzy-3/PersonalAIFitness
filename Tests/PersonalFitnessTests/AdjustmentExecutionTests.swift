@@ -4,6 +4,52 @@ import FitnessCore
 
 final class AdjustmentExecutionTests: XCTestCase {
     @MainActor
+    func testGentleAlternativeChangesOnlyOneExecutionAfterConfirmation() throws {
+        let store = try TrainingStore(inMemory: true)
+        let profileDate = Date()
+        var interview = try store.startInterview(at: profileDate)
+        interview.profile.equipment = ProfileField(value: [.walkingSpace], provenance: .stated, confirmedAt: profileDate)
+        interview.profile.restrictions = ProfileField(value: "无已知限制", provenance: .stated, confirmedAt: profileDate)
+        try store.saveInterview(interview)
+        let exercise = try XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.bodyweight-squat"))
+        let plan = try store.confirmPlan(name: "原训练", items: [PlannedExercise(exercise: exercise, setCount: 3)])
+        let now = Date()
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: now, energy: 3, painReported: false,
+                                                note: "今天不适合剧烈训练"))
+        XCTAssertThrowsError(try store.proposeGentleToday(lightActivityConfirmed: false, limitsCompleteConfirmed: true, at: now))
+        XCTAssertThrowsError(try store.proposeGentleToday(lightActivityConfirmed: true, limitsCompleteConfirmed: false, at: now))
+        let proposal = try store.proposeGentleToday(lightActivityConfirmed: true, limitsCompleteConfirmed: true, at: now)
+        XCTAssertEqual(proposal.todayItems?.first?.exercise.id, "builtin.walking")
+        XCTAssertEqual(proposal.todayItems?.first?.targetSeconds, 300)
+        XCTAssertEqual(store.currentPlan, plan)
+        try store.acceptAdjustment(id: proposal.id, at: now)
+        let session = try store.startWorkout(plan: plan, at: now)
+        XCTAssertEqual(session.exercises.first?.exercise.id, "builtin.walking")
+        XCTAssertEqual(store.currentPlan, plan)
+        XCTAssertEqual(store.adjustments.first { $0.id == proposal.id }?.appliedSessionID, session.id)
+    }
+
+    @MainActor
+    func testGentleAlternativeRejectsPainAndNewCheckInInvalidatesProposal() throws {
+        let store = try TrainingStore(inMemory: true)
+        let profileDate = Date()
+        var interview = try store.startInterview(at: profileDate)
+        interview.profile.equipment = ProfileField(value: [.walkingSpace], provenance: .stated, confirmedAt: profileDate)
+        interview.profile.restrictions = ProfileField(value: "无已知限制", provenance: .stated, confirmedAt: profileDate)
+        try store.saveInterview(interview)
+        let exercise = try XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.bodyweight-squat"))
+        _ = try store.confirmPlan(name: "原训练", items: [PlannedExercise(exercise: exercise)])
+        let now = Date()
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: now, energy: 3, painReported: true, note: "今天不适"))
+        XCTAssertThrowsError(try store.proposeGentleToday(lightActivityConfirmed: true, limitsCompleteConfirmed: true, at: now))
+        let later = now.addingTimeInterval(1)
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: later, energy: 3, painReported: false, note: "今天想轻一点"))
+        let proposal = try store.proposeGentleToday(lightActivityConfirmed: true, limitsCompleteConfirmed: true, at: later)
+        try store.saveCheckIn(PreWorkoutCheckIn(createdAt: later.addingTimeInterval(1), energy: 1, painReported: true, note: "情况变了"))
+        XCTAssertThrowsError(try store.acceptAdjustment(id: proposal.id, at: later.addingTimeInterval(2)))
+    }
+
+    @MainActor
     private func fixture() throws -> (TrainingStore, PlanVersion, AdjustmentProposal, Date) {
         let store = try TrainingStore(inMemory: true)
         let exercise = try XCTUnwrap(ExerciseCatalog.exercise(id: "builtin.bodyweight-squat"))
