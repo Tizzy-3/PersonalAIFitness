@@ -117,7 +117,8 @@ struct PreWorkoutConversationView: View {
     }
 
     private func message(_ text: String) -> some View {
-        Text(text).frame(maxWidth: .infinity, alignment: .leading)
+        CoachMessageText(text: text, size: 15, color: FitnessTheme.ink)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14).background(FitnessTheme.surface, in: RoundedRectangle(cornerRadius: 16))
     }
 
