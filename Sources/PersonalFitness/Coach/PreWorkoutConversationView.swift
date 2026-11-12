@@ -25,7 +25,8 @@ struct PreWorkoutConversationView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                message("今天原定「\(plan.name)」。开始前先聊聊你现在的状态，我再看看今天需不需要调整。")
+                message((store.scheduledPlan()?.id == plan.id ? "今天原定" : "你选择了")
+                        + "「\(plan.name)」。开始前先聊聊你现在的状态，我再看看今天需不需要调整。")
                 message("现在精力怎么样？")
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 120 : 48), spacing: 6)], alignment: .leading) {
                     ForEach(1...5, id: \.self) { value in
