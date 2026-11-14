@@ -46,7 +46,8 @@ extension PlannerEngine {
             return first
         }
 
-        let strength = strengthWeekdays(input: input)
+        let hasCardio = pool[Pattern.cardio.rawValue] != nil
+        let strength = strengthWeekdays(input: input, hasCardio: hasCardio)
         let limits = input.minutesPerSession
         var days: [PlanningDay] = []
         for weekday in 1...7 {
@@ -67,7 +68,7 @@ extension PlannerEngine {
                                         estimatedMinutesUpper: estimate.upper,
                                         notes: ["先用轻重量或容易控制的变式校准，保留余力，不追求力竭。",
                                                 "估时含热身、所有规定休息、换动作与缓和；如实际超时，结束并保留记录。"]))
-            } else {
+            } else if hasCardio {
                 let id = try pick(.cardio)
                 let minutes = min(input.experience == .regular ? 30 : 15, max(5, limits - 8))
                 var item = PlanningItem(exerciseID: id, setCount: 1, targetReps: nil,
@@ -88,15 +89,22 @@ extension PlannerEngine {
                                         estimatedMinutesUpper: estimate.upper,
                                         notes: ["选择可舒适交谈的强度，不用未知最大心率推算精确心率区间。",
                                                 "先从可承受的少量开始，不把成人活动指南当作第一周必须完成的配额。"]))
+            } else {
+                days.append(recoveryDay(weekday: weekday))
             }
         }
+        var limitations = ["这是第一版校准安排，不是长期周期化结果；每周按实际表现复核。",
+                           "未指定公斤数：能力未知时用轻重量或容易变式校准并记录实际结果。"]
+        if !hasCardio, strength.count < input.weekdays.count || input.goal == .endurance {
+            limitations.append(noCardioLimitation)
+        }
+        limitations += constraintLimitations(input: input)
         let option = WeeklyPlanOption(id: profileOptionID, title: "按你的情况组合",
                                       days: days,
                                       rationale: ["动作由 AI 在本地允许范围内选择，组数、休息和时间再由本地规则复核。",
                                                   "只使用你已确认的目标、经验、器械和时间；未知项没有补猜。",
                                                   "规则 \(rulesVersion)；目录 \(catalogVersion)；估时 \(timingVersion)。"],
-                                      limitations: ["这是第一版校准安排，不是长期周期化结果；每周按实际表现复核。",
-                                                    "未指定公斤数：能力未知时用轻重量或容易变式校准并记录实际结果。"] + constraintLimitations(input: input),
+                                      limitations: limitations,
                                       rulesVersion: rulesVersion)
         try validate(option: option, input: input)
         return option
@@ -105,20 +113,6 @@ extension PlannerEngine {
     /// Option id for a profile-fitted week. Kept separate from the template ids so stored plans
     /// remain distinguishable.
     public static let profileOptionID = "profile-fitted"
-
-    static func strengthWeekdays(input: PlanningInput) -> [Int] {
-        let desired: Int
-        switch input.goal {
-        case .endurance: desired = input.weekdays.count >= 4 ? 2 : input.weekdays.count >= 3 ? 1 : 0
-        case .fatLoss: desired = min(2, input.weekdays.count)
-        default: desired = min(3, input.weekdays.count)
-        }
-        var strength: [Int] = []
-        for weekday in input.weekdays where strength.count < desired {
-            if strength.allSatisfy({ cyclicDistance($0, weekday) >= 2 }) { strength.append(weekday) }
-        }
-        return strength
-    }
 
     private static func assembledItems(input: PlanningInput, index: Int,
                                        pick: (Pattern) throws -> String) throws -> [PlanningItem] {

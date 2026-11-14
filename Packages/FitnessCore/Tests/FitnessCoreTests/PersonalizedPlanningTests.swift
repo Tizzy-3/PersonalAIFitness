@@ -39,6 +39,27 @@ final class PersonalizedPlanningTests: XCTestCase {
         XCTAssertTrue(draft.matches(snapshot: snapshot))
     }
 
+    func testInterviewWithNoCardioConditionsCanGenerateAndRestoreAFullWeek() throws {
+        var session = interview()
+        session.profile.weekdays.value = [1, 2, 3, 5]
+        session.profile.equipment.value = [.bodyweight, .dumbbells, .bench]
+        let snapshot = AppSnapshot(interview: session)
+        let eligibility = session.planningEligibility(snapshot: snapshot)
+        XCTAssertTrue(eligibility.canGenerate, eligibility.message)
+        let input = try session.profile.planningInput()
+        let selected = try reply(input)
+        XCTAssertNil(selected.choices["cardio"])
+        let draft = try PlanningDraft.makePersonalized(profile: session.profile, reply: selected, snapshot: snapshot,
+                                                      providerHost: "fixture.invalid", model: "fixture")
+        let restored = try JSONDecoder().decode(PlanningDraft.self, from: JSONEncoder().encode(draft))
+        try restored.validate()
+        let option = try XCTUnwrap(restored.options.first)
+        XCTAssertEqual(option.days.map(\.weekday), Array(1...7))
+        XCTAssertEqual(option.days.filter { !$0.isRestDay }.map(\.weekday), [1, 3, 5])
+        XCTAssertTrue(option.days[1].isRestDay)
+        XCTAssertFalse(option.days[1].notes.isEmpty)
+    }
+
     func testReplyRejectsMissingPatternInsteadOfLocallyPickingDefault() throws {
         let input = try interview().profile.planningInput()
         var selected = try reply(input)

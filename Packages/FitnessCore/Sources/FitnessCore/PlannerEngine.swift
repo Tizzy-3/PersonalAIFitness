@@ -67,13 +67,14 @@ public enum PlannerEngine {
               option.rationale.count <= 20, option.limitations.count <= 20 else {
             throw CoreError.invalidInput("周计划结构、版本或星期安排不符合本地规则。")
         }
+        let activeWeekdays = hasCardioCandidate(input: input) ? input.weekdays : strengthWeekdays(input: input, hasCardio: false)
         var strengthDays: [Int] = []
         for day in option.days {
             guard day.title.count <= 100, day.notes.count <= 10, day.notes.allSatisfy({ $0.count <= 1_000 }) else {
                 throw CoreError.invalidInput("计划日说明超长。")
             }
-            guard day.isRestDay == !input.weekdays.contains(day.weekday) else {
-                throw CoreError.invalidInput("训练只能安排在本人明确选择的星期。")
+            guard day.isRestDay == !activeWeekdays.contains(day.weekday) else {
+                throw CoreError.invalidInput("训练或恢复日与当前可用条件不符。")
             }
             if day.isRestDay {
                 guard day.estimatedMinutesLower == 0, day.estimatedMinutesUpper == 0 else { throw CoreError.invalidInput("休息日不能包含虚构训练时长。") }
@@ -144,16 +145,8 @@ public enum PlannerEngine {
     }
 
     private static func build(input: PlanningInput, simple: Bool) throws -> WeeklyPlanOption {
-        let desired: Int
-        switch input.goal {
-        case .endurance: desired = input.weekdays.count >= 4 ? 2 : input.weekdays.count >= 3 ? 1 : 0
-        case .fatLoss: desired = min(2, input.weekdays.count)
-        default: desired = min(3, input.weekdays.count)
-        }
-        var strength: [Int] = []
-        for weekday in input.weekdays where strength.count < desired {
-            if strength.allSatisfy({ cyclicDistance($0, weekday) >= 2 }) { strength.append(weekday) }
-        }
+        let hasCardio = hasCardioCandidate(input: input)
+        let strength = strengthWeekdays(input: input, hasCardio: hasCardio)
         var limitations = [
             input.constraintReview == nil ? "这是健康成人的第一阶段保守校准，不是精确最佳训练量或长期周期。每周复核实际表现后再提出新草案。" : "这是本人明确活动范围内的保守安排，不推断医疗许可或治疗恢复间隔。",
             "尚无完整睡眠、HRV、个人恢复基线或动作能力实测；本方案不生成恢复分数，也不预测最优公斤数。",
@@ -161,7 +154,12 @@ public enum PlannerEngine {
         ]
         limitations += constraintLimitations(input: input)
         if strength.count < 2 { limitations.append("本次安排少于每周2次抗阻，没有伪装为达到一般指南方向；可在时间允许后逐步增加。") }
-        if strength.count < desired { limitations.append("部分可训练日相邻，为避免连续抗阻校准，改安排轻有氧；若想增加抗阻频率，请调整可训练日。") }
+        if hasCardio, strength.count < desiredStrengthDayCount(input: input) {
+            limitations.append("部分可训练日相邻，为避免连续抗阻校准，改安排轻有氧；若想增加抗阻频率，请调整可训练日。")
+        }
+        if !hasCardio, strength.count < input.weekdays.count || input.goal == .endurance {
+            limitations.append(noCardioLimitation)
+        }
         let hasPull = candidates(pattern: .pull, input: input, simple: simple).first != nil
         if !hasPull, !strength.isEmpty { limitations.append("当前器械/排除条件缺少可靠拉类动作，不能声称完整覆盖背部；可补充合适器械后重新制定。") }
         if input.equipment.contains(.resistanceBand), !input.equipment.contains(.dumbbells), !input.equipment.contains(.cableMachine), !input.equipment.contains(.latPulldown) {
@@ -181,11 +179,13 @@ public enum PlannerEngine {
                 days.append(PlanningDay(weekday: weekday, title: title, items: items, estimatedMinutesLower: estimate.lower,
                                         estimatedMinutesUpper: estimate.upper,
                                         notes: ["先用轻重量或容易控制的变式校准，保留余力，不追求力竭。", "估时含热身、所有规定休息、换动作与缓和；如实际超时，结束并保留记录，不赶组数。 "]))
-            } else {
+            } else if hasCardio {
                 let items = try cardioItems(input: input, simple: simple)
                 let estimate = timeRange(items: items)
                 days.append(PlanningDay(weekday: weekday, title: "轻松有氧与习惯建立", items: items, estimatedMinutesLower: estimate.lower,
                                         estimatedMinutesUpper: estimate.upper, notes: ["选择可舒适交谈的强度，不用未知最大心率推算精确心率区间。", "先从可承受的少量开始，不把成人公共活动指南当作第一周必须完成的配额。 "]))
+            } else {
+                days.append(recoveryDay(weekday: weekday))
             }
         }
         let result = WeeklyPlanOption(id: simple ? "simple-first" : "equipment-first", title: simple ? "简易变式优先" : "可用器械优先",
@@ -228,9 +228,9 @@ public enum PlannerEngine {
         return items
     }
 
-    static func cardioItems(input: PlanningInput, simple: Bool) throws -> [PlanningItem] {
+    private static func cardioItems(input: PlanningInput, simple: Bool) throws -> [PlanningItem] {
         guard let chosen = candidates(pattern: .cardio, input: input, simple: simple).first else {
-            throw CoreError.invalidInput("当前安排需要轻有氧日，但没有可用安全步行空间或适合的有氧器械。请补充可用条件、调整星期或手动创建。")
+            throw CoreError.invalidInput("选定的有氧日缺少可用动作。")
         }
         let cap = input.experience == .regular ? 30 : 15
         var minutes = min(cap, max(5, input.minutesPerSession - 8))
@@ -241,6 +241,35 @@ public enum PlannerEngine {
         }
         guard timeRange(items: [item]).upper <= input.minutesPerSession else { throw CoreError.invalidInput("有氧准备与缓和后仍超过时间预算，请增加可用时间。") }
         return [item]
+    }
+
+    static let noCardioLimitation = "按目前已确认的场地、器械和运动限制，先安排可做的力量训练。这周暂未安排有氧。"
+
+    static func hasCardioCandidate(input: PlanningInput) -> Bool {
+        !candidates(pattern: .cardio, input: input, simple: false).isEmpty
+    }
+
+    static func recoveryDay(weekday: Int) -> PlanningDay {
+        PlanningDay(weekday: weekday, title: "休息与恢复", items: [], estimatedMinutesLower: 0,
+                    estimatedMinutesUpper: 0, notes: ["这天留给恢复，无需补练。"])
+    }
+
+    static func desiredStrengthDayCount(input: PlanningInput) -> Int {
+        switch input.goal {
+        case .endurance: return input.weekdays.count >= 4 ? 2 : input.weekdays.count >= 3 ? 1 : 0
+        case .fatLoss: return min(2, input.weekdays.count)
+        default: return min(3, input.weekdays.count)
+        }
+    }
+
+    static func strengthWeekdays(input: PlanningInput, hasCardio: Bool) -> [Int] {
+        let desired = desiredStrengthDayCount(input: input)
+        let target = hasCardio ? desired : max(1, desired)
+        var strength: [Int] = []
+        for weekday in input.weekdays where strength.count < target {
+            if strength.allSatisfy({ cyclicDistance($0, weekday) >= 2 }) { strength.append(weekday) }
+        }
+        return strength
     }
 
     static func candidates(pattern: Pattern, input: PlanningInput, simple: Bool) -> [Movement] {

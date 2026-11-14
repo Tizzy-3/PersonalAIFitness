@@ -203,11 +203,22 @@ final class PlannerEngineTests: XCTestCase {
         }
     }
 
-    func testMissingCardioSpaceOrMachineFailsRatherThanInventingFeasibility() throws {
-        XCTAssertThrowsError(try PlannerEngine.options(for: input(weekdays: [1, 2, 3, 4, 5], equipment: [.bodyweight])))
-        XCTAssertThrowsError(try PlannerEngine.options(for: input(weekdays: [1, 7], equipment: [.dumbbells, .bench])))
-        XCTAssertNoThrow(try PlannerEngine.options(for: input(weekdays: [1], equipment: [.bodyweight])))
-        XCTAssertNoThrow(try PlannerEngine.options(for: input(weekdays: [1, 2, 3, 4, 5], equipment: [.bodyweight, .stationaryBike])))
+    func testMissingCardioConditionsLeaveRecoveryBetweenFeasibleStrengthDays() throws {
+        let request = input(weekdays: [1, 2, 3, 4, 5], equipment: [.bodyweight])
+        for option in try PlannerEngine.options(for: request) {
+            XCTAssertEqual(resistanceDays(option), [1, 3, 5])
+            XCTAssertTrue(option.days[1].isRestDay)
+            XCTAssertTrue(option.days[3].isRestDay)
+            XCTAssertEqual(option.days[3].estimatedMinutesUpper, 0)
+            var missingTrainingDay = option
+            missingTrainingDay.days[0].items = []
+            XCTAssertThrowsError(try missingTrainingDay.validate(input: request))
+        }
+        let adjacent = input(weekdays: [1, 7], equipment: [.dumbbells, .bench])
+        for option in try PlannerEngine.options(for: adjacent) {
+            XCTAssertEqual(resistanceDays(option), [1])
+            XCTAssertTrue(option.days[6].isRestDay)
+        }
     }
 
     func testBikeOnlyIsFeasibleForEnduranceButDoesNotInventFloorSpaceForResistance() throws {
@@ -289,10 +300,22 @@ final class PlannerEngineTests: XCTestCase {
         }
     }
 
-    func testExcludingAllFeasibleCardioIsExplicitFailure() throws {
+    func testCardioExclusionIsRespectedInRecoverySchedule() throws {
         var request = input(weekdays: [1, 2, 3, 4, 5])
         request.excludedExerciseIDs = ["builtin.walking"]
-        XCTAssertThrowsError(try PlannerEngine.options(for: request))
+        for option in try PlannerEngine.options(for: request) {
+            XCTAssertEqual(option.days.filter { !$0.isRestDay }.map(\.weekday), [1, 3, 5])
+            XCTAssertFalse(option.days.flatMap(\.items).contains { $0.exerciseID == "builtin.walking" })
+        }
+    }
+
+    func testEnduranceWeekWithoutCardioHasAFeasibleStartingWorkout() throws {
+        let request = input(weekdays: [2, 5], equipment: [.bodyweight], goal: .endurance)
+        for option in try PlannerEngine.options(for: request) {
+            XCTAssertEqual(option.days.filter { !$0.isRestDay }.map(\.weekday), [2])
+            XCTAssertEqual(resistanceDays(option), [2])
+            XCTAssertTrue(option.limitations.contains { $0.contains("有氧") })
+        }
     }
 
     func testUnknownWeightStaysUnknownWhenGeneratedDoseBecomesWorkout() throws {
