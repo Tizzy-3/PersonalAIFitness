@@ -12,7 +12,9 @@ private final class InterviewRepairFixture: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         bodies.append(try HTTPRequestBodyFixture.read(request))
         guard !replies.isEmpty else { throw URLError(.resourceUnavailable) }
-        return try JSONSerialization.data(withJSONObject: ["choices": [["message": ["content": replies.removeFirst()], "finish_reason": "stop"]]])
+        let reply = replies.removeFirst()
+        let reason = reply == "FIXTURE_TRUNCATED" ? "length" : "stop"
+        return try JSONSerialization.data(withJSONObject: ["choices": [["message": ["content": reply], "finish_reason": reason]]])
     }
     func requests() -> [Data] { lock.lock(); defer { lock.unlock() }; return bodies }
 }
@@ -39,10 +41,10 @@ final class InterviewRepairClientTests: XCTestCase {
     }
     @MainActor
     func testAIAsksARealFirstQuestionWithoutAnyUserIntroduction() async throws {
-        InterviewRepairProtocol.fixture.reset([#"{"questions":[{"topic":"capability","kind":"text","prompt":"你现在能连续步行多久？"}],"extractions":[],"note":"我先来问，你只需回答。"}"#])
+        InterviewRepairProtocol.fixture.reset([#"{"questions":[{"topic":"capability","kind":"text","prompt":"你现在能连续步行多久？"},{"topic":"minutes","kind":"number","prompt":"你每次方便练多久？","unit":"分钟"}],"extractions":[],"note":"我先来问，你只需回答。"}"#])
         let session = InterviewSession()
         let turn = try await api().nextTurn(session: session, configuration: .init(endpoint: "https://fixture.example/chat/completions", model: "fixture"), key: "fixture-token")
-        XCTAssertEqual(turn.questions.first?.prompt, "你现在能连续步行多久？")
+        XCTAssertEqual(turn.questions.map(\.topic), [.minutes])
         XCTAssertTrue((session.narratives ?? []).isEmpty)
         XCTAssertEqual(InterviewRepairProtocol.fixture.requests().count, 1)
     }
@@ -53,12 +55,26 @@ final class InterviewRepairClientTests: XCTestCase {
         let first = InterviewQuestion(topic: .capability, kind: .text, prompt: "能连续步行多久？")
         try session.appendTurn(.init(questions: [first]))
         try session.answer([.init(questionID: first.id, text: "SYNTHETIC-WALK-20-MINUTES", answeredAt: Date())])
-        let turn = try await api().nextTurn(session: session, configuration: .init(endpoint: "https://fixture.example/chat/completions", model: "fixture"), key: "fixture-token")
+        let turn = try await api().nextTurn(session: session, configuration: .init(endpoint: "https://fixture.example/chat/completions", model: "fixture"), key: "fixture-token", scope: .details)
         XCTAssertEqual(turn.questions.first?.detailKey, "capability.walking_effort")
         let body = try XCTUnwrap(InterviewRepairProtocol.fixture.requests().first)
         XCTAssertTrue(String(decoding: body, as: UTF8.self).contains("SYNTHETIC-WALK-20-MINUTES"))
         XCTAssertTrue((session.narratives ?? []).isEmpty)
         XCTAssertEqual(InterviewRepairProtocol.fixture.requests().count, 1)
+    }
+
+    @MainActor
+    func testTruncatedQuestionGetsOneShortRetryWithSameInterviewContext() async throws {
+        InterviewRepairProtocol.fixture.reset(["FIXTURE_TRUNCATED", #"{"questions":[{"topic":"minutes","kind":"number","prompt":"每次能练多久？","unit":"分钟"}],"extractions":[],"note":""}"#])
+        let turn = try await api().nextTurn(session: InterviewSession(),
+            configuration: .init(endpoint: "https://fixture.example/chat/completions", model: "fixture"), key: "fixture-token")
+        XCTAssertEqual(turn.questions.map(\.topic), [.minutes])
+        let requests = InterviewRepairProtocol.fixture.requests()
+        XCTAssertEqual(requests.count, 2)
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(requests.last)) as? [String: Any])
+        let messages = try XCTUnwrap(payload["messages"] as? [[String: String]])
+        XCTAssertTrue(messages.last?["content"]?.contains("最多一个最重要的问题") == true)
+        XCTAssertNil(payload["response_format"])
     }
     @MainActor
     func testMalformedReplyGetsOneCorrectionWithoutForwardingPrivateRawReply() async throws {

@@ -18,14 +18,15 @@ struct CoachInterviewView: View {
     @State private var ownWords = ""
     @State private var formatDiagnostic: String?
     @State private var reviewingEarly = false
-    @State private var deepeningInterview = false
+    private let continueInDepth: Bool
+    @State private var lastQuestionScope: InterviewAPI.Scope = .essentials
     @State private var guidanceStarted = false
     @State private var clarifyingLimits = false
     @State private var planAfterSkipping = false
 
     init(store: TrainingStore, continueInDepth: Bool = false) {
         self.store = store
-        _deepeningInterview = State(initialValue: continueInDepth)
+        self.continueInDepth = continueInDepth
     }
 
     var body: some View {
@@ -152,7 +153,9 @@ struct CoachInterviewView: View {
                 .font(.footnote).foregroundStyle(.secondary)
             DisclosureGroup("查看详细原因") { Text(value).font(.caption.monospaced()).textSelection(.enabled) }
             Button("复制格式诊断") { UIPasteboard.general.string = value }.frame(minHeight: 44)
-            Button("重新询问") { Task { await askNext() } }.disabled(request != nil || configuration == nil || session?.canContinueInterview != true)
+            Button("重新询问") { Task { await askNext(scope: lastQuestionScope) } }
+                .disabled(request != nil || configuration == nil || session?.canContinueInterview != true)
+            NavigationLink { CoachProfileReviewView(store: store) } label: { Text("查看已保存资料") }
         }
     }
 
@@ -163,7 +166,7 @@ struct CoachInterviewView: View {
             try store.saveInterview(current)
             session = store.interview; ownWords = ""
             status = nil
-            Task { await askNext() }
+            if session?.profile.isReadyForPlanning != true { Task { await askNext() } }
         } catch { issue = error.localizedDescription }
     }
 
@@ -315,7 +318,7 @@ struct CoachInterviewView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Text("点下方“生成训练计划”即可，不用再自己补话题。")
                     .font(.subheadline)
-                Button("让教练继续问得更细") { deepeningInterview = true; Task { await askNext() } }
+                Button("再细聊一轮") { Task { await askNext(scope: .details) } }
                     .frame(minHeight: 44)
                     .disabled(request != nil || configuration == nil || !session.canContinueInterview)
             } else if eligibility.needsConstraintReview {
@@ -367,7 +370,6 @@ struct CoachInterviewView: View {
 
     private func requestPlan() {
         guard request == nil, let current = store.interview else { return }
-        deepeningInterview = false
         planAfterSkipping = false
         switch planButtonStep() {
         case .readyForPlan: generatePlan(current)
@@ -399,7 +401,6 @@ struct CoachInterviewView: View {
     private func advanceAfterReply() {
         switch nextStep() {
         case .askCoach: Task { await askNext() }
-        case .readyForPlan where deepeningInterview: Task { await askNext() }
         case .clarifyLimits: clarifyingLimits = true
         default: break
         }
@@ -417,14 +418,16 @@ struct CoachInterviewView: View {
                 guidanceStarted = true
                 let step = nextStep()
                 if step == .clarifyLimits { clarifyingLimits = true }
-                else if step.shouldAskOnEntry(continueInDepth: deepeningInterview) { await askNext() }
+                else if step.shouldAskOnEntry(continueInDepth: continueInDepth) {
+                    await askNext(scope: step == .readyForPlan ? .details : .essentials)
+                }
             }
         } catch {
             issue = error.localizedDescription
         }
     }
 
-    private func askNext() async {
+    private func askNext(scope: InterviewAPI.Scope = .essentials) async {
         guard let configuration, request == nil else { return }
         let storedKey = try? AIKeychain.load(for: configuration)
         guard let key = storedKey ?? nil else {
@@ -434,6 +437,7 @@ struct CoachInterviewView: View {
         let starting = session ?? (try? store.startInterview())
         guard let starting else { return }
         guard starting.canContinueInterview else { return }
+        lastQuestionScope = scope
         let startingLegacy = store.profile.restrictions
         status = nil
         formatDiagnostic = nil
@@ -441,7 +445,8 @@ struct CoachInterviewView: View {
             defer { request = nil }
             do {
                 let api = InterviewAPI()
-                let turn = try await api.nextTurn(session: starting, configuration: configuration, key: key, legacyRestrictions: startingLegacy)
+                let turn = try await api.nextTurn(session: starting, configuration: configuration, key: key,
+                                                  legacyRestrictions: startingLegacy, scope: scope)
                 try Task.checkCancellation()
                 guard store.interview == starting, store.profile.restrictions == startingLegacy else {
                     throw CoreError.invalidState("访谈已在请求期间被修改，旧回答没有覆盖最新资料。请重新询问。")
@@ -456,13 +461,20 @@ struct CoachInterviewView: View {
                 session = store.interview
                 draft = AnswerDraft()
                 status = nil
-                if turn.questions.isEmpty, !updated.profile.isReadyForPlanning {
-                    status = "教练这次没有提出新问题。可以再点“继续访谈”，或先在档案页手动补充。"
+                if accepted.questions.isEmpty, updated.pendingInferences.isEmpty {
+                    let eligibility = displayEligibility(for: updated)
+                    status = eligibility.canGenerate ? "可以先按已有资料生成一周计划。" : eligibility.message
                 }
+            } catch is CancellationError {
+                return
             } catch {
                 if let error = error as? InterviewProtocolError { formatDiagnostic = error.diagnostic }
                 else if let clientError = error as? CoachClientError, clientError == .outputTruncated {
                     formatDiagnostic = "interview-json-v2\nstage=response-envelope\nfinish_reason=length\ncategory=output_truncated\n原文未保存；已有资料未改变。"
+                    status = displayEligibility(for: starting).canGenerate
+                        ? "这次追问没能完成。已有资料可以先生成一周计划。"
+                        : "这次追问没能完成。你的回答已保存，可以重试或在档案页补充。"
+                    return
                 }
                 issue = error.localizedDescription
             }
