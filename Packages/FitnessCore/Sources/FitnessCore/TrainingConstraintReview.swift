@@ -205,7 +205,11 @@ extension InterviewSession {
         }
         do {
             let input = try profile.planningInput(at: date)
-            try input.validateLegacyRestrictions(legacyRestrictions, at: date)
+            do { try input.validateLegacyRestrictions(legacyRestrictions, at: date) }
+            catch {
+                return .init(canGenerate: false, title: "待核对原档案", message: error.localizedDescription,
+                             needsConstraintReview: true)
+            }
             if let snapshot {
                 if snapshot.sessions.contains(where: { $0.status.isOngoing }) {
                     return .init(canGenerate: false, title: "先完成当前训练", message: "先结束或取消正在进行的训练，再制定新的生效安排。")

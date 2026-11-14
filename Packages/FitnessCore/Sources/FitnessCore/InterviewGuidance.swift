@@ -3,7 +3,7 @@ import Foundation
 /// One deterministic next step, shared by automatic continuation and the explicit plan button.
 /// It only chooses navigation; it cannot answer questions or confirm/activate a plan.
 public enum InterviewGuidanceStep: Equatable, Sendable {
-    case reviewFacts, answerQuestions, clarifyLimits, readyForPlan, askCoach, resume
+    case reviewFacts, answerQuestions, confirmMissingRestrictions, clarifyLimits, readyForPlan, askCoach, resume
     case blocked(String)
 
     public func shouldAskOnEntry(continueInDepth: Bool) -> Bool {
@@ -23,6 +23,10 @@ extension InterviewSession {
         if pausedAt != nil { return .resume }
         if !pendingInferences.isEmpty { return .reviewFacts }
         if !unansweredQuestions.isEmpty { return .answerQuestions }
+        let missing = profile.missingRequiredTopics
+        if missing.contains(.restrictions), declinedTopics.contains(.restrictions) || missing == [.restrictions] {
+            return .confirmMissingRestrictions
+        }
         let eligibility = planningEligibility(legacyRestrictions: legacyRestrictions, at: date, snapshot: snapshot)
         if eligibility.canGenerate { return .readyForPlan }
         if eligibility.needsConstraintReview { return .clarifyLimits }

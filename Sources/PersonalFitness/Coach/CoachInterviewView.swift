@@ -22,6 +22,8 @@ struct CoachInterviewView: View {
     @State private var lastQuestionScope: InterviewAPI.Scope = .essentials
     @State private var guidanceStarted = false
     @State private var clarifyingLimits = false
+    @State private var confirmingRestrictions = false
+    @State private var restrictionText = ""
     @State private var planAfterSkipping = false
 
     init(store: TrainingStore, continueInDepth: Bool = false) {
@@ -30,59 +32,63 @@ struct CoachInterviewView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 18) {
-                if configuration == nil { availabilitySection }
-                if request != nil {
-                    HStack { ProgressView(); Text("教练正在根据已有资料思考…").font(.footnote)
-                        Spacer(); Button("取消") { request?.cancel() }.frame(minHeight: 44) }
-                }
-                if let session {
-                    if let note = session.latestTurn?.note, !note.isEmpty {
-                        Text(note).font(.title3.weight(.medium)).padding(.vertical, 4)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 18) {
+                    if configuration == nil { availabilitySection }
+                    if request != nil {
+                        HStack { ProgressView(); Text("教练正在根据已有资料思考…").font(.footnote)
+                            Spacer(); Button("取消") { request?.cancel() }.frame(minHeight: 44) }
                     }
-                    if !session.pendingInferences.isEmpty {
-                        inferenceSection(session)
-                    } else if !session.unansweredQuestions.isEmpty {
-                        answerSection(session)
-                    } else if session.profile.isReadyForPlanning {
-                        planSection(session)
-                    } else {
-                        progressSection(session)
+                    if let session {
+                        if !session.pendingInferences.isEmpty {
+                            inferenceSection(session)
+                        } else if !session.unansweredQuestions.isEmpty {
+                            answerSection(session)
+                        } else if nextStep() == .confirmMissingRestrictions {
+                            missingRestrictionsSection.id("missingRestrictions")
+                        } else if session.profile.isReadyForPlanning {
+                            planSection(session)
+                        } else {
+                            progressSection(session)
+                        }
+                        DisclosureGroup("我也想主动补充一些情况") { selfDescriptionSection }
                     }
-                    DisclosureGroup("我也想主动补充一些情况") { selfDescriptionSection }
-                }
-                if let formatDiagnostic { diagnosticSection(formatDiagnostic) }
-                if let unsavedPlan {
-                    CoachPanel {
-                        Label("计划尚未保存", systemImage: "exclamationmark.circle")
-                            .font(.headline).foregroundStyle(FitnessTheme.orange)
-                        Text("AI已返回动作选择，但本地保存未完成。重试保存不需要重复请求模型。")
-                            .font(.footnote).foregroundStyle(.secondary)
-                        Button("重试保存计划草案") { persistPlan(unsavedPlan) }.buttonStyle(FitnessPrimaryButtonStyle())
-                        Button("放弃未保存结果，按最新资料重新制定", role: .destructive) { self.unsavedPlan = nil }
-                            .frame(minHeight: 44)
-                    }
-                }
-                if let session {
-                    if let issues = session.latestTurn?.extractionIssues, !issues.isEmpty {
+                    if let formatDiagnostic { diagnosticSection(formatDiagnostic) }
+                    if let unsavedPlan {
                         CoachPanel {
-                            Label("有资料需要进一步澄清，访谈可以继续", systemImage: "text.bubble")
+                            Label("计划尚未保存", systemImage: "exclamationmark.circle")
                                 .font(.headline).foregroundStyle(FitnessTheme.orange)
-                            Text("\(issues.map { $0.topic.title }.joined(separator: "、"))：本轮未写成档案事实。你的原话仍保留，可以继续回答问题，或到档案页核对。")
+                            Text("AI已返回动作选择，但本地保存未完成。重试保存不需要重复请求模型。")
                                 .font(.footnote).foregroundStyle(.secondary)
-                            NavigationLink { CoachProfileReviewView(store: store) } label: {
-                                Label("核对待澄清资料", systemImage: "person.crop.rectangle")
-                            }.frame(minHeight: 44)
+                            Button("重试保存计划草案") { persistPlan(unsavedPlan) }.buttonStyle(FitnessPrimaryButtonStyle())
+                            Button("放弃未保存结果，按最新资料重新制定", role: .destructive) { self.unsavedPlan = nil }
+                                .frame(minHeight: 44)
                         }
                     }
-                    conversationSection(session)
-                    DisclosureGroup("资料与聊天管理") { syncSection(session) }
-                }
-                if let status {
-                    CoachPanel { Label(status, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary) }
-                }
-            }.padding(.horizontal, 18).padding(.vertical, 16)
+                    if let session {
+                        if let issues = session.latestTurn?.extractionIssues, !issues.isEmpty {
+                            CoachPanel {
+                                Label("有资料需要进一步澄清，访谈可以继续", systemImage: "text.bubble")
+                                    .font(.headline).foregroundStyle(FitnessTheme.orange)
+                                Text("\(issues.map { $0.topic.title }.joined(separator: "、"))：本轮未写成档案事实。你的原话仍保留，可以继续回答问题，或到档案页核对。")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                                NavigationLink { CoachProfileReviewView(store: store) } label: {
+                                    Label("核对待澄清资料", systemImage: "person.crop.rectangle")
+                                }.frame(minHeight: 44)
+                            }
+                        }
+                        conversationSection(session)
+                        DisclosureGroup("资料与聊天管理") { syncSection(session) }
+                    }
+                    if let status {
+                        CoachPanel { Label(status, systemImage: "info.circle").font(.footnote).foregroundStyle(.secondary) }
+                    }
+                }.padding(.horizontal, 18).padding(.vertical, 16)
+            }
+            .onChange(of: confirmingRestrictions) { _, confirming in
+                if confirming { proxy.scrollTo("missingRestrictions", anchor: .top) }
+            }
         }
         .background(FitnessTheme.canvas)
         .tint(FitnessTheme.accent)
@@ -96,9 +102,9 @@ struct CoachInterviewView: View {
             if let session {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(planHint(session)).font(.caption).foregroundStyle(.secondary)
-                    Button(request == nil ? "生成训练计划" : "教练正在处理…") { requestPlan() }
+                    Button(request != nil ? "教练正在处理…" : nextStep() == .confirmMissingRestrictions ? "补充运动限制" : "生成训练计划") { requestPlan() }
                         .buttonStyle(FitnessPrimaryButtonStyle())
-                        .disabled(request != nil || configuration == nil || unsavedPlan != nil)
+                        .disabled(request != nil || (configuration == nil && nextStep() != .confirmMissingRestrictions) || unsavedPlan != nil)
                 }.padding(16).background(FitnessTheme.surface)
             }
         }
@@ -117,6 +123,55 @@ struct CoachInterviewView: View {
             Button("继续回答", role: .cancel) { planAfterSkipping = false }
         } message: { Text("这些问题会明确记录为跳过，不猜测答案。关键安全资料或待确认推断仍须本人核对，计划不会自动生效。") }
         .fitnessError($issue)
+    }
+
+    private var missingRestrictionsSection: some View {
+        CoachPanel {
+            Text("还需确认运动限制").font(.headline)
+            Text("按你的实际情况确认一次，就可以继续核对计划。")
+                .font(.footnote).foregroundStyle(.secondary)
+            if hasLegacyRestrictions {
+                Text("原档案记录：\(store.profile.restrictions)")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            if confirmingRestrictions {
+                if !hasLegacyRestrictions {
+                    Button("我确认目前没有已知运动限制") { saveRestrictions("无") }
+                        .buttonStyle(.bordered)
+                } else {
+                    Button("原档案记录仍适用") { saveRestrictions(store.profile.restrictions) }
+                        .buttonStyle(.bordered)
+                }
+                TextField("有需要避开的情况？用自己的话写", text: $restrictionText, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                Button("保存我说明的情况") { saveRestrictions(restrictionText) }
+                    .buttonStyle(FitnessPrimaryButtonStyle())
+                    .disabled(restrictionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button("稍后确认") { confirmingRestrictions = false }
+            } else {
+                Button("现在确认") { confirmingRestrictions = true }
+                    .buttonStyle(FitnessPrimaryButtonStyle())
+            }
+        }
+    }
+
+    private var hasLegacyRestrictions: Bool {
+        !TrainingConstraintReview.isNoRestrictionText(store.profile.restrictions, allowingEmpty: true)
+    }
+
+    private func saveRestrictions(_ text: String) {
+        guard var current = store.interview, nextStep() == .confirmMissingRestrictions else { return }
+        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
+        do {
+            try current.setValue(.text(value), for: .restrictions)
+            try store.saveInterview(current)
+            session = store.interview
+            confirmingRestrictions = false
+            restrictionText = ""
+            status = nil
+            advanceAfterReply()
+        } catch { issue = error.localizedDescription }
     }
 
     private var selfDescriptionSection: some View {
@@ -358,6 +413,7 @@ struct CoachInterviewView: View {
         switch nextStep() {
         case .readyForPlan: return "使用已确认资料和训练摘要，请你配置的AI安排；你最后确认后才生效。"
         case .reviewFacts: return "先核对教练整理的重点，再生成。"
+        case .confirmMissingRestrictions: return "需要你亲自确认一次运动限制。"
         case .answerQuestions: return session.profile.isReadyForPlanning
             ? "可继续回答，也可先按已确认资料安排第一版。"
             : "回答教练的问题后会自动继续，不需要你自己想话题。"
@@ -374,6 +430,7 @@ struct CoachInterviewView: View {
         switch planButtonStep() {
         case .readyForPlan: generatePlan(current)
         case .clarifyLimits: clarifyingLimits = true
+        case .confirmMissingRestrictions: confirmingRestrictions = true; status = nil
         case .askCoach: Task { await askNext() }
         case .reviewFacts: status = "请先核对上方“我理解得对吗？”中的重点。"
         case .answerQuestions:

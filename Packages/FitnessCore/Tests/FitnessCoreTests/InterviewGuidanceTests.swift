@@ -50,6 +50,31 @@ final class InterviewGuidanceTests: XCTestCase {
         XCTAssertEqual(ready().planButtonStep(at: now), .readyForPlan)
     }
 
+    func testSkippedRestrictionsRouteToExplicitConfirmationAndKeepSafetyChecks() throws {
+        var session = ready()
+        try session.markUnknown(.restrictions, at: now)
+        XCTAssertEqual(session.nextGuidanceStep(at: now), .confirmMissingRestrictions)
+        XCTAssertEqual(session.planButtonStep(at: now), .confirmMissingRestrictions)
+        XCTAssertFalse(session.nextGuidanceStep(at: now).shouldAskOnEntry(continueInDepth: true))
+        XCTAssertFalse(session.planningEligibility(at: now).canGenerate)
+
+        var unrestricted = session
+        try unrestricted.setValue(.text("无"), for: .restrictions, at: now)
+        XCTAssertEqual(unrestricted.planButtonStep(at: now), .readyForPlan)
+        XCTAssertEqual(unrestricted.planButtonStep(legacyRestrictions: "医生要求避免剧烈运动", at: now), .clarifyLimits)
+
+        try session.setValue(.text("医生要求避免剧烈运动"), for: .restrictions, at: now)
+        XCTAssertFalse(session.declinedTopics.contains(.restrictions))
+        XCTAssertEqual(session.planButtonStep(at: now), .clarifyLimits)
+    }
+
+    func testWhenOnlyRestrictionsAreMissingAppOffersDirectConfirmation() {
+        var session = ready()
+        session.profile.restrictions = .unknown
+        XCTAssertTrue(session.declinedTopics.isEmpty)
+        XCTAssertEqual(session.planButtonStep(at: now), .confirmMissingRestrictions)
+    }
+
     func testEnoughFactsOffersPlanAndStillAllowsAIInitiatedDepth() {
         let step = ready().nextGuidanceStep(at: now)
         XCTAssertEqual(step, .readyForPlan)
